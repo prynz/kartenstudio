@@ -4,6 +4,7 @@
 import { app } from './app.js';
 import { animateSections } from './animation.js';
 import { revealSection } from './sheet.js';
+import { wizardOpenSec } from './assistent.js';
 import { $, CLS, SWATCH, hex } from './basis.js';
 import { BASES } from '../themen/standard.js';
 import { PRESETS } from '../themen/vorlagen.js';
@@ -84,6 +85,7 @@ export function textKey() {
   return app.curText;
 }
 export function openSec(name) {
+  if (wizardOpenSec(name)) return;
   animateSections(() => document.querySelectorAll('.sec').forEach(x => x.classList.toggle('open', x.dataset.s === name)));
   revealSection(document.querySelector(`.sec[data-s="${name}"]`));
 }

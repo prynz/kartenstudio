@@ -5,7 +5,7 @@ import { zoom } from './ansicht.js';
 import { reducedMotion } from './animation.js';
 
 const MOBILE = '(max-width: 900px)';
-const SNAPS = [0.3, 0.52, 0.74]; // Anteil der verfügbaren Höhe
+const SNAPS = [0.3, 0.58, 0.76]; // Anteil der verfügbaren Höhe
 let snap = 1; // Start: mittlere Höhe
 
 const isMobile = () => matchMedia(MOBILE).matches;

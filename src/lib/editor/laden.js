@@ -3,6 +3,7 @@
 // Aus dem Prototyp übernommen (prototyp/src/script.js).
 import { app } from './app.js';
 import { revealEditor } from './animation.js';
+import { wizardAfterLoad } from './assistent.js';
 import { $, CLS, MW, ORDER } from './basis.js';
 import { FMAP, drawSel, render } from './zeichnen.js';
 import { PRESETS } from '../themen/vorlagen.js';
@@ -192,12 +193,13 @@ export function loadData(data) {
   updUndo();
   render();
   renderThumbs();
+  wizardAfterLoad();
 }
 export function renderThumbs() {
   if (!app.DATA) return;
   const v = defView(),
     MH = MW * v.a;
-  document.querySelectorAll('#styles button[data-p]').forEach(b => {
+  document.querySelectorAll('#styles button[data-p], #wzStyles button[data-p]').forEach(b => {
     const p = PRESETS[b.dataset.p];
     let o = `<svg viewBox="${MW * 0.18} ${MH * 0.18} ${MW * 0.64} ${MW * 0.64}" preserveAspectRatio="xMidYMid slice">`;
     o += `<rect x="-2000" y="-2000" width="6000" height="6000" fill="${p.bg !== 'none' ? p.bg : '#ffffff'}"/>`;

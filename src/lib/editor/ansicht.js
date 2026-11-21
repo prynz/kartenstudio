@@ -15,9 +15,10 @@ export function zoom() {
     c = $('canvas');
   // Rand um das Poster: am Handy knapper, damit es den Platz über der Einstellungs-Leiste nutzt
   const narrow = matchMedia('(max-width: 900px)').matches;
-  const dock = narrow && !document.body.classList.contains('sheet-big');
+  const B = document.body.classList;
+  const dock = !B.contains('wiz-on') && !(narrow && B.contains('sheet-big'));
   const padX = narrow ? 32 : 80,
-    padY = narrow ? (dock ? 78 : 28) : 136;
+    padY = narrow ? (dock ? 78 : 26) : dock ? 136 : 80;
   const base = Math.max(narrow ? 60 : 240, Math.min(c.clientWidth - padX, (c.clientHeight - padY) * g.W / g.H));
   app.poster.style.width = base * z + 'px';
 }

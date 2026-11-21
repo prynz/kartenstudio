@@ -12,6 +12,7 @@ import { initEditorAnsicht } from './ansicht.js';
 import { initExportExport } from '../export/export.js';
 import { initEditorBeispiel } from './beispiel.js';
 import { initSheet } from './sheet.js';
+import { initWizard } from './assistent.js';
 
 let started = false;
 export function start() {
@@ -28,4 +29,5 @@ export function start() {
   initExportExport();
   initEditorBeispiel();
   initSheet();
+  initWizard();
 }

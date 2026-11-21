@@ -38,6 +38,65 @@
 <div class="app">
 <aside id="side" class="nodata">
 <div class="sheet-grip" id="sheetGrip" role="slider" aria-label="Einstellungen größer oder kleiner ziehen" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0"></div>
+<!-- Geführter Ablauf (Assistent): immer nur ein Schritt sichtbar -->
+<div class="wiz" id="wiz">
+<nav class="wz-steps" id="wzSteps" aria-label="Schritte">
+<button data-step="ort"><i>1</i><span>Ort</span></button>
+<button data-step="ausschnitt"><i>2</i><span>Ausschnitt</span></button>
+<button data-step="stil"><i>3</i><span>Stil</span></button>
+<button data-step="design"><i>4</i><span>Design</span></button>
+<button data-step="text"><i>5</i><span>Text</span></button>
+<button data-step="fertig"><i>6</i><span>Fertig</span></button>
+</nav>
+<div class="wz-panes">
+<section class="wz-pane" data-step="ort">
+<h3>Welcher Ort?</h3>
+<div class="wz-place"><div class="pin">⌖</div><div><b id="wzPlace">–</b><span id="wzPlaceInfo"></span></div></div>
+<p class="wz-hint">Du kannst jederzeit einen anderen Ort suchen.</p>
+<div class="search wz-search"><input id="wq" type="search" placeholder="Dorf, Stadt oder Adresse" autocomplete="off" enterkeyhint="search"><button class="btn primary" id="wgo">Suchen</button><div class="results hidden" id="wresults"></div></div>
+</section>
+<section class="wz-pane" data-step="ausschnitt">
+<h3>Ausschnitt</h3>
+<p class="wz-hint"><b>Karte im Poster ziehen</b>, um sie zu verschieben. Zoomen mit <b>+ / −</b> – am PC auch mit dem Mausrad.</p>
+<div class="lab">Format</div>
+<div class="wz-chips" id="wzFmt"><button data-a="0.8805">8 : 7</button><button data-a="1">1 : 1</button><button data-a="1.25">4 : 5</button><button data-a="1.3333">3 : 4</button><button data-a="0.6667">3 : 2</button></div>
+<div class="lab">Zoom</div>
+<div class="wz-zoom"><button class="btn" id="wzZOut" aria-label="Herauszoomen">−</button><button class="btn" id="wzZIn" aria-label="Hineinzoomen">+</button><button class="btn ghost" id="wzReset">Zurücksetzen</button></div>
+</section>
+<section class="wz-pane" data-step="stil">
+<h3>Stil</h3>
+<div class="tabs2 wz-mode" id="wzMode"><button data-m="art">Gezeichnet</button><button data-m="std">Landkarte</button></div>
+<div class="wz-cards" id="wzStyles"></div>
+<div class="wz-cards wz-bases hidden" id="wzBases"></div>
+</section>
+<section class="wz-pane" data-step="design">
+<h3>Design</h3>
+<p class="wz-hint">Wie Rahmen, Karte und Text angeordnet sind. Die Farben kommen vom Stil.</p>
+<div class="wz-cards wz-designs" id="wzDesigns"></div>
+</section>
+<section class="wz-pane" data-step="text">
+<h3>Text</h3>
+<label class="wz-field"><span>Titel</span><input id="wzTitle" class="inp" type="text" autocomplete="off"></label>
+<label class="wz-field"><span>Untertitel</span><input id="wzSub" class="inp" type="text" autocomplete="off"></label>
+<label class="tog wz-tog"><input type="checkbox" id="wzCoords"><span>Koordinaten anzeigen</span></label>
+</section>
+<section class="wz-pane" data-step="fertig">
+<h3>Fertig – herunterladen</h3>
+<p class="wz-hint">Die Datei hat einen transparenten Hintergrund und eignet sich für Druck und T-Shirts.</p>
+<div class="wz-dl">
+<button data-f="png" data-w="3600"><b>PNG für den Druck</b><span>3600 px · ca. 30 cm bei 300 dpi</span></button>
+<button data-f="png" data-w="4800"><b>PNG groß</b><span>4800 px · ca. 40 cm bei 300 dpi</span></button>
+<button data-f="svg"><b>SVG (Vektor)</b><span>beliebig skalierbar · für Druckereien</span></button>
+</div>
+</section>
+</div>
+<div class="wz-foot"><button class="btn" id="wzBack">‹ Zurück</button><button class="btn primary" id="wzNext">Weiter ›</button></div>
+<button class="wz-adv" id="wzAdv">⚙ Erweiterte Einstellungen</button>
+</div>
+
+<!-- Erweiterte Einstellungen: alle Detailregler aus dem Prototyp -->
+<div class="adv hidden" id="adv">
+<button class="adv-back" id="advBack">‹ Zurück zum Assistenten</button>
 <div class="place"><div class="pin">⌖</div><div style="flex:1;min-width:0"><b id="placeName">Noch kein Ort gewählt</b><span id="placeInfo">Suche einen Ort, um zu starten</span></div><button class="btn sm" id="openPicker2">Ändern</button></div>
 
 <div class="sec open" data-s="ausschnitt"><button class="sh"><span class="num">01</span><span class="tt">Ausschnitt</span><span class="sum" id="sumA"></span><span class="chev">▾</span></button><div class="sb">
@@ -125,6 +184,7 @@
 <div class="row"><span class="k">Alte Farbe</span><select class="inp" id="rOld"></select></div>
 <div class="row"><span class="k">Neue Farbe</span><div class="col"><input type="color" id="rNew" value="#000000"><button class="btn sm" id="rGo">Ersetzen</button></div></div>
 </div></div>
+</div>
 </aside>
 
 <section class="stage">

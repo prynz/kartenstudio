@@ -42,10 +42,9 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 	ok(await page.locator('#landing').isHidden(), 'Startseite ausgeblendet');
 	ok((await page.textContent('#poster')).includes('SIEGRITZ'), 'Titel „SIEGRITZ“ im Poster');
 	await page.screenshot({ path: `${OUT}/2-editor-desktop.png` });
-	// Stil wechseln
-	await page.click('.sec[data-s="stil"] > .sh');
-	await page.waitForTimeout(400);
-	await page.click('#styles button[data-p="dunkel"]');
+	ok(await page.locator('.wz-pane[data-step="stil"]').isVisible(), 'Assistent startet beim Schritt „Stil“');
+	// Stil wechseln (Assistent)
+	await page.click('#wzStyles button[data-p="dunkel"]');
 	await page.waitForTimeout(300);
 	ok((await page.getAttribute('#kartenhintergrund', 'fill')) === '#272c39', 'Thema „Nachtblau“ angewendet');
 	await page.screenshot({ path: `${OUT}/3-stil-desktop.png` });
@@ -53,18 +52,63 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 	await page.click('#undo');
 	await page.waitForTimeout(200);
 	ok((await page.$('#kartenhintergrund')) === null, 'Rückgängig stellt Siegritz-Stil wieder her');
-	// Haus anklicken
+	// Karte im Poster ziehen verschiebt den Ausschnitt (ohne Werkzeug umzuschalten)
+	const cx0 = await page.evaluate(() => document.querySelector('#karte > g > g > g').getAttribute('transform'));
+	const box = await page.locator('#poster').boundingBox();
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 3);
+	await page.mouse.down();
+	await page.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 3 + 40, { steps: 8 });
+	await page.mouse.up();
+	await page.waitForTimeout(200);
+	const cx1 = await page.evaluate(() => document.querySelector('#karte > g > g > g').getAttribute('transform'));
+	ok(cx0 !== cx1, 'Karte im Poster direkt verschiebbar');
+	// Designs durchklicken
+	await page.click('#wzNext');
+	await page.waitForTimeout(1200);
+	ok(await page.locator('.wz-pane[data-step="design"]').isVisible(), '„Weiter“ führt zum Schritt „Design“');
+	const designs = await page.$$eval('#wzDesigns button', (b) => b.map((x) => x.dataset.d));
+	ok(designs.length >= 9, `${designs.length} Designs zur Auswahl`);
+	const thumbs = await page.$$eval('#wzDesigns img', (i) => i.filter((x) => x.complete && x.naturalWidth > 0).length);
+	ok(thumbs === designs.length, `Vorschaubilder für alle Designs (${thumbs})`);
+	const bad = [];
+	for (const d of designs) {
+		await page.click(`#wzDesigns button[data-d="${d}"]`);
+		await page.waitForTimeout(150);
+		const okDesign = await page.evaluate(() => {
+			const t = document.querySelector('#poster #titel');
+			const vb = document.getElementById('poster').viewBox.baseVal;
+			if (!t) return false;
+			const b = t.getBBox();
+			return b.y >= 0 && b.y + b.height <= vb.height && b.x >= 0 && b.x + b.width <= vb.width;
+		});
+		if (!okDesign) bad.push(d);
+	}
+	ok(bad.length === 0, 'Jedes Design zeichnet den Titel innerhalb des Posters' + (bad.length ? ': ' + bad.join(', ') : ''));
+	await page.click('#wzDesigns button[data-d="kreis"]');
+	await page.waitForTimeout(200);
+	ok((await page.$('#cMap circle')) !== null, 'Design „Kreis“ schneidet die Karte rund aus');
+	await page.click('#wzDesigns button[data-d="koordinaten"]');
+	await page.waitForTimeout(200);
+	ok(/° .*N/.test((await page.textContent('#koordinaten')) || ''), 'Design „Mit Koordinaten“ zeigt Koordinaten');
+	await page.click('#wzDesigns button[data-d="siegritz"]');
+	// Text
+	await page.click('#wzNext');
+	await page.waitForTimeout(400);
+	await page.fill('#wzTitle', 'MEIN DORF');
+	await page.waitForTimeout(200);
+	ok((await page.textContent('#poster')).includes('MEIN DORF'), 'Titel im Assistenten geändert');
+	// Erweiterte Einstellungen: alle Detailregler weiterhin erreichbar
+	await page.click('#wzAdv');
+	await page.waitForTimeout(400);
+	ok(await page.locator('#adv').isVisible(), 'Erweiterte Einstellungen öffnen');
 	await page.click('.sec[data-s="elemente"] > .sh');
 	await page.waitForTimeout(400);
 	await page.click('#grpbtns .chip[data-k="haus"]');
 	await page.waitForTimeout(200);
-	ok((await page.textContent('#selinfo')).includes('Häuser'), 'Gruppe „Häuser“ ausgewählt');
-	// Text
-	await page.click('.sec[data-s="text"] > .sh');
-	await page.waitForTimeout(400);
-	await page.fill('#tText', 'MEIN DORF');
-	await page.waitForTimeout(200);
-	ok((await page.textContent('#poster')).includes('MEIN DORF'), 'Titel geändert');
+	ok((await page.textContent('#selinfo')).includes('Häuser'), 'Gruppe „Häuser“ ausgewählt (erweitert)');
+	await page.click('#advBack');
+	await page.waitForTimeout(300);
+	ok(await page.locator('#wiz').isVisible(), 'Zurück zum Assistenten');
 	// SVG-Export
 	await page.click('#dlBtn');
 	await page.click('#dlFmt button[data-f="svg"]');
@@ -97,16 +141,16 @@ await run('iPhone – Offline-Beispiel', { ...devices['iPhone 14'] }, async (pag
 			const s = document.getElementById('side').getBoundingClientRect();
 			return p.top >= 0 && p.bottom <= s.top + 1 && p.height > minH;
 		}, minH);
-	await page.tap('.sec[data-s="text"] > .sh');
+	await page.tap('#wzSteps button[data-step="text"]');
 	await page.waitForTimeout(600);
-	await page.fill('#tText', 'MEIN DORF');
+	await page.fill('#wzTitle', 'MEIN DORF');
 	await page.waitForTimeout(300);
 	ok(await posterVisible(), 'Handy: Poster bleibt beim Text-Ändern sichtbar');
 	ok((await page.evaluate(() => window.scrollY)) === 0, 'Handy: Seite selbst scrollt nicht weg');
 	await page.screenshot({ path: `${OUT}/5b-text-iphone.png` });
-	await page.tap('.sec[data-s="stil"] > .sh');
+	await page.tap('#wzSteps button[data-step="stil"]');
 	await page.waitForTimeout(600);
-	await page.tap('#styles button[data-p="vintage"]');
+	await page.tap('#wzStyles button[data-p="vintage"]');
 	await page.waitForTimeout(500);
 	ok(await posterVisible(), 'Handy: Poster bleibt beim Stilwechsel sichtbar');
 	await page.screenshot({ path: `${OUT}/5c-stil-iphone.png` });
@@ -140,9 +184,9 @@ if (ONLINE)
 		ok(n > 100 && (await page.$$eval('#karte path', (p) => p.length)) > 5, `Poster aus Vektorkacheln gezeichnet (${n} Kartenelemente)`);
 		await page.screenshot({ path: `${OUT}/7-editor-kacheln.png` });
 		// Standard-Stil (MapLibre rendert ein Bild)
-		await page.click('.sec[data-s="stil"] > .sh');
+		await page.click('#wzSteps button[data-step="stil"]');
 		await page.waitForTimeout(400);
-		await page.click('#modeTabs button[data-m="std"]');
+		await page.click('#wzMode button[data-m="std"]');
 		await page.waitForSelector('#poster image', { timeout: 60000 }).catch(() => {});
 		ok((await page.$('#poster image')) !== null, 'Standard-Stil „Klassisch“ gerendert');
 		await page.waitForTimeout(500);

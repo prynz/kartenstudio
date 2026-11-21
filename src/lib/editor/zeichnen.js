@@ -6,42 +6,82 @@ import { $, CAP, CLS, CLS1, FONTDATA, MW, NS, ORDER, esc } from './basis.js';
 import { BASES } from '../themen/standard.js';
 import { RASTER, rasterKey } from '../karte/raster.js';
 import { eff, vT, visRect } from './zustand.js';
-import { panel } from './seitenleiste.js';
+import { dms, panel, viewCenterLL } from './seitenleiste.js';
+import { LAY_DEFAULT } from '../themen/designs.js';
+import { syncWizard } from './assistent.js';
 import { syncTools } from './bedienung.js';
 import { zoom } from './ansicht.js';
 
-export /* ---------- Poster-Geometrie & SVG ---------- */
-function geo() {
-  const sw = app.S.frame.w,
-    p = app.S.frame.pad,
-    MH = MW * app.S.view.a;
+/* ---------- Poster-Geometrie & SVG ---------- */
+// Berechnet, wo Karte, Balken und Text im Poster liegen – je nach Design (app.S.lay).
+export function geo() {
+  const S = app.S,
+    L = { ...LAY_DEFAULT, ...(S.lay || {}) };
+  const sw = S.frame.w,
+    p = S.frame.pad,
+    MH = MW * S.view.a;
   const W = MW + 2 * p + 2 * sw,
-    mx = sw + p,
-    my = sw + p;
-  const t = app.S.title,
-    u = app.S.sub;
+    mx = sw + p;
+  const t = S.title,
+    u = S.sub;
   const capT = t.on && t.text ? t.size * CAP[t.font] : 0,
     capS = u.on && u.text ? u.size * CAP[u.font] : 0;
-  const gap = capT && capS ? app.S.bar.gap : 0,
-    block = capT + gap + capS;
-  let barH = 0;
-  if (app.S.bar.on || block > 0) barH = app.S.bar.auto ? Math.round(block + 60 + sw / 2) : app.S.bar.h;
-  const barTop = my + MH + p,
-    H = barTop + (barH > 0 ? barH : sw);
-  const top = barTop + (barH - sw / 2 - block) / 2;
-  return {
-    W,
+  const cSize = Math.round(Math.max(16, (u.size || 34) * 0.62));
+  const capC = L.coords && app.DATA ? cSize * CAP.SgMD : 0;
+  const gap = capT && capS ? S.bar.gap : 0,
+    gapC = capC && (capT || capS) ? Math.round(S.bar.gap * 0.8) : 0;
+  const block = capT + gap + capS + gapC + capC;
+  let my,
     H,
-    sw,
-    p,
-    mx,
-    my,
-    MH,
     barTop,
-    barH,
-    yT: top + capT,
-    yS: top + capT + gap + capS
-  };
+    barH = 0,
+    top;
+  if (L.kind === 'below') {
+    my = sw + p;
+    barTop = my + MH;
+    const tp = block > 0 ? Math.max(L.textPad, p) : p;
+    top = my + MH + tp;
+    H = block > 0 ? top + block + tp + sw : my + MH + p + sw;
+  } else if (L.kind === 'top') {
+    const tp = block > 0 ? Math.max(L.textPad, p) : 0;
+    top = sw + tp;
+    my = block > 0 ? top + block + tp : sw + p;
+    barTop = my + MH;
+    H = my + MH + p + sw;
+  } else if (L.kind === 'over') {
+    my = sw + p;
+    barTop = my + MH;
+    H = my + MH + p + sw;
+    top = my + MH - Math.max(56, MH * 0.07) - block;
+  } else {
+    // 'bar' – Text im Farbbalken unter der Karte (Ursprungsdesign)
+    my = sw + p;
+    if (S.bar.on || block > 0) barH = S.bar.auto ? Math.round(block + 60 + sw / 2) : S.bar.h;
+    barTop = my + MH + p;
+    H = barTop + (barH > 0 ? barH : sw);
+    top = barTop + (barH - sw / 2 - block) / 2;
+  }
+  let y = top,
+    yT = top,
+    yS = top,
+    yC = top;
+  if (capT) yT = y += capT;
+  if (capS) yS = y += (capT ? gap : 0) + capS;
+  if (capC) yC = y += gapC + capC;
+  return { W, H, sw, p, mx, my, MH, barTop, barH, yT, yS, yC, top, block, cSize, L };
+}
+/** Koordinaten der Kartenmitte als Textzeile. */
+export function coordText() {
+  const [lon, lat] = viewCenterLL();
+  return `${dms(lat, 'N', 'S')}  ·  ${dms(lon, 'O', 'W')}`;
+}
+/** Umriss der Kartenfläche (Rechteck oder Kreis), optional um `grow` vergrößert. */
+function mapShape(g, grow, attrs) {
+  if (g.L.shape === 'circle') {
+    const r = Math.min(MW, g.MH) / 2 + grow;
+    return `<circle cx="${MW / 2}" cy="${(g.MH / 2).toFixed(1)}" r="${r.toFixed(1)}"${attrs}/>`;
+  }
+  return `<rect x="${-grow}" y="${-grow}" width="${MW + 2 * grow}" height="${(g.MH + 2 * grow).toFixed(1)}"${attrs}/>`;
 }
 export function buildSVG(forExport) {
   const g = geo(),
@@ -53,7 +93,7 @@ export function buildSVG(forExport) {
   [app.S.title, app.S.sub].forEach(t => {
     if (t.on && t.text) fonts.add(t.font);
   });
-  if (app.S.attr.on) fonts.add('SgMD');
+  if (app.S.attr.on || g.L.coords) fonts.add('SgMD');
   o += '<defs>';
   if (forExport && fonts.size) {
     o += '<style>';
@@ -62,7 +102,7 @@ export function buildSVG(forExport) {
     });
     o += '</style>';
   }
-  o += `<clipPath id="cMap"><rect x="0" y="0" width="${MW}" height="${g.MH.toFixed(1)}"/></clipPath>`;
+  o += `<clipPath id="cMap">${mapShape(g, 0, '')}</clipPath>`;
   o += `<clipPath id="cIn"><rect x="${f.w}" y="${f.w}" width="${(g.W - 2 * f.w).toFixed(1)}" height="${(g.H - 2 * f.w).toFixed(1)}" rx="${ri}" ry="${ri}"/></clipPath>`;
   (app.DATA.tiles || []).forEach((r, i) => {
     o += `<clipPath id="tc${i}"><rect x="${r[0].toFixed(2)}" y="${r[1].toFixed(2)}" width="${r[2].toFixed(2)}" height="${r[2].toFixed(2)}"/></clipPath>`;
@@ -96,18 +136,28 @@ export function buildSVG(forExport) {
     });
   });
   o += '</g></g></g></g>';
-  if (app.S.bar.on && g.barH > 0) o += `<rect id="balken" x="${f.w / 2}" y="${g.barTop.toFixed(1)}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - g.barTop).toFixed(1)}" fill="${app.S.bar.color}" clip-path="url(#cOut)"/>`;
+  const ink = app.S.title.color;
+  if (g.L.inner > 0) o += mapShape(g, g.L.innerGap + g.L.inner / 2, ` id="innenlinie" transform="translate(${g.mx},${g.my})" fill="none" stroke="${f.w > 0 ? f.color : ink}" stroke-width="${g.L.inner}"`);
+  if (g.L.kind === 'over' && g.L.fade && g.block > 0) {
+    const paper = app.S.bg !== 'none' ? app.S.bg : '#ffffff',
+      y0 = Math.max(g.my, g.top - 150);
+    o += `<defs><linearGradient id="gFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${paper}" stop-opacity="0"/><stop offset=".55" stop-color="${paper}" stop-opacity=".82"/><stop offset="1" stop-color="${paper}" stop-opacity=".95"/></linearGradient></defs>`;
+    o += `<rect id="verlauf" x="${g.mx}" y="${y0.toFixed(1)}" width="${MW}" height="${(g.my + g.MH - y0).toFixed(1)}" fill="url(#gFade)" clip-path="url(#cIn)"/>`;
+  }
+  if (g.L.kind === 'bar' && app.S.bar.on && g.barH > 0) o += `<rect id="balken" x="${f.w / 2}" y="${g.barTop.toFixed(1)}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - g.barTop).toFixed(1)}" fill="${app.S.bar.color}" clip-path="url(#cOut)"/>`;
   if (f.w > 0) o += `<rect id="rahmen" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="none" stroke="${f.color}" stroke-width="${f.w}"/>`;
   [['title', g.yT], ['sub', g.yS]].forEach(([k, y]) => {
     const t = app.S[k];
     if (!t.on || !t.text) return;
     o += `<text id="${k === 'title' ? 'titel' : 'untertitel'}" x="${(g.W / 2 + t.ls / 2).toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" font-family="${t.font}" font-size="${t.size}" letter-spacing="${t.ls}" fill="${t.color}">${esc(t.text)}</text>`;
   });
+  if (g.L.coords && app.DATA) o += `<text id="koordinaten" x="${(g.W / 2 + 1.5).toFixed(2)}" y="${g.yC.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.cSize}" letter-spacing="3" fill="${app.S.sub.color}" fill-opacity="0.85">${esc(coordText())}</text>`;
   if (app.S.attr.on) {
-    const inBar = app.S.bar.on && g.barH > 0;
-    const col = inBar ? app.S.title.color : app.S.mode === 'std' ? BASES[app.S.base].sat || app.S.base === 'dark' || app.S.base === 'fiord' ? '#ffffff' : '#333333' : app.S.cls.haupt.s;
+    const inBar = g.L.kind === 'bar' && app.S.bar.on && g.barH > 0;
+    const onPaper = !inBar && g.L.kind !== 'top';
+    const col = inBar || onPaper ? app.S.title.color : app.S.mode === 'std' ? BASES[app.S.base].sat || app.S.base === 'dark' || app.S.base === 'fiord' ? '#ffffff' : '#333333' : app.S.cls.haupt.s;
     const x = g.W - g.sw - g.p - 4;
-    const y = inBar ? g.H - g.sw - 8 : g.my + g.MH - 6;
+    const y = inBar ? g.H - g.sw - 8 : g.L.kind === 'below' ? g.H - g.sw - Math.min(14, g.p / 2 + 4) : g.my + g.MH - 6;
     const at = app.S.mode === 'std' ? BASES[app.S.base].sat ? '© Esri, Maxar, Earthstar Geographics · © OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenStreetMap-Mitwirkende';
     o += `<text id="quelle" x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" font-family="SgMD" font-size="11" fill="${col}" fill-opacity="0.75">${at}</text>`;
   }
@@ -144,12 +194,7 @@ export function render() {
   hg2.setAttribute('clip-path', 'url(#cMapHit)');
   const cm = document.createElementNS(NS, 'clipPath');
   cm.id = 'cMapHit';
-  const cr = document.createElementNS(NS, 'rect');
-  cr.setAttribute('x', g.mx);
-  cr.setAttribute('y', g.my);
-  cr.setAttribute('width', MW);
-  cr.setAttribute('height', g.MH);
-  cm.appendChild(cr);
+  cm.innerHTML = mapShape(g, 0, ` transform="translate(${g.mx},${g.my})"`);
   app.poster.querySelector('defs').appendChild(cm);
   hg2.appendChild(hits);
   hg.appendChild(hg2);
@@ -165,6 +210,7 @@ export function render() {
   });
   drawSel();
   panel();
+  syncWizard();
   zoom();
   syncTools();
 }

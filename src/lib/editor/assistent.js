@@ -1,0 +1,294 @@
+// Geführter Ablauf („Assistent“): Ort → Ausschnitt → Stil → Design → Text → Fertig.
+// Es ist immer nur ein Schritt sichtbar. Alle Detailregler aus dem Prototyp
+// bleiben unter „Erweiterte Einstellungen“ erreichbar.
+import { app as appUntyped } from './app.js';
+import { buildSVG, render } from './zeichnen.js';
+import { begin, change, clampView, commit, newState } from './zustand.js';
+import { openSec } from './seitenleiste.js';
+import { setTool } from './bedienung.js';
+import { dotsHTML } from './seitenleiste.js';
+import { PRESETS as PRESETS_UNTYPED } from '../themen/vorlagen.js';
+import { BASES } from '../themen/standard.js';
+import { DESIGNS, applyDesign } from '../themen/designs.js';
+import { ensureRaster } from '../karte/raster.js';
+import { attachSearch } from '../karte/suche.js';
+import { pickPlace } from '../karte/ortswahl-start.js';
+import { EASE, reducedMotion } from './animation.js';
+import { revealSection } from './sheet.js';
+
+// Der übernommene Zustand ist noch untypisiert (siehe @ts-nocheck in den Prototyp-Modulen).
+/** @type {any} */
+const app = appUntyped;
+/** @type {Record<string, any>} */
+const PRESETS = PRESETS_UNTYPED;
+/** @param {string} id */
+const $ = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
+
+export const STEPS = ['ort', 'ausschnitt', 'stil', 'design', 'text', 'fertig'];
+/** Welcher Abschnitt der erweiterten Einstellungen passt zu welchem Schritt */
+/** @type {Record<string,string>} */
+const ADV_FOR = { ort: 'ausschnitt', ausschnitt: 'ausschnitt', stil: 'stil', design: 'rahmen', text: 'text', fertig: 'farben' };
+
+let step = 'stil';
+let advOpen = false;
+
+const wizOn = () => !advOpen;
+/** @param {string} sel */
+const all = (sel) => /** @type {HTMLElement[]} */ ([...document.querySelectorAll(sel)]);
+
+/**
+ * Zu einem Schritt wechseln.
+ * @param {string} next
+ * @param {boolean} [animate]
+ */
+export function goStep(next, animate = true) {
+	if (!STEPS.includes(next)) return;
+	const dir = STEPS.indexOf(next) - STEPS.indexOf(step);
+	step = next;
+	all('.wz-pane').forEach((p) => p.classList.toggle('on', p.dataset.step === next));
+	const idx = STEPS.indexOf(next);
+	all('#wzSteps button').forEach((b, i) => {
+		b.classList.toggle('on', i === idx);
+		b.classList.toggle('done', i < idx);
+		b.setAttribute('aria-current', i === idx ? 'step' : 'false');
+	});
+	$('wzBack').style.visibility = idx === 0 ? 'hidden' : '';
+	$('wzNext').classList.toggle('hidden', idx === STEPS.length - 1);
+	$('wzNext').textContent = idx === STEPS.length - 2 ? 'Fertig ›' : 'Weiter ›';
+	const pane = document.querySelector(`.wz-pane[data-step="${next}"]`);
+	if (animate && dir && pane && !reducedMotion()) {
+		pane.animate(
+			[
+				{ opacity: 0, transform: `translateX(${dir > 0 ? 28 : -28}px)` },
+				{ opacity: 1, transform: 'none' }
+			],
+			{ duration: 280, easing: EASE }
+		);
+	}
+	const side = $('side');
+	if (side) side.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
+	if (next === 'design') scheduleDesignThumbs(0);
+	syncWizard();
+}
+
+/** Assistent ↔ erweiterte Einstellungen umschalten. @param {boolean} on */
+function showAdvanced(on) {
+	advOpen = on;
+	$('wiz').classList.toggle('hidden', on);
+	$('adv').classList.toggle('hidden', !on);
+	document.body.classList.toggle('wiz-on', !on);
+	// Im Assistenten lässt sich die Karte direkt im Poster verschieben; Auswählen gibt es in den erweiterten Einstellungen
+	setTool(on ? 'sel' : 'move');
+	if (on) {
+		openSec(ADV_FOR[step] || 'stil');
+		$('side').scrollTo({ top: 0 });
+	}
+	const box = on ? $('adv') : $('wiz');
+	if (!reducedMotion()) box.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: EASE });
+	if (app.DATA) render();
+}
+
+/* ---------- Vorschaubilder der Designs ---------- */
+let thumbTimer = 0;
+let thumbKey = '';
+/** @type {string[]} */
+let thumbUrls = [];
+/** @param {number} delay */
+function scheduleDesignThumbs(delay = 350) {
+	clearTimeout(thumbTimer);
+	thumbTimer = window.setTimeout(renderDesignThumbs, delay);
+}
+function renderDesignThumbs() {
+	if (!app.DATA || !app.S || step !== 'design' || advOpen) return;
+	const S = app.S;
+	const key = JSON.stringify([S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.view, S.title.text, S.sub.text, S.title.font, S.sub.font, S.scale]);
+	if (key === thumbKey) return;
+	thumbKey = key;
+	const keep = app.S;
+	const urls = [];
+	try {
+		for (const b of all('#wzDesigns button[data-d]')) {
+			const k = /** @type {string} */ (b.dataset.d);
+			const c = JSON.parse(JSON.stringify(keep));
+			applyDesign(c, k, PRESETS[c.preset], true);
+			const D = DESIGNS[k];
+			if (D.aspect) c.view.a = D.aspect;
+			else if (keep.lay && keep.lay.shape === 'circle' && keep.aPrev) c.view.a = keep.aPrev;
+			app.S = c;
+			clampView(c.view);
+			const url = URL.createObjectURL(new Blob([buildSVG(true)], { type: 'image/svg+xml' }));
+			urls.push(url);
+			const img = /** @type {HTMLImageElement} */ (b.querySelector('img'));
+			img.src = url;
+		}
+	} finally {
+		app.S = keep;
+	}
+	thumbUrls.forEach((u) => URL.revokeObjectURL(u));
+	thumbUrls = urls;
+}
+
+/* ---------- Anzeige mit dem Zustand abgleichen ---------- */
+export function syncWizard() {
+	const S = app.S;
+	if (!S) return;
+	const std = S.mode === 'std';
+	all('#wzMode button').forEach((b) => b.classList.toggle('on', b.dataset.m === S.mode));
+	$('wzStyles').classList.toggle('hidden', std);
+	$('wzBases').classList.toggle('hidden', !std);
+	all('#wzStyles button').forEach((b) => b.classList.toggle('on', !std && b.dataset.p === S.preset));
+	all('#wzBases button').forEach((b) => b.classList.toggle('on', std && b.dataset.b === S.base));
+	all('#wzDesigns button').forEach((b) => b.classList.toggle('on', b.dataset.d === (S.design || 'siegritz')));
+	all('#wzFmt button').forEach((b) => b.classList.toggle('on', Math.abs(+(b.dataset.a || 0) - S.view.a) < 0.01));
+	const t = /** @type {HTMLInputElement} */ ($('wzTitle')),
+		u = /** @type {HTMLInputElement} */ ($('wzSub'));
+	if (document.activeElement !== t) t.value = S.title.text;
+	if (document.activeElement !== u) u.value = S.sub.text;
+	/** @type {HTMLInputElement} */ ($('wzCoords')).checked = !!(S.lay && S.lay.coords);
+	if (app.DATA) {
+		$('wzPlace').textContent = app.DATA.place || 'Mein Ort';
+		$('wzPlaceInfo').textContent = app.DATA.region || '';
+	}
+	if (step === 'design') scheduleDesignThumbs();
+}
+
+/** Nach dem Laden eines Orts: im Assistenten beim Stil weitermachen. */
+export function wizardAfterLoad() {
+	thumbKey = '';
+	if (!advOpen) goStep('stil', false);
+	setTool(advOpen ? 'sel' : 'move');
+}
+
+/**
+ * Wird aufgerufen, wenn im Poster etwas angeklickt wurde, das einen Abschnitt öffnen will.
+ * Im Assistenten: Text → Schritt „Text“, alles andere → erweiterte Einstellungen.
+ * @param {string} name
+ */
+export function wizardOpenSec(name) {
+	if (!wizOn()) return false;
+	if (name === 'text') {
+		goStep('text');
+		return true;
+	}
+	showAdvanced(true);
+	return false;
+}
+
+/** @param {HTMLButtonElement} b @param {string} html */
+function card(b, html) {
+	b.type = 'button';
+	b.className = 'wz-card';
+	b.innerHTML = html;
+	return b;
+}
+
+export function initWizard() {
+	// Schritte
+	all('#wzSteps button').forEach((b) => (b.onclick = () => goStep(/** @type {string} */ (b.dataset.step))));
+	$('wzBack').onclick = () => goStep(STEPS[Math.max(0, STEPS.indexOf(step) - 1)]);
+	$('wzNext').onclick = () => goStep(STEPS[Math.min(STEPS.length - 1, STEPS.indexOf(step) + 1)]);
+	$('wzAdv').onclick = () => showAdvanced(true);
+	$('advBack').onclick = () => showAdvanced(false);
+
+	// 1 Ort
+	attachSearch('wq', 'wgo', 'wresults', pickPlace);
+
+	// 2 Ausschnitt
+	all('#wzFmt button').forEach(
+		(b) =>
+			(b.onclick = () =>
+				change(() => {
+					app.S.view.a = +(b.dataset.a || 1);
+					clampView(app.S.view);
+				}))
+	);
+	$('wzZIn').onclick = () => $('zIn').click();
+	$('wzZOut').onclick = () => $('zOut').click();
+	$('wzReset').onclick = () => $('vReset').click();
+
+	// 3 Stil
+	Object.entries(PRESETS).forEach(([k, p]) => {
+		const b = card(document.createElement('button'), `<div class="th" style="background:${p.bg === 'none' ? '#fff' : p.bg}"></div><span class="nm">${p.name}</span>`);
+		b.dataset.p = k;
+		b.title = p.desc || '';
+		b.onclick = () =>
+			change(() => {
+				const keep = app.S;
+				app.S = newState(k, keep);
+				app.S.mode = 'art';
+			});
+		$('wzStyles').appendChild(b);
+	});
+	Object.entries(BASES).forEach(([k, p]) => {
+		const b = card(document.createElement('button'), `${dotsHTML(p.dots)}<span class="nm">${p.name}</span>`);
+		b.dataset.b = k;
+		b.onclick = () => {
+			change(() => {
+				app.S.mode = 'std';
+				app.S.base = k;
+			});
+			ensureRaster();
+		};
+		$('wzBases').appendChild(b);
+	});
+	all('#wzMode button').forEach(
+		(b) =>
+			(b.onclick = () => {
+				change(() => (app.S.mode = /** @type {string} */ (b.dataset.m)));
+				if (app.S.mode === 'std') ensureRaster();
+			})
+	);
+
+	// 4 Design
+	Object.entries(DESIGNS).forEach(([k, D]) => {
+		const b = card(document.createElement('button'), `<div class="dth"><img alt="" decoding="async"></div><span class="nm">${D.name}</span>`);
+		b.dataset.d = k;
+		b.title = D.desc;
+		b.onclick = () =>
+			change(() => {
+				const S = app.S;
+				const wasCircle = S.lay && S.lay.shape === 'circle';
+				applyDesign(S, k, PRESETS[S.preset], true);
+				if (DESIGNS[k].aspect) {
+					if (!wasCircle) S.aPrev = S.view.a;
+					S.view.a = /** @type {number} */ (DESIGNS[k].aspect);
+				} else if (wasCircle && S.aPrev) S.view.a = S.aPrev;
+				clampView(S.view);
+			});
+		$('wzDesigns').appendChild(b);
+	});
+
+	// 5 Text
+	/** @param {string} id @param {(v:string)=>void} set */
+	const textInput = (id, set) => {
+		const e = /** @type {HTMLInputElement} */ ($(id));
+		e.addEventListener('input', () => {
+			begin();
+			set(e.value);
+			render();
+		});
+		e.addEventListener('change', () => commit());
+		e.addEventListener('focus', () => {
+			// Am Handy: Eingabefeld in Sicht holen
+			revealSection(e.closest('label'));
+		});
+	};
+	textInput('wzTitle', (v) => (app.S.title.text = v));
+	textInput('wzSub', (v) => (app.S.sub.text = v));
+	$('wzCoords').addEventListener('change', (e) =>
+		change(() => (app.S.lay = { ...(app.S.lay || {}), coords: /** @type {HTMLInputElement} */ (e.target).checked }))
+	);
+
+	// 6 Fertig
+	all('.wz-dl button').forEach(
+		(b) =>
+			(b.onclick = () => {
+				app.dlF = b.dataset.f;
+				if (b.dataset.w) /** @type {HTMLSelectElement} */ ($('pngW')).value = b.dataset.w;
+				$('dlGo').click();
+			})
+	);
+
+	document.body.classList.add('wiz-on');
+	goStep(step, false);
+}

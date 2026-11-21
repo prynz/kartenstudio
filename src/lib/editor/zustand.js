@@ -4,6 +4,7 @@
 import { app } from './app.js';
 import { $, CLS, MW } from './basis.js';
 import { PRESETS } from '../themen/vorlagen.js';
+import { applyDesign } from '../themen/designs.js';
 import { RASTER, ensureRaster, rasterKey } from '../karte/raster.js';
 import { render } from './zeichnen.js';
 
@@ -74,6 +75,8 @@ export function newState(presetKey, keep) {
     st.base = keep.base;
     st.labels = keep.labels;
   }
+  // Design (Aufbau/Rahmen) bleibt beim Wechsel des Farbthemas erhalten
+  applyDesign(st, keep && keep.design || 'siegritz', p, !keep);
   return st;
 }
 export function defView() {
