@@ -21,6 +21,9 @@ export function zoom() {
     padY = narrow ? (dock ? 78 : 26) : dock ? 136 : 80;
   const base = Math.max(narrow ? 60 : 240, Math.min(c.clientWidth - padX, (c.clientHeight - padY) * g.W / g.H));
   app.poster.style.width = base * z + 'px';
+  // Ecken des Schattens an die Rahmenrundung anpassen
+  const R = Math.max(0, app.S.frame.r) + app.S.frame.w / 2;
+  app.poster.style.borderRadius = R > 0.5 ? (R * base * z / g.W).toFixed(1) + 'px' : '0';
 }
 export function msg(t, c) {
   const m = $('msg');

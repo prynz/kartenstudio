@@ -135,7 +135,7 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 	await page.click('#wzSteps button[data-step="stil"]');
 	await page.click('#wzStyles button[data-p="popart"]');
 	await page.waitForTimeout(400);
-	ok((await page.$$eval('#symbole use', (u) => u.length)) > 300, 'Pop-Art: Symbolteppich gezeichnet');
+	ok((await page.$$eval('#symbole path', (u) => u.reduce((n, p) => n + (p.getAttribute('d').match(/Z/g) || []).length, 0))) > 300, 'Pop-Art: Symbolteppich gezeichnet');
 	await page.click('#undo');
 	await page.waitForTimeout(200);
 	// SVG-Export

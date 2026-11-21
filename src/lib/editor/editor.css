@@ -127,7 +127,8 @@ details.cust summary::after{content:' ▾';color:var(--soft);font-size:11px}
 .stage{position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:520px}
 .canvas{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:40px 40px 96px;background-color:var(--canvas);background-image:radial-gradient(#d8d5cf 1px,transparent 1px);background-size:18px 18px}
 /* Karomuster wird jetzt im SVG gezeichnet (render) */
-#poster{display:block;user-select:none;filter:drop-shadow(0 18px 30px rgba(20,24,35,.18)) drop-shadow(0 2px 4px rgba(20,24,35,.08));touch-action:none}
+/* Schatten per box-shadow (günstig) statt filter:drop-shadow, das bei jeder Änderung das ganze Poster neu berechnen müsste */
+#poster{display:block;user-select:none;box-shadow:0 18px 40px rgba(20,24,35,.16),0 2px 6px rgba(20,24,35,.08);touch-action:none}
 .canvas.tool-move,.canvas.tool-move #poster{cursor:grab}
 .canvas.tool-move.dragging,.canvas.tool-move.dragging #poster{cursor:grabbing}
 .dock{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;padding:5px;box-shadow:0 8px 24px rgba(20,24,35,.12);white-space:nowrap}

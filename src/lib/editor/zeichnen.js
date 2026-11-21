@@ -9,7 +9,7 @@ import { eff, vT, visRect } from './zustand.js';
 import { dms, panel, viewCenterLL } from './seitenleiste.js';
 import { LAY_DEFAULT } from '../themen/designs.js';
 import { syncWizard } from './assistent.js';
-import { popDefs, popSymbols, popColor } from '../themen/pop.js';
+import { popDefs, popSymbols, popColor, popK } from '../themen/pop.js';
 import { syncTools } from './bedienung.js';
 import { zoom } from './ansicht.js';
 
@@ -111,6 +111,117 @@ function mapShape(g, grow, attrs) {
   }
   return `<rect x="${-grow}" y="${-grow}" width="${MW + 2 * grow}" height="${(g.MH + 2 * grow).toFixed(1)}"${attrs}/>`;
 }
+/**
+ * Karteninhalt (Häuser, Straßen …) als SVG-Text – das ist der teure Teil.
+ * @param {boolean} forExport
+ * @param {number[]} vr Kartenbereich, der gezeichnet wird [x0,y0,x1,y1]
+ */
+function mapContent(forExport, vr) {
+  let o = '';
+  const sc = app.S.scale / app.S.view.z;
+  if (app.S.mode === 'std') {
+    const E = app.DATA.ext,
+      R0 = RASTER.get(rasterKey());
+    o += R0 ? `<image href="${R0.url}" x="${E.x0.toFixed(2)}" y="${E.y0.toFixed(2)}" width="${(E.x1 - E.x0).toFixed(2)}" height="${(E.y1 - E.y0).toFixed(2)}" preserveAspectRatio="none"/>` : `<rect x="${E.x0}" y="${E.y0}" width="${E.x1 - E.x0}" height="${E.y1 - E.y0}" fill="#e9e7e2"/>`;
+  } else {
+  const pop = app.S.pop && app.S.pop.pal;
+  if (pop) o += `<defs>${popDefs()}</defs>` + popSymbols(app.DATA, app.S, vr, pop);
+  // Pop-Art: Straßen/Wasser im selben Maßstab wie die Symbole
+  const pk = pop ? popK(app.DATA, app.S) : 1;
+  ORDER.forEach(k => {
+    const groups = new Map();
+    app.DATA.feats.forEach(ft => {
+      if (ft.k !== k) return;
+      const e = eff(ft);
+      if (e.h) return;
+      const bx = ft.bx;
+      if (bx[2] < vr[0] || bx[0] > vr[2] || bx[3] < vr[1] || bx[1] > vr[3]) return;
+      const lc = k === 'haus' ? 'stroke-linejoin="miter"' : 'stroke-linecap="round" stroke-linejoin="round"';
+      let fill = ft.a ? e.f : 'none';
+      // Pop-Art: jedes Haus bekommt eine feste Zufallsfarbe (außer es wurde einzeln umgefärbt)
+      if (pop && k === 'haus' && !(app.S.ov[ft.id] && app.S.ov[ft.id].f)) fill = popColor(ft.id, pop);
+      const p = `<path id="${ft.fid}" d="${ft.d}" fill="${fill}" fill-rule="evenodd" stroke="${e.s}" stroke-width="${+(e.w * sc * pk).toFixed(3)}" ${lc}${forExport ? '' : ' data-k="' + k + '" data-g="' + ft.id + '"'}/>`;
+      const t = ft.t ?? -1;
+      if (!groups.has(t)) groups.set(t, []);
+      groups.get(t).push(p);
+    });
+    groups.forEach((arr, t) => {
+      o += t >= 0 ? `<g clip-path="url(#tc${t})">${arr.join('')}</g>` : arr.join('');
+    });
+  });
+  }
+  return o;
+}
+
+/* ---------- Zwischenspeicher für die Karte ----------
+   Text-, Rahmen- oder Designänderungen bauen die Karte nicht neu auf: Der fertige
+   Karten-Knoten wird wiederverwendet. Beim Verschieben wird nur die Ansicht versetzt. */
+const MC = { key: '', node: null, hits: null, rect: null, z: 0 };
+function mapKey() {
+  const S = app.S;
+  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.mode === 'std' ? !!RASTER.get(rasterKey()) : 0]);
+}
+/** Sichtbarer Bereich plus großzügiger Rand, damit Verschieben ohne Neuzeichnen geht */
+function cullRect() {
+  const v = visRect(), w = v[2] - v[0], h = v[3] - v[1], E = app.DATA.ext;
+  return [Math.max(E.x0, v[0] - w * 0.6), Math.max(E.y0, v[1] - h * 0.6), Math.min(E.x1, v[2] + w * 0.6), Math.min(E.y1, v[3] + h * 0.6)];
+}
+function cacheCovers() {
+  if (!MC.node || !MC.rect) return false;
+  const v = visRect(), r = MC.rect, E = app.DATA.ext, eps = 0.5;
+  return (v[0] >= r[0] - eps || r[0] <= E.x0 + eps) && (v[1] >= r[1] - eps || r[1] <= E.y0 + eps) && (v[2] <= r[2] + eps || r[2] >= E.x1 - eps) && (v[3] <= r[3] + eps || r[3] >= E.y1 - eps);
+}
+/** Kartenknoten (und Klickflächen) holen – aus dem Zwischenspeicher oder neu bauen */
+function mapNodes() {
+  const key = mapKey();
+  if (key === MC.key && cacheCovers()) return MC;
+  const rect = cullRect();
+  const doc = new DOMParser().parseFromString(`<svg xmlns="${NS}"><g id="kartenInhalt">${mapContent(false, rect)}</g></svg>`, 'image/svg+xml');
+  const node = document.importNode(doc.documentElement.firstChild, true);
+  // Klickflächen: breite unsichtbare Linien, damit man dünne Straßen gut trifft
+  const hits = document.createElementNS(NS, 'g');
+  const hw = (12 / app.S.view.z).toFixed(2);
+  node.querySelectorAll('path[data-k]').forEach(p => {
+    if (p.getAttribute('fill') !== 'none' || p.dataset.k === 'haus') {
+      p.setAttribute('pointer-events', 'all');
+      p.style.cursor = 'pointer';
+      if (p.dataset.k === 'haus') return;
+    }
+    const h = document.createElementNS(NS, 'path');
+    h.setAttribute('d', p.getAttribute('d'));
+    h.setAttribute('fill', 'none');
+    h.setAttribute('stroke', 'transparent');
+    h.setAttribute('stroke-width', hw);
+    h.setAttribute('stroke-linecap', 'round');
+    h.dataset.ref = p.dataset.g;
+    hits.appendChild(h);
+  });
+  Object.assign(MC, { key, node, hits, rect, z: app.S.view.z });
+  return MC;
+}
+
+let fullTimer = 0;
+/**
+ * Schnelle Aktualisierung beim Ziehen/Zoomen: nur die Ansicht verschieben/skalieren.
+ * Das vollständige Neuzeichnen folgt kurz nach der letzten Bewegung.
+ */
+export function renderView() {
+  if (!app.DATA) return;
+  const inner = app.poster.querySelector('#kartenAnsicht');
+  if (!inner || !MC.node || !cacheCovers()) {
+    render();
+    return;
+  }
+  const g = geo();
+  const t = vT(g);
+  // Linienstärken sind für den alten Zoom berechnet – bis zum Neuzeichnen proportional mitskalieren
+  inner.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
+  if (MC.hits) MC.hits.setAttribute('transform', t);
+  drawSel();
+  syncTools();
+  clearTimeout(fullTimer);
+  fullTimer = window.setTimeout(render, 140);
+}
 export function buildSVG(forExport) {
   const g = geo(),
     f = app.S.frame,
@@ -137,38 +248,8 @@ export function buildSVG(forExport) {
   });
   o += `<clipPath id="cOut"><rect x="0" y="0" width="${g.W.toFixed(1)}" height="${g.H.toFixed(1)}" rx="${R + f.w / 2}" ry="${R + f.w / 2}"/></clipPath></defs>`;
   if (app.S.bg !== 'none') o += `<rect id="kartenhintergrund" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="${app.S.bg}"/>`;
-  o += `<g id="karte" clip-path="url(#cIn)"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><g transform="${vT(g).replace(/^translate\([^)]*\) /, '')}">`;
-  const sc = app.S.scale / app.S.view.z,
-    vr = visRect();
-  if (app.S.mode === 'std') {
-    const E = app.DATA.ext,
-      R0 = RASTER.get(rasterKey());
-    o += R0 ? `<image href="${R0.url}" x="${E.x0.toFixed(2)}" y="${E.y0.toFixed(2)}" width="${(E.x1 - E.x0).toFixed(2)}" height="${(E.y1 - E.y0).toFixed(2)}" preserveAspectRatio="none"/>` : `<rect x="${E.x0}" y="${E.y0}" width="${E.x1 - E.x0}" height="${E.y1 - E.y0}" fill="#e9e7e2"/>`;
-  } else {
-  const pop = app.S.pop && app.S.pop.pal;
-  if (pop) o += `<defs>${popDefs()}</defs>` + popSymbols(vr, app.S.view.z, pop);
-  ORDER.forEach(k => {
-    const groups = new Map();
-    app.DATA.feats.forEach(ft => {
-      if (ft.k !== k) return;
-      const e = eff(ft);
-      if (e.h) return;
-      const bx = ft.bx;
-      if (bx[2] < vr[0] || bx[0] > vr[2] || bx[3] < vr[1] || bx[1] > vr[3]) return;
-      const lc = k === 'haus' ? 'stroke-linejoin="miter"' : 'stroke-linecap="round" stroke-linejoin="round"';
-      let fill = ft.a ? e.f : 'none';
-      // Pop-Art: jedes Haus bekommt eine feste Zufallsfarbe (außer es wurde einzeln umgefärbt)
-      if (pop && k === 'haus' && !(app.S.ov[ft.id] && app.S.ov[ft.id].f)) fill = popColor(ft.id, pop);
-      const p = `<path id="${ft.fid}" d="${ft.d}" fill="${fill}" fill-rule="evenodd" stroke="${e.s}" stroke-width="${+(e.w * sc).toFixed(3)}" ${lc}${forExport ? '' : ' data-k="' + k + '" data-g="' + ft.id + '"'}/>`;
-      const t = ft.t ?? -1;
-      if (!groups.has(t)) groups.set(t, []);
-      groups.get(t).push(p);
-    });
-    groups.forEach((arr, t) => {
-      o += t >= 0 ? `<g clip-path="url(#tc${t})">${arr.join('')}</g>` : arr.join('');
-    });
-  });
-  }
+  o += `<g id="karte" clip-path="url(#cIn)"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><g id="kartenAnsicht" transform="${vT(g).replace(/^translate\([^)]*\) /, '')}">`;
+  o += forExport ? mapContent(true, visRect()) : '<g id="kartenInhalt"/>';
   o += '</g></g></g></g>';
   const ink = app.S.title.color;
   if (g.L.inner > 0) o += mapShape(g, g.L.innerGap + g.L.inner / 2, ` id="innenlinie" transform="translate(${g.mx},${g.my})" fill="none" stroke="${f.w > 0 ? f.color : ink}" stroke-width="${g.L.inner}"`);
@@ -204,46 +285,64 @@ export function buildSVG(forExport) {
 }
 export function render() {
   if (!app.DATA) return;
+  clearTimeout(fullTimer);
   const svg = buildSVG(false);
   const tmp = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;
   app.poster.setAttribute('viewBox', tmp.getAttribute('viewBox'));
-  app.poster.innerHTML = tmp.innerHTML;
   // Vorschau-Hintergrund (Karomuster = transparent) genau in der Umrissform des Posters
   const pv = app.previewBg || 'checker';
   const bgFill = pv === 'checker' ? 'url(#pvChecker)' : pv;
-  const defs = app.poster.querySelector('defs');
-  if (pv === 'checker') defs.insertAdjacentHTML('beforeend', '<pattern id="pvChecker" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="#fff"/><rect width="12" height="12" fill="#ececec"/><rect x="12" y="12" width="12" height="12" fill="#ececec"/></pattern>');
-  defs.insertAdjacentHTML('afterend', `<rect id="vorschau" x="0" y="0" width="100%" height="100%" fill="${bgFill}" clip-path="url(#cOut)" pointer-events="none"/>`);
+  const tdefs = tmp.querySelector('defs');
+  if (pv === 'checker') tdefs.insertAdjacentHTML('beforeend', '<pattern id="pvChecker" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="#fff"/><rect width="12" height="12" fill="#ececec"/><rect x="12" y="12" width="12" height="12" fill="#ececec"/></pattern>');
+  tdefs.insertAdjacentHTML('afterend', `<rect id="vorschau" x="0" y="0" width="100%" height="100%" fill="${bgFill}" clip-path="url(#cOut)" pointer-events="none"/>`);
   const g = geo();
-  const hits = document.createElementNS(NS, 'g');
-  hits.setAttribute('transform', vT(g));
-  const hw = (12 / app.S.view.z).toFixed(2);
-  app.poster.querySelectorAll('path[data-k]').forEach(p => {
-    if (p.getAttribute('fill') !== 'none' || p.dataset.k === 'haus') {
-      p.setAttribute('pointer-events', 'all');
-      p.style.cursor = 'pointer';
-      if (p.dataset.k === 'haus') return;
+  const before = MC.node;
+  const M = mapNodes();
+  const oldK = app.poster.querySelector('#karte');
+  const oldHg = app.poster.querySelector('#treffer');
+  if (oldK && M.node === before && oldK.contains(M.node)) {
+    // Schneller Weg: Karte bleibt im Poster, nur alles drumherum wird ersetzt.
+    // (Herausnehmen und Wiedereinsetzen würde den Browser zwingen, jedes Haus neu zu vermessen.)
+    const newK = tmp.querySelector('#karte');
+    let a = newK, b = oldK;
+    while (a && b && a.id !== 'kartenInhalt' && b !== M.node) {
+      for (const at of [...a.attributes]) b.setAttribute(at.name, at.value);
+      a = a.firstElementChild;
+      b = b.firstElementChild;
     }
-    const h = document.createElementNS(NS, 'path');
-    h.setAttribute('d', p.getAttribute('d'));
-    h.setAttribute('fill', 'none');
-    h.setAttribute('stroke', 'transparent');
-    h.setAttribute('stroke-width', hw);
-    h.setAttribute('stroke-linecap', 'round');
-    h.dataset.ref = p.dataset.g;
-    hits.appendChild(h);
-  });
-  const hg = document.createElementNS(NS, 'g');
-  hg.setAttribute('clip-path', 'url(#cIn)');
-  const hg2 = document.createElementNS(NS, 'g');
-  hg2.setAttribute('clip-path', 'url(#cMapHit)');
+    const kids = [...tmp.children];
+    const i = kids.indexOf(newK);
+    const html = (arr) => arr.map(n => n.outerHTML).join('');
+    [...app.poster.children].forEach(n => {
+      if (n !== oldK && n !== oldHg) n.remove();
+    });
+    oldK.insertAdjacentHTML('beforebegin', html(kids.slice(0, i)));
+    (oldHg || oldK).insertAdjacentHTML('afterend', html(kids.slice(i + 1)));
+  } else {
+    app.poster.innerHTML = tmp.innerHTML;
+    const ph = app.poster.querySelector('#kartenInhalt');
+    if (ph) ph.replaceWith(M.node);
+    if (oldHg) oldHg.remove();
+  }
+  const hits = M.hits;
+  hits.setAttribute('transform', vT(g));
+  // Klickflächen-Gruppe (bleibt ebenfalls bestehen, wenn möglich)
   const cm = document.createElementNS(NS, 'clipPath');
   cm.id = 'cMapHit';
   cm.innerHTML = mapShape(g, 0, ` transform="translate(${g.mx},${g.my})"`);
   app.poster.querySelector('defs').appendChild(cm);
-  hg2.appendChild(hits);
-  hg.appendChild(hg2);
-  app.poster.insertBefore(hg, app.poster.querySelector('#balken') || app.poster.querySelector('#rahmen') || null);
+  let hg = app.poster.querySelector('#treffer');
+  if (!hg || !hg.contains(hits)) {
+    if (hg) hg.remove();
+    hg = document.createElementNS(NS, 'g');
+    hg.id = 'treffer';
+    hg.setAttribute('clip-path', 'url(#cIn)');
+    const hg2 = document.createElementNS(NS, 'g');
+    hg2.setAttribute('clip-path', 'url(#cMapHit)');
+    hg2.appendChild(hits);
+    hg.appendChild(hg2);
+    app.poster.querySelector('#karte').after(hg);
+  }
   const fr = app.poster.querySelector('#rahmen');
   if (fr) {
     fr.setAttribute('pointer-events', 'stroke');

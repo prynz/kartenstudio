@@ -425,12 +425,14 @@ const POP = (name, desc, bg, pal, ink, water) => ({
   dots: [bg, ...pal.slice(0, 3)],
   pop: { pal },
   cls: {
-    haus: { s: bg, f: pal[0], w: 1.2 },
-    haupt: { s: ink, f: 'none', w: 8 },
-    neben: { s: bg, f: 'none', w: 12 },
-    weg: { s: bg, f: 'none', w: 6 },
-    wasser: { s: water, f: water, w: 10 },
-    bahn: { s: ink, f: 'none', w: 2 },
+    // Häuser werden nicht als Grundriss gezeichnet – die Symbole stehen für die Bebauung
+    haus: { s: bg, f: pal[0], w: 1.2, h: true },
+    // Straßen: freie Wege in Hintergrundfarbe, Hauptstraßen breiter
+    haupt: { s: bg, f: 'none', w: 15 },
+    neben: { s: bg, f: 'none', w: 9 },
+    weg: { s: bg, f: 'none', w: 5, h: true },
+    wasser: { s: water, f: water, w: 12 },
+    bahn: { s: ink, f: 'none', w: 2.5 },
     gruen: { s: bg, f: 'none', w: 0, h: true }
   },
   bg,
@@ -439,6 +441,6 @@ const POP = (name, desc, bg, pal, ink, water) => ({
   text: bg
 });
 Object.assign(PRESETS, {
-  popart: POP('Pop-Art', 'Wimmelbild in Rot, Gelb und Blau – Straßen als helle Wege durch bunte Symbole.', '#fbf8f1', ['#e23b2e', '#f4b400', '#1d5fa8', '#e8772e', '#d12f6a'], '#1d5fa8', '#1d5fa8'),
+  popart: POP('Pop-Art', 'Illustrierter Stadtplan: Symbole in Rot, Gelb und Blau folgen den Straßen, der Ort zeichnet sich als bunte Fläche ab.', '#fbf8f1', ['#e23b2e', '#f4b400', '#1d5fa8'], '#1d5fa8', '#1d5fa8'),
   konfetti: POP('Konfetti-Nacht', 'Pastellfarbene Symbole auf Nachtblau – verspielt und edel.', '#262c3a', ['#f6a6b2', '#ffd58a', '#9fd8cb', '#b9a7f0', '#ffffff'], '#ffd58a', '#7fb7d9')
 });

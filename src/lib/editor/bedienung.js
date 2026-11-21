@@ -4,7 +4,7 @@
 import { app } from './app.js';
 import { $, MW } from './basis.js';
 import { begin, change, clampView, commit, defView, eff, vLimits, visRect } from './zustand.js';
-import { drawSel, geo, render } from './zeichnen.js';
+import { drawSel, geo, render, renderView } from './zeichnen.js';
 import { msg } from './ansicht.js';
 import { openSec, panel } from './seitenleiste.js';
 
@@ -162,7 +162,7 @@ export function initEditorBedienung() {
         cy: app.drag.v0.cy - (b.y - a.y) / app.drag.v0.z
       };
       clampView(app.S.view);
-      render();
+      renderView();
       return;
     }
     const m = $('marq');
@@ -191,7 +191,7 @@ export function initEditorBedienung() {
       cy: p.y - (p.y - v.cy) * v.z / z
     };
     clampView(app.S.view);
-    render();
+    renderView();
     clearTimeout(app.cv._wt);
     app.cv._wt = setTimeout(commit, 350);
   }, {

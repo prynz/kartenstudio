@@ -204,7 +204,7 @@ export function renderThumbs() {
     const p = PRESETS[b.dataset.p];
     let o = `<svg viewBox="${MW * 0.18} ${MH * 0.18} ${MW * 0.64} ${MW * 0.64}" preserveAspectRatio="xMidYMid slice">`;
     o += `<rect x="-2000" y="-2000" width="6000" height="6000" fill="${p.bg !== 'none' ? p.bg : '#ffffff'}"/>`;
-    if (p.pop) o += `<defs>${popDefs()}</defs>` + popSymbols([MW * 0.18, MH * 0.18, MW * 0.82, MH * 0.18 + MW * 0.64], 1.4, p.pop.pal);
+    if (p.pop) o += `<defs>${popDefs()}</defs>` + popSymbols(app.DATA, { view: { z: 1.4 }, scale: 1, cls: p.cls }, [MW * 0.18, MH * 0.18, MW * 0.82, MH * 0.18 + MW * 0.64], p.pop.pal);
     ORDER.forEach(k => {
       const c = p.cls[k];
       if (c.h) return;
