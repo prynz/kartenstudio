@@ -59,7 +59,7 @@ Die echte App liegt im Repo-Wurzelverzeichnis: **SvelteKit 3 + Svelte 5 + Vite, 
 
 Aufbau (`src/lib`), aus `prototyp/src/script.js` maschinell (Babel) zerlegt – Logik unverändert:
 - `editor/app.js` – **gemeinsamer Zustand** `app` (früher globale Variablen: `app.DATA`, `app.S`, `app.sel`, `app.map` …)
-- `editor/` – `basis` (Konstanten, `$`, Schriften), `zustand` (newState, Ansicht, Undo), `laden` (generate/loadData), `zeichnen` (geo/buildSVG/render/drawSel), `bedienung` (Zeiger/Zoom), `seitenleiste` (panel, Schritte 01–06), `farben`, `ansicht` (Undo-Knöpfe, Tasten, Meldungen), `beispiel` (+ `beispiel-siegritz.json`), `animation` (neu: Akkordeon, Übergang Start → Editor), `start.js` (verbindet alle Bausteine mit der Seite, `init…`-Funktionen in Prototyp-Reihenfolge), `editor.css`
+- `editor/` – `basis` (Konstanten, `$`, Schriften), `zustand` (newState, Ansicht, Undo), `laden` (generate/loadData), `zeichnen` (geo/buildSVG/render/drawSel), `bedienung` (Zeiger/Zoom), `seitenleiste` (panel, Schritte 01–06), `farben`, `ansicht` (Undo-Knöpfe, Tasten, Meldungen), `beispiel` (+ `beispiel-siegritz.json`), `animation` (neu: Akkordeon, Übergang Start → Editor), `sheet` (neu: Handy-Bottom-Sheet – Poster bleibt oben fest, Einstellungen scrollen separat, Griff mit 3 Rastpunkten; `revealSection` holt geöffnete Schritte in Sicht), `start.js` (verbindet alle Bausteine mit der Seite, `init…`-Funktionen in Prototyp-Reihenfolge), `editor.css`
 - `karte/` – `ortswahl`, `ortswahl-start`, `suche` (Photon), `kacheln` (MVT-Decoder), `overpass`, `daten` (buildData/buildDataTiles), `raster` (Standard-Stile via MapLibre)
 - `themen/` – `vorlagen` (PRESETS), `standard` (BASES)
 - `export/` – SVG/PNG

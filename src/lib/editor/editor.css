@@ -200,3 +200,31 @@ details.cust summary::after{content:' ▾';color:var(--soft);font-size:11px}
 .hero > :nth-child(5){animation-delay:.2s}
 .hero > :nth-child(n+6){animation-delay:.25s}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ---------- Handy: Poster bleibt oben stehen, Einstellungen als Leiste von unten ---------- */
+.sheet-grip{display:none}
+@media(max-width:900px){
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+  .app{display:flex;flex-direction:column;height:calc(100vh - 56px);height:calc(100dvh - 56px)}
+  .stage,.stage:has(.landing:not(.hidden)){order:1;flex:1 1 auto;min-height:0}
+  .landing{overflow:auto;-webkit-overflow-scrolling:touch}
+  aside{order:2;flex:0 0 var(--sheet,52%);min-height:0;overflow-y:auto;overscroll-behavior:contain;border-top:0;border-radius:18px 18px 0 0;box-shadow:0 -10px 30px rgba(20,24,35,.12),0 -1px 0 var(--line);position:relative;z-index:6}
+  aside.sheet-anim{transition:flex-basis .34s cubic-bezier(.2,.8,.2,1)}
+  aside.nodata{display:none}
+  .sheet-grip{display:flex;position:sticky;top:0;z-index:4;height:24px;flex:0 0 24px;background:var(--panel);touch-action:none;cursor:grab;outline:none}
+  .sheet-grip::before{content:'';width:40px;height:5px;border-radius:3px;background:#d3d1cc;margin:auto;transition:background .15s,width .2s}
+  .sheet-grip:active::before,.sheet-grip:focus-visible::before{background:var(--soft);width:52px}
+  .sec>button.sh{padding:13px 18px}
+  .canvas{padding:12px 16px 62px}
+  .dock{bottom:10px}
+  #poster{transition:width .34s cubic-bezier(.2,.8,.2,1)}
+  .sheet-dragging #poster{transition:none}
+  .toast{top:10px;max-width:calc(100% - 32px);text-align:center}
+}
+@media(max-width:900px){
+  .dock{transition:opacity .25s cubic-bezier(.2,.8,.2,1),transform .25s cubic-bezier(.2,.8,.2,1)}
+  .sheet-big .dock{opacity:0;transform:translate(-50%,12px);pointer-events:none}
+  .sheet-big .canvas{padding:12px 16px}
+  .dock .bgs,.dock .sep{display:none}
+}
+@media(max-width:900px){.toast{font-size:12px;line-height:1.35;padding:6px 12px;top:8px;max-width:calc(100% - 48px)}}

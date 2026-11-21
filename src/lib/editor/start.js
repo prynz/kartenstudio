@@ -11,6 +11,7 @@ import { initEditorFarben } from './farben.js';
 import { initEditorAnsicht } from './ansicht.js';
 import { initExportExport } from '../export/export.js';
 import { initEditorBeispiel } from './beispiel.js';
+import { initSheet } from './sheet.js';
 
 let started = false;
 export function start() {
@@ -26,4 +27,5 @@ export function start() {
   initEditorAnsicht();
   initExportExport();
   initEditorBeispiel();
+  initSheet();
 }

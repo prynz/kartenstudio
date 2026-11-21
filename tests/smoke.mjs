@@ -90,6 +90,37 @@ await run('iPhone – Offline-Beispiel', { ...devices['iPhone 14'] }, async (pag
 	await page.waitForTimeout(900);
 	ok((await page.$$eval('#poster path[data-k]', (p) => p.length)) > 100, 'Poster auf dem Handy gezeichnet');
 	await page.screenshot({ path: `${OUT}/5-editor-iphone.png` });
+	// Poster muss sichtbar bleiben, während man unten Einstellungen ändert
+	const posterVisible = (minH = 150) =>
+		page.evaluate((minH) => {
+			const p = document.getElementById('poster').getBoundingClientRect();
+			const s = document.getElementById('side').getBoundingClientRect();
+			return p.top >= 0 && p.bottom <= s.top + 1 && p.height > minH;
+		}, minH);
+	await page.tap('.sec[data-s="text"] > .sh');
+	await page.waitForTimeout(600);
+	await page.fill('#tText', 'MEIN DORF');
+	await page.waitForTimeout(300);
+	ok(await posterVisible(), 'Handy: Poster bleibt beim Text-Ändern sichtbar');
+	ok((await page.evaluate(() => window.scrollY)) === 0, 'Handy: Seite selbst scrollt nicht weg');
+	await page.screenshot({ path: `${OUT}/5b-text-iphone.png` });
+	await page.tap('.sec[data-s="stil"] > .sh');
+	await page.waitForTimeout(600);
+	await page.tap('#styles button[data-p="vintage"]');
+	await page.waitForTimeout(500);
+	ok(await posterVisible(), 'Handy: Poster bleibt beim Stilwechsel sichtbar');
+	await page.screenshot({ path: `${OUT}/5c-stil-iphone.png` });
+	// Leiste am Griff hochziehen → Poster wird kleiner, bleibt aber sichtbar
+	const g = await page.locator('#sheetGrip').boundingBox();
+	const h0 = (await page.locator('#side').boundingBox()).height;
+	await page.mouse.move(g.x + g.width / 2, g.y + 10);
+	await page.mouse.down();
+	await page.mouse.move(g.x + g.width / 2, g.y - 180, { steps: 12 });
+	await page.mouse.up();
+	await page.waitForTimeout(700);
+	const h1 = (await page.locator('#side').boundingBox()).height;
+	ok(h1 > h0 + 80 && (await posterVisible(100)), `Handy: Leiste hochgezogen (${Math.round(h0)} → ${Math.round(h1)} px), Poster sichtbar`);
+	await page.screenshot({ path: `${OUT}/5d-gross-iphone.png` });
 });
 
 if (ONLINE)

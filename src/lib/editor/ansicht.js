@@ -13,7 +13,12 @@ export function zoom() {
   const z = +$('zoom').value / 100;
   const g = geo(),
     c = $('canvas');
-  const base = Math.max(240, Math.min(c.clientWidth - 80, (c.clientHeight - 136) * g.W / g.H));
+  // Rand um das Poster: am Handy knapper, damit es den Platz über der Einstellungs-Leiste nutzt
+  const narrow = matchMedia('(max-width: 900px)').matches;
+  const dock = narrow && !document.body.classList.contains('sheet-big');
+  const padX = narrow ? 32 : 80,
+    padY = narrow ? (dock ? 78 : 28) : 136;
+  const base = Math.max(narrow ? 60 : 240, Math.min(c.clientWidth - padX, (c.clientHeight - padY) * g.W / g.H));
   app.poster.style.width = base * z + 'px';
 }
 export function msg(t, c) {

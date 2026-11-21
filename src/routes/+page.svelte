@@ -37,6 +37,7 @@
 </header>
 <div class="app">
 <aside id="side" class="nodata">
+<div class="sheet-grip" id="sheetGrip" role="slider" aria-label="Einstellungen größer oder kleiner ziehen" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0"></div>
 <div class="place"><div class="pin">⌖</div><div style="flex:1;min-width:0"><b id="placeName">Noch kein Ort gewählt</b><span id="placeInfo">Suche einen Ort, um zu starten</span></div><button class="btn sm" id="openPicker2">Ändern</button></div>
 
 <div class="sec open" data-s="ausschnitt"><button class="sh"><span class="num">01</span><span class="tt">Ausschnitt</span><span class="sum" id="sumA"></span><span class="chev">▾</span></button><div class="sb">

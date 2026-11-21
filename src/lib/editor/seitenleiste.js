@@ -3,6 +3,7 @@
 // Aus dem Prototyp übernommen (prototyp/src/script.js).
 import { app } from './app.js';
 import { animateSections } from './animation.js';
+import { revealSection } from './sheet.js';
 import { $, CLS, SWATCH, hex } from './basis.js';
 import { BASES } from '../themen/standard.js';
 import { PRESETS } from '../themen/vorlagen.js';
@@ -84,6 +85,7 @@ export function textKey() {
 }
 export function openSec(name) {
   animateSections(() => document.querySelectorAll('.sec').forEach(x => x.classList.toggle('open', x.dataset.s === name)));
+  revealSection(document.querySelector(`.sec[data-s="${name}"]`));
 }
 export function setMap(prop, val) {
   if (app.selCls) {
@@ -149,6 +151,7 @@ export function initEditorSeitenleiste() {
       document.querySelectorAll('.sec').forEach(x => x.classList.remove('open'));
       if (!was) sec.classList.add('open');
     });
+    if (!was) revealSection(sec);
   });
   $('tabTitle').onclick = () => {
     app.curText = 'title';
