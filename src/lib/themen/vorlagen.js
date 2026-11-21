@@ -1,0 +1,418 @@
+// @ts-nocheck – aus dem Prototyp übernommen; Typen folgen bei der Überarbeitung.
+// Künstlerische Farbthemen (PRESETS)
+// Aus dem Prototyp übernommen (prototyp/src/script.js).
+
+export const NAVY = '#262c3a';
+export const PRESETS = {
+  umriss: {
+    name: 'Umriss (Siegritz)',
+    chip: 'linear-gradient(90deg,#fff 0 70%,#262c3a 70%)',
+    cls: {
+      haus: {
+        s: NAVY,
+        f: 'none',
+        w: 2.2
+      },
+      haupt: {
+        s: NAVY,
+        f: 'none',
+        w: 6.4
+      },
+      neben: {
+        s: '#a6a6a6',
+        f: 'none',
+        w: 2
+      },
+      weg: {
+        s: '#a6a6a6',
+        f: 'none',
+        w: 2
+      },
+      wasser: {
+        s: '#a6a6a6',
+        f: 'none',
+        w: 1.5
+      },
+      bahn: {
+        s: '#a6a6a6',
+        f: 'none',
+        w: 2
+      },
+      gruen: {
+        s: '#d9e2cf',
+        f: '#eef2e8',
+        w: 0,
+        h: true
+      }
+    },
+    bg: 'none',
+    frame: {
+      color: NAVY,
+      w: 16,
+      r: 48,
+      pad: 14
+    },
+    bar: {
+      color: NAVY,
+      on: true
+    },
+    text: '#ffffff'
+  },
+  dunkel: {
+    name: 'Nachtblau (New York)',
+    chip: '#272c39',
+    cls: {
+      haus: {
+        s: '#ffffff',
+        f: 'none',
+        w: 1.4
+      },
+      haupt: {
+        s: '#ffffff',
+        f: 'none',
+        w: 5
+      },
+      neben: {
+        s: '#ffffff',
+        f: 'none',
+        w: 2
+      },
+      weg: {
+        s: '#ffffff',
+        f: 'none',
+        w: 1.1
+      },
+      wasser: {
+        s: '#ffffff',
+        f: 'none',
+        w: 1.2
+      },
+      bahn: {
+        s: '#ffffff',
+        f: 'none',
+        w: 1.5
+      },
+      gruen: {
+        s: '#323949',
+        f: '#2e3442',
+        w: 0,
+        h: true
+      }
+    },
+    bg: '#272c39',
+    frame: {
+      color: '#ffffff',
+      w: 4,
+      r: 0,
+      pad: 10
+    },
+    bar: {
+      color: '#272c39',
+      on: true
+    },
+    text: '#ffffff'
+  },
+  minimal: {
+    name: 'Minimal schwarz',
+    chip: 'linear-gradient(90deg,#fff 0 55%,#000 55%)',
+    cls: {
+      haus: {
+        s: '#000000',
+        f: '#000000',
+        w: 0.6
+      },
+      haupt: {
+        s: '#000000',
+        f: 'none',
+        w: 5
+      },
+      neben: {
+        s: '#000000',
+        f: 'none',
+        w: 2
+      },
+      weg: {
+        s: '#000000',
+        f: 'none',
+        w: 0.9
+      },
+      wasser: {
+        s: '#000000',
+        f: 'none',
+        w: 1
+      },
+      bahn: {
+        s: '#000000',
+        f: 'none',
+        w: 1.5
+      },
+      gruen: {
+        s: '#000000',
+        f: 'none',
+        w: 0,
+        h: true
+      }
+    },
+    bg: 'none',
+    frame: {
+      color: '#000000',
+      w: 6,
+      r: 0,
+      pad: 14
+    },
+    bar: {
+      color: '#000000',
+      on: true
+    },
+    text: '#ffffff'
+  },
+  strassen: {
+    name: 'Nur Straßen',
+    chip: 'repeating-linear-gradient(45deg,#fff 0 6px,#262c3a 6px 8px)',
+    cls: {
+      haus: {
+        s: NAVY,
+        f: 'none',
+        w: 2,
+        h: true
+      },
+      haupt: {
+        s: NAVY,
+        f: 'none',
+        w: 6
+      },
+      neben: {
+        s: NAVY,
+        f: 'none',
+        w: 2.6
+      },
+      weg: {
+        s: NAVY,
+        f: 'none',
+        w: 1.2
+      },
+      wasser: {
+        s: NAVY,
+        f: 'none',
+        w: 1.2
+      },
+      bahn: {
+        s: NAVY,
+        f: 'none',
+        w: 1.5
+      },
+      gruen: {
+        s: NAVY,
+        f: 'none',
+        w: 0,
+        h: true
+      }
+    },
+    bg: 'none',
+    frame: {
+      color: NAVY,
+      w: 10,
+      r: 0,
+      pad: 14
+    },
+    bar: {
+      color: NAVY,
+      on: true
+    },
+    text: '#ffffff'
+  }
+};
+export function TH(name, desc, c, w) {
+  w = w || {};
+  const L = (x, ww) => ({
+    s: x,
+    f: 'none',
+    w: ww
+  });
+  return {
+    name,
+    desc,
+    dots: [c.bg, c.haupt, c.haus[1] !== 'none' ? c.haus[1] : c.haus[0], c.neben],
+    cls: {
+      haus: {
+        s: c.haus[0],
+        f: c.haus[1],
+        w: w.haus ?? 1.2
+      },
+      haupt: L(c.haupt, w.haupt ?? 4.6),
+      neben: L(c.neben, w.neben ?? 2),
+      weg: L(c.weg, w.weg ?? 1),
+      wasser: {
+        s: c.wasser[0],
+        f: c.wasser[1],
+        w: w.wasser ?? 1
+      },
+      bahn: L(c.bahn || c.neben, 1.4),
+      gruen: {
+        s: c.gruen ? c.gruen[0] : c.bg,
+        f: c.gruen ? c.gruen[1] : 'none',
+        w: 0,
+        h: !c.gruen
+      }
+    },
+    bg: c.bg,
+    frame: {
+      color: c.frame,
+      w: w.frame ?? 8,
+      r: w.r ?? 0,
+      pad: 12
+    },
+    bar: {
+      color: c.bar,
+      on: true
+    },
+    text: c.text
+  };
+}
+Object.assign(PRESETS.umriss, {
+  desc: 'Klare Linien, leere Häuser, Rahmen und Balken in Navy – das Siegritz-Design.'
+});
+Object.assign(PRESETS.dunkel, {
+  desc: 'Weiße Linien auf Nachtblau, wie die klassischen Stadtposter.'
+});
+Object.assign(PRESETS.minimal, {
+  desc: 'Schwarz auf Weiß, gefüllte Häuser – maximal reduziert.'
+});
+Object.assign(PRESETS.strassen, {
+  desc: 'Nur das Straßennetz, ohne Häuser.'
+});
+Object.assign(PRESETS, {
+  cyber: TH('Cyber Noir', 'Neonpink und Cyan auf fast schwarzem Grund.', {
+    bg: '#0b0b12',
+    haus: ['#34344d', '#16161f'],
+    haupt: '#ff2bd6',
+    neben: '#00e5ff',
+    weg: '#24606e',
+    wasser: ['#13284a', '#13284a'],
+    gruen: ['#111a1c', '#111a1c'],
+    frame: '#ff2bd6',
+    bar: '#0b0b12',
+    text: '#ffffff'
+  }, {
+    haus: 0.9,
+    frame: 6
+  }),
+  mittelmeer: TH('Mittelmeer-Sonne', 'Warmes Creme, Terrakotta und Meeresblau.', {
+    bg: '#f6efe3',
+    haus: ['#8b3a12', '#ead7bf'],
+    haupt: '#5b3a29',
+    neben: '#9a6446',
+    weg: '#c9ad8f',
+    wasser: ['#6a9ab5', '#8fb6cc'],
+    gruen: ['#d6dab3', '#dfe2c2'],
+    frame: '#5b3a29',
+    bar: '#5b3a29',
+    text: '#f6efe3'
+  }, {
+    r: 24
+  }),
+  solar: TH('Solar Flare', 'Glühendes Orange auf tiefem Schwarz.', {
+    bg: '#0e0b0a',
+    haus: ['#f26a1b', '#2a1d18'],
+    haupt: '#ff9a3c',
+    neben: '#d9601c',
+    weg: '#6b3a1f',
+    wasser: ['#1f1714', '#1f1714'],
+    gruen: ['#18120f', '#18120f'],
+    frame: '#f26a1b',
+    bar: '#0e0b0a',
+    text: '#ff9a3c'
+  }, {
+    haus: 0.9
+  }),
+  vulkan: TH('Vulkanglas', 'Ultradunkles Glas mit kühlen blaugrauen Reflexen.', {
+    bg: '#0d0f12',
+    haus: ['#8f99ad', '#1b1f26'],
+    haupt: '#c5cbd6',
+    neben: '#8f99ad',
+    weg: '#4a5160',
+    wasser: ['#232a35', '#232a35'],
+    gruen: ['#151a1f', '#151a1f'],
+    frame: '#8f99ad',
+    bar: '#0d0f12',
+    text: '#c5cbd6'
+  }, {
+    haus: 0.8,
+    frame: 4
+  }),
+  blaupause: TH('Blaupause', 'Weiße Konstruktionslinien auf Blaupausen-Blau.', {
+    bg: '#1d4e89',
+    haus: ['#ffffff', 'none'],
+    haupt: '#ffffff',
+    neben: '#dbe7f6',
+    weg: '#9dbbe0',
+    wasser: ['#9cc3ef', '#2a5d99'],
+    frame: '#ffffff',
+    bar: '#1d4e89',
+    text: '#ffffff'
+  }, {
+    haus: 1,
+    frame: 4
+  }),
+  vintage: TH('Vintage-Papier', 'Alte Landkarte: Sepia, Papier und blasses Wasser.', {
+    bg: '#efe4cc',
+    haus: ['#4a3a2a', '#d9c7a3'],
+    haupt: '#4a3a2a',
+    neben: '#6e5a44',
+    weg: '#a8916f',
+    wasser: ['#7f9fa6', '#a9c3c8'],
+    gruen: ['#c9cba0', '#d3d4ad'],
+    frame: '#4a3a2a',
+    bar: '#4a3a2a',
+    text: '#efe4cc'
+  }, {
+    frame: 10
+  }),
+  wald: TH('Waldgrün', 'Tannengrün, Moos und Nebel.', {
+    bg: '#eef0e6',
+    haus: ['#2f4a36', '#c7d1bb'],
+    haupt: '#1f3a2b',
+    neben: '#4f6b55',
+    weg: '#8ea18f',
+    wasser: ['#7fa8ae', '#9fc4c9'],
+    gruen: ['#b7cba0', '#b7cba0'],
+    frame: '#1f3a2b',
+    bar: '#1f3a2b',
+    text: '#eef0e6'
+  }, {
+    r: 20
+  }),
+  tusche: TH('Tusche & Rot', 'Japanische Tuschezeichnung mit rotem Akzent.', {
+    bg: '#f4f1ea',
+    haus: ['#1a1a1a', 'none'],
+    haupt: '#c0392b',
+    neben: '#1a1a1a',
+    weg: '#9a958c',
+    wasser: ['#b9b4aa', '#dcd8cf'],
+    frame: '#1a1a1a',
+    bar: '#1a1a1a',
+    text: '#f4f1ea'
+  }, {
+    haus: 1
+  }),
+  pastell: TH('Pastell', 'Sanftes Rosa, Flieder und Himmelblau.', {
+    bg: '#fdf6f0',
+    haus: ['#e8a0b4', '#fbe1e8'],
+    haupt: '#7fb7d9',
+    neben: '#b8a6d9',
+    weg: '#d8cde8',
+    wasser: ['#a9d3e8', '#cfe8f3'],
+    gruen: ['#dcefd6', '#dcefd6'],
+    frame: '#b8a6d9',
+    bar: '#b8a6d9',
+    text: '#ffffff'
+  }, {
+    r: 36,
+    frame: 8
+  })
+});
+['umriss', 'dunkel', 'minimal', 'strassen'].forEach(k => {
+  const p = PRESETS[k];
+  p.dots = [p.bg === 'none' ? '#ffffff' : p.bg, p.cls.haupt.s, p.cls.haus.f !== 'none' ? p.cls.haus.f : p.cls.haus.s, p.frame.color];
+});
+/* Standard-Kartenstile (gerenderte Karte) */
