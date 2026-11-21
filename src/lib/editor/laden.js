@@ -4,6 +4,7 @@
 import { app } from './app.js';
 import { revealEditor } from './animation.js';
 import { wizardAfterLoad } from './assistent.js';
+import { popColor, popDefs, popSymbols } from '../themen/pop.js';
 import { $, CLS, MW, ORDER } from './basis.js';
 import { FMAP, drawSel, render } from './zeichnen.js';
 import { PRESETS } from '../themen/vorlagen.js';
@@ -203,6 +204,7 @@ export function renderThumbs() {
     const p = PRESETS[b.dataset.p];
     let o = `<svg viewBox="${MW * 0.18} ${MH * 0.18} ${MW * 0.64} ${MW * 0.64}" preserveAspectRatio="xMidYMid slice">`;
     o += `<rect x="-2000" y="-2000" width="6000" height="6000" fill="${p.bg !== 'none' ? p.bg : '#ffffff'}"/>`;
+    if (p.pop) o += `<defs>${popDefs()}</defs>` + popSymbols([MW * 0.18, MH * 0.18, MW * 0.82, MH * 0.18 + MW * 0.64], 1.4, p.pop.pal);
     ORDER.forEach(k => {
       const c = p.cls[k];
       if (c.h) return;
@@ -210,7 +212,8 @@ export function renderThumbs() {
         if (f.k !== k) return;
         const bx = f.bx;
         if (bx[2] < 0 || bx[0] > MW || bx[3] < 0 || bx[1] > MH) return;
-        o += `<path d="${f.d}" fill="${f.a ? c.f : 'none'}" stroke="${c.s}" stroke-width="${c.w * 1.6}" stroke-linecap="round" stroke-linejoin="round"/>`;
+        const fl = p.pop && k === 'haus' ? popColor(f.id, p.pop.pal) : f.a ? c.f : 'none';
+        o += `<path d="${f.d}" fill="${fl}" stroke="${c.s}" stroke-width="${c.w * 1.6}" stroke-linecap="round" stroke-linejoin="round"/>`;
       });
     });
     o += `<rect x="-2000" y="-2000" width="6000" height="6000" fill="none"/>`;

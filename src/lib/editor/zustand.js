@@ -48,7 +48,8 @@ export function newState(presetKey, keep) {
     view: defView(),
     mode: 'art',
     base: 'liberty',
-    labels: true
+    labels: true,
+    pop: p.pop ? JSON.parse(JSON.stringify(p.pop)) : null
   };
   Object.keys(CLS).forEach(k => {
     if (st.cls[k].h === undefined) st.cls[k].h = false;

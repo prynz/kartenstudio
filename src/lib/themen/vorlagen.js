@@ -416,3 +416,29 @@ Object.assign(PRESETS, {
   p.dots = [p.bg === 'none' ? '#ffffff' : p.bg, p.cls.haupt.s, p.cls.haus.f !== 'none' ? p.cls.haus.f : p.cls.haus.s, p.frame.color];
 });
 /* Standard-Kartenstile (gerenderte Karte) */
+
+/* ---------- Pop-Art-Themen (neu in der Web-App, experimentell) ---------- */
+// Straßen in Hintergrundfarbe → sie schneiden helle Wege durch den Symbolteppich (siehe themen/pop.js)
+const POP = (name, desc, bg, pal, ink, water) => ({
+  name,
+  desc,
+  dots: [bg, ...pal.slice(0, 3)],
+  pop: { pal },
+  cls: {
+    haus: { s: bg, f: pal[0], w: 1.2 },
+    haupt: { s: ink, f: 'none', w: 8 },
+    neben: { s: bg, f: 'none', w: 12 },
+    weg: { s: bg, f: 'none', w: 6 },
+    wasser: { s: water, f: water, w: 10 },
+    bahn: { s: ink, f: 'none', w: 2 },
+    gruen: { s: bg, f: 'none', w: 0, h: true }
+  },
+  bg,
+  frame: { color: ink, w: 8, r: 0, pad: 12 },
+  bar: { color: ink, on: true },
+  text: bg
+});
+Object.assign(PRESETS, {
+  popart: POP('Pop-Art', 'Wimmelbild in Rot, Gelb und Blau – Straßen als helle Wege durch bunte Symbole.', '#fbf8f1', ['#e23b2e', '#f4b400', '#1d5fa8', '#e8772e', '#d12f6a'], '#1d5fa8', '#1d5fa8'),
+  konfetti: POP('Konfetti-Nacht', 'Pastellfarbene Symbole auf Nachtblau – verspielt und edel.', '#262c3a', ['#f6a6b2', '#ffd58a', '#9fd8cb', '#b9a7f0', '#ffffff'], '#ffd58a', '#7fb7d9')
+});

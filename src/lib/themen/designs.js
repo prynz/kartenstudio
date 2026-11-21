@@ -182,6 +182,41 @@ export const DESIGNS = {
 		title: { size: 64, ls: 18 },
 		sub: { size: 34, ls: 1 },
 		aspect: 1
+	},
+	rund: {
+		name: 'Runder Rahmen',
+		desc: 'Kräftiger, stark abgerundeter Rahmen, Text frei darunter.',
+		frame: { w: 22, r: 64, pad: 20 },
+		lay: { kind: 'below', textPad: 40 },
+		title: { size: 66, ls: 16 },
+		sub: { size: 34, ls: 1 }
+	},
+	galeriekoord: {
+		name: 'Galerie + Koordinaten',
+		desc: 'Feiner Rahmen, Ortsname und Koordinaten unter der Karte.',
+		frame: { w: 3, r: 0, pad: 26 },
+		lay: { kind: 'below', textPad: 44, coords: true },
+		title: { size: 62, ls: 22 },
+		sub: { size: 32, ls: 1 }
+	},
+	kreiskoord: {
+		name: 'Kreis + Koordinaten',
+		desc: 'Runder Ausschnitt mit Ortsname und Koordinaten.',
+		frame: { w: 0, r: 0, pad: 48 },
+		lay: { kind: 'below', textPad: 40, shape: 'circle', inner: 3, innerGap: 12, coords: true },
+		title: { size: 62, ls: 18 },
+		sub: { size: 32, ls: 1 },
+		aspect: 1
+	},
+	bogenlinie: {
+		name: 'Bogen elegant',
+		desc: 'Bogenfenster mit feiner Zierlinie zwischen Titel und Untertitel.',
+		frame: { w: 1.5, r: 0, pad: 40 },
+		lay: { kind: 'below', textPad: 46, shape: 'arch', inner: 1.5, innerGap: 10, rule: true },
+		title: { size: 58, ls: 22 },
+		sub: { size: 30, ls: 1 },
+		gap: 46,
+		aspect: 1.25
 	}
 };
 

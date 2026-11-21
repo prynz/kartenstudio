@@ -15,6 +15,8 @@ import { attachSearch } from '../karte/suche.js';
 import { pickPlace } from '../karte/ortswahl-start.js';
 import { EASE, reducedMotion } from './animation.js';
 import { revealSection } from './sheet.js';
+import { FRAMES, PRODUCTS, SHIRTS, WALLS, product, renderMockup, scheduleMockup } from './mockup.js';
+import { zoom } from './ansicht.js';
 
 // Der übernommene Zustand ist noch untypisiert (siehe @ts-nocheck in den Prototyp-Modulen).
 /** @type {any} */
@@ -24,12 +26,12 @@ const PRESETS = PRESETS_UNTYPED;
 /** @param {string} id */
 const $ = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
 
-export const STEPS = ['ort', 'ausschnitt', 'stil', 'design', 'text', 'fertig'];
+export const STEPS = ['ort', 'ausschnitt', 'stil', 'design', 'text', 'produkt', 'fertig'];
 /** Welcher Abschnitt der erweiterten Einstellungen passt zu welchem Schritt */
 /** @type {Record<string,string>} */
-const LABEL = { ort: 'Ort', ausschnitt: 'Ausschnitt', stil: 'Stil', design: 'Design', text: 'Text', fertig: 'Fertig' };
+const LABEL = { ort: 'Ort', ausschnitt: 'Ausschnitt', stil: 'Stil', design: 'Design', text: 'Text', produkt: 'Produkt', fertig: 'Fertig' };
 /** @type {Record<string,string>} */
-const ADV_FOR = { ort: 'ausschnitt', ausschnitt: 'ausschnitt', stil: 'stil', design: 'rahmen', text: 'text', fertig: 'farben' };
+const ADV_FOR = { ort: 'ausschnitt', ausschnitt: 'ausschnitt', stil: 'stil', design: 'rahmen', text: 'text', produkt: 'rahmen', fertig: 'farben' };
 
 let step = 'stil';
 let advOpen = false;
@@ -56,7 +58,7 @@ export function goStep(next, animate = true) {
 	});
 	/** @type {HTMLButtonElement} */ ($('wzBack')).disabled = idx === 0;
 	$('wzNext').classList.toggle('hidden', idx === STEPS.length - 1);
-	$('wzNextLabel').textContent = idx < STEPS.length - 1 ? `Weiter: ${LABEL[STEPS[idx + 1]]}` : '';
+	$('wzNextLabel').textContent = idx < STEPS.length - 1 ? LABEL[STEPS[idx + 1]] : '';
 	const pane = document.querySelector(`.wz-pane[data-step="${next}"]`);
 	if (animate && dir && pane && !reducedMotion()) {
 		pane.animate(
@@ -70,12 +72,40 @@ export function goStep(next, animate = true) {
 	const side = $('side');
 	if (side) side.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
 	if (next === 'design') scheduleDesignThumbs(0);
+	setMockup(next === 'produkt' && !advOpen);
 	syncWizard();
+}
+
+/** Produktauswahl ändern (mit Rückgängig). @param {Record<string, any>} patch */
+function setProduct(patch) {
+	change(() => (app.S.product = { ...product(app.S), ...patch }));
+}
+
+/** Mockup-Ansicht im Vorschaubereich ein-/ausblenden. @param {boolean} on */
+function setMockup(on) {
+	const was = document.body.classList.contains('mk-on');
+	document.body.classList.toggle('mk-on', on);
+	if (on && !was) {
+		renderMockup();
+		const m = document.getElementById('mockup');
+		if (m && !reducedMotion()) m.animate([{ opacity: 0, transform: 'scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: EASE });
+	}
+	if (on !== was) zoom();
+}
+
+/** Auswahlzustand der Produkt-Bedienelemente abgleichen */
+function syncProduct() {
+	const P = product(app.S);
+	all('#wzProd button').forEach((b) => b.classList.toggle('on', b.dataset.t === P.type));
+	all('.mk-swatch').forEach((b) => b.classList.toggle('on', P[/** @type {string} */ (b.dataset.key)] === b.dataset.k));
+	all('.mk-opt').forEach((o) => o.classList.toggle('hidden', !(o.dataset.for || '').split(' ').includes(P.type)));
+	/** @type {HTMLInputElement} */ ($('mkMat')).checked = !!P.mat;
 }
 
 /** Assistent ↔ erweiterte Einstellungen umschalten. @param {boolean} on */
 function showAdvanced(on) {
 	advOpen = on;
+	setMockup(!on && step === 'produkt');
 	$('wiz').classList.toggle('hidden', on);
 	$('adv').classList.toggle('hidden', !on);
 	document.body.classList.toggle('wiz-on', !on);
@@ -152,6 +182,8 @@ export function syncWizard() {
 		$('wzPlaceInfo').textContent = app.DATA.region || '';
 	}
 	if (step === 'design') scheduleDesignThumbs();
+	syncProduct();
+	if (step === 'produkt') scheduleMockup();
 }
 
 /** Nach dem Laden eines Orts: im Assistenten beim Stil weitermachen. */
@@ -282,7 +314,41 @@ export function initWizard() {
 		change(() => (app.S.lay = { ...(app.S.lay || {}), coords: /** @type {HTMLInputElement} */ (e.target).checked }))
 	);
 
-	// 6 Fertig
+	// 6 Produkt
+	const PICON = {
+		poster: '<rect x="9" y="5" width="22" height="30" rx="1.5"/>',
+		gerahmt: '<rect x="7" y="3" width="26" height="34" rx="2" stroke-width="3.2"/><rect x="12" y="9" width="16" height="22"/>',
+		leinwand: '<path d="M8 6h22v28H8z"/><path d="M30 6l3 3v28l-3-3M8 34l3 3h22"/>',
+		shirt: '<path d="M14 5c2 3 10 3 12 0l8 4 4 9-6 3-1-2v17H9V19l-1 2-6-3 4-9z"/>',
+		tasse: '<path d="M7 8h20v22c0 3-3 5-10 5S7 33 7 30z"/><path d="M27 13c7-1 7 11 0 10"/>'
+	};
+	Object.entries(PRODUCTS).forEach(([k, P]) => {
+		const b = card(document.createElement('button'), `<svg viewBox="0 0 40 40" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">${PICON[/** @type {keyof typeof PICON} */ (k)]}</svg><span class="nm">${P.name}</span>`);
+		b.dataset.t = k;
+		b.title = P.desc;
+		b.onclick = () => setProduct({ type: k });
+		$('wzProd').appendChild(b);
+	});
+	/** @param {string} id @param {Record<string,{name:string,css?:string,c?:string}>} list @param {string} key */
+	const swatches = (id, list, key) =>
+		Object.entries(list).forEach(([k, v]) => {
+			const s = document.createElement('button');
+			s.type = 'button';
+			s.className = 'mk-swatch';
+			s.dataset.k = k;
+			s.dataset.key = key;
+			s.title = v.name;
+			s.setAttribute('aria-label', v.name);
+			s.innerHTML = `<i style="background:${v.css || v.c}"></i><span>${v.name}</span>`;
+			s.onclick = () => setProduct({ [key]: k });
+			$(id).appendChild(s);
+		});
+	swatches('mkFrameSw', FRAMES, 'frame');
+	swatches('mkShirtSw', SHIRTS, 'shirt');
+	swatches('mkWallSw', WALLS, 'wall');
+	$('mkMat').addEventListener('change', (e) => setProduct({ mat: /** @type {HTMLInputElement} */ (e.target).checked }));
+
+	// 7 Fertig
 	all('.wz-dl button').forEach(
 		(b) =>
 			(b.onclick = () => {

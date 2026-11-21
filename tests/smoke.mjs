@@ -109,6 +109,35 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 	await page.click('#advBack');
 	await page.waitForTimeout(300);
 	ok(await page.locator('#wiz').isVisible(), 'Zurück zum Assistenten');
+	// Produkt-Mockups
+	await page.click('#wzSteps button[data-step="produkt"]');
+	await page.waitForTimeout(600);
+	ok(await page.locator('#mockup').isVisible(), 'Schritt „Produkt“ zeigt Mockup');
+	const mkBad = [];
+	for (const t of ['poster', 'gerahmt', 'leinwand', 'shirt', 'tasse']) {
+		await page.click(`#wzProd button[data-t="${t}"]`);
+		await page.waitForTimeout(500);
+		const loaded = await page.evaluate(() => {
+			const i = document.querySelector('#mkScene .mk-img');
+			if (!i) return false;
+			if (i.tagName === 'IMG') return i.complete && i.naturalWidth > 0;
+			return !!i.getAttribute('href');
+		});
+		if (!loaded) mkBad.push(t);
+	}
+	ok(mkBad.length === 0, 'Mockups Poster, Rahmen, Leinwand, Shirt, Tasse' + (mkBad.length ? ' – fehlt: ' + mkBad.join(', ') : ''));
+	await page.click('#wzProd button[data-t="gerahmt"]');
+	await page.click('.mk-swatch[data-key="frame"][data-k="eiche"]');
+	await page.waitForTimeout(300);
+	ok(/repeating-linear-gradient/.test(await page.getAttribute('.mk-gerahmt', 'style')), 'Rahmen „Eiche“ gewählt');
+	await page.screenshot({ path: `${OUT}/3b-mockup-desktop.png` });
+	// Pop-Art-Thema
+	await page.click('#wzSteps button[data-step="stil"]');
+	await page.click('#wzStyles button[data-p="popart"]');
+	await page.waitForTimeout(400);
+	ok((await page.$$eval('#symbole use', (u) => u.length)) > 300, 'Pop-Art: Symbolteppich gezeichnet');
+	await page.click('#undo');
+	await page.waitForTimeout(200);
 	// SVG-Export
 	await page.click('#dlBtn');
 	await page.click('#dlFmt button[data-f="svg"]');

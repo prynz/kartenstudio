@@ -9,6 +9,7 @@ import { eff, vT, visRect } from './zustand.js';
 import { dms, panel, viewCenterLL } from './seitenleiste.js';
 import { LAY_DEFAULT } from '../themen/designs.js';
 import { syncWizard } from './assistent.js';
+import { popDefs, popSymbols, popColor } from '../themen/pop.js';
 import { syncTools } from './bedienung.js';
 import { zoom } from './ansicht.js';
 
@@ -143,7 +144,10 @@ export function buildSVG(forExport) {
     const E = app.DATA.ext,
       R0 = RASTER.get(rasterKey());
     o += R0 ? `<image href="${R0.url}" x="${E.x0.toFixed(2)}" y="${E.y0.toFixed(2)}" width="${(E.x1 - E.x0).toFixed(2)}" height="${(E.y1 - E.y0).toFixed(2)}" preserveAspectRatio="none"/>` : `<rect x="${E.x0}" y="${E.y0}" width="${E.x1 - E.x0}" height="${E.y1 - E.y0}" fill="#e9e7e2"/>`;
-  } else ORDER.forEach(k => {
+  } else {
+  const pop = app.S.pop && app.S.pop.pal;
+  if (pop) o += `<defs>${popDefs()}</defs>` + popSymbols(vr, app.S.view.z, pop);
+  ORDER.forEach(k => {
     const groups = new Map();
     app.DATA.feats.forEach(ft => {
       if (ft.k !== k) return;
@@ -152,7 +156,9 @@ export function buildSVG(forExport) {
       const bx = ft.bx;
       if (bx[2] < vr[0] || bx[0] > vr[2] || bx[3] < vr[1] || bx[1] > vr[3]) return;
       const lc = k === 'haus' ? 'stroke-linejoin="miter"' : 'stroke-linecap="round" stroke-linejoin="round"';
-      const fill = ft.a ? e.f : 'none';
+      let fill = ft.a ? e.f : 'none';
+      // Pop-Art: jedes Haus bekommt eine feste Zufallsfarbe (außer es wurde einzeln umgefärbt)
+      if (pop && k === 'haus' && !(app.S.ov[ft.id] && app.S.ov[ft.id].f)) fill = popColor(ft.id, pop);
       const p = `<path id="${ft.fid}" d="${ft.d}" fill="${fill}" fill-rule="evenodd" stroke="${e.s}" stroke-width="${+(e.w * sc).toFixed(3)}" ${lc}${forExport ? '' : ' data-k="' + k + '" data-g="' + ft.id + '"'}/>`;
       const t = ft.t ?? -1;
       if (!groups.has(t)) groups.set(t, []);
@@ -162,6 +168,7 @@ export function buildSVG(forExport) {
       o += t >= 0 ? `<g clip-path="url(#tc${t})">${arr.join('')}</g>` : arr.join('');
     });
   });
+  }
   o += '</g></g></g></g>';
   const ink = app.S.title.color;
   if (g.L.inner > 0) o += mapShape(g, g.L.innerGap + g.L.inner / 2, ` id="innenlinie" transform="translate(${g.mx},${g.my})" fill="none" stroke="${f.w > 0 ? f.color : ink}" stroke-width="${g.L.inner}"`);

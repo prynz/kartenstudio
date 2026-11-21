@@ -46,7 +46,8 @@
 <button data-step="stil"><i>3</i><span>Stil</span></button>
 <button data-step="design"><i>4</i><span>Design</span></button>
 <button data-step="text"><i>5</i><span>Text</span></button>
-<button data-step="fertig"><i>6</i><span>Fertig</span></button>
+<button data-step="produkt"><i>6</i><span>Produkt</span></button>
+<button data-step="fertig"><i>7</i><span>Fertig</span></button>
 </nav>
 <div class="wz-panes">
 <section class="wz-pane" data-step="ort">
@@ -80,6 +81,16 @@
 <label class="wz-field"><span>Untertitel</span><input id="wzSub" class="inp" type="text" autocomplete="off"></label>
 <label class="tog wz-tog"><input type="checkbox" id="wzCoords"><span>Koordinaten anzeigen</span></label>
 </section>
+<section class="wz-pane" data-step="produkt">
+<h3>Produkt &amp; Vorschau</h3>
+<p class="wz-hint">So sieht dein Motiv als fertiges Produkt aus.</p>
+<div class="wz-prod" id="wzProd"></div>
+<div class="mk-opt" data-for="gerahmt"><div class="lab">Rahmen</div><div class="mk-sw" id="mkFrameSw"></div>
+<label class="tog wz-tog"><input type="checkbox" id="mkMat"><span>Passepartout (heller Rand)</span></label></div>
+<div class="mk-opt" data-for="shirt"><div class="lab">Shirtfarbe</div><div class="mk-sw" id="mkShirtSw"></div></div>
+<div class="mk-opt" data-for="poster gerahmt leinwand"><div class="lab">Wandfarbe</div><div class="mk-sw" id="mkWallSw"></div></div>
+<p class="wz-hint mk-note">Bestellen kommt in einem der nächsten Schritte. Die Druckdatei kannst du im nächsten Schritt schon herunterladen.</p>
+</section>
 <section class="wz-pane" data-step="fertig">
 <h3>Fertig – herunterladen</h3>
 <p class="wz-hint">Die Datei hat einen transparenten Hintergrund und eignet sich für Druck und T-Shirts.</p>
@@ -93,7 +104,7 @@
 <div class="wz-foot">
 <button class="wz-back" id="wzBack" aria-label="Zurück"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
 <button class="wz-advbtn" id="wzAdv" title="Alle Detailregler: Linien, einzelne Häuser, Farben tauschen …"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg><span>Erweitert</span></button>
-<button class="wz-next" id="wzNext"><span id="wzNextLabel">Weiter</span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+<button class="wz-next" id="wzNext"><span class="nx"><small>Weiter</small><b id="wzNextLabel">Stil</b></span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
 </div>
 </div>
 
@@ -192,6 +203,7 @@
 
 <section class="stage">
 <div class="canvas checker" id="canvas"><svg id="poster" xmlns="http://www.w3.org/2000/svg"></svg></div>
+<div class="mockup" id="mockup" aria-live="polite"><div class="mk-scene" id="mkScene"></div></div>
 <div class="toolhint" id="toolHint"></div>
 <div class="dock" id="dock">
 <button class="tb on" id="toolSel" title="Auswählen (V)">↖ Auswählen</button>
