@@ -48,6 +48,13 @@ export function geo() {
     my = block > 0 ? top + block + tp : sw + p;
     barTop = my + MH;
     H = my + MH + p + sw;
+  } else if (L.kind === 'bartop') {
+    // Farbbalken oben mit Text, Karte darunter
+    barH = block > 0 ? (S.bar.auto ? Math.round(block + 60 + sw / 2) : S.bar.h) : 0;
+    barTop = 0;
+    my = sw + (barH > 0 ? barH - sw / 2 : 0) + p;
+    H = my + MH + p + sw;
+    top = sw / 2 + (barH - sw / 2 - block) / 2;
   } else if (L.kind === 'over') {
     my = sw + p;
     barTop = my + MH;
@@ -77,9 +84,29 @@ export function coordText() {
 }
 /** Umriss der Kartenfläche (Rechteck oder Kreis), optional um `grow` vergrößert. */
 function mapShape(g, grow, attrs) {
-  if (g.L.shape === 'circle') {
+  const sh = g.L.shape;
+  if (sh === 'circle') {
     const r = Math.min(MW, g.MH) / 2 + grow;
     return `<circle cx="${MW / 2}" cy="${(g.MH / 2).toFixed(1)}" r="${r.toFixed(1)}"${attrs}/>`;
+  }
+  const x0 = -grow,
+    y0 = -grow,
+    w = MW + 2 * grow,
+    h = g.MH + 2 * grow;
+  /** Punkt in relativen Koordinaten (0–1) der Kartenfläche */
+  const P = (u, v) => `${(x0 + u * w).toFixed(1)} ${(y0 + v * h).toFixed(1)}`;
+  if (sh === 'heart') {
+    const d = `M${P(.5, .97)} C${P(.18, .76)} ${P(0, .55)} ${P(0, .31)} C${P(0, .12)} ${P(.14, 0)} ${P(.29, 0)} C${P(.4, 0)} ${P(.47, .06)} ${P(.5, .15)} C${P(.53, .06)} ${P(.6, 0)} ${P(.71, 0)} C${P(.86, 0)} ${P(1, .12)} ${P(1, .31)} C${P(1, .55)} ${P(.82, .76)} ${P(.5, .97)} Z`;
+    return `<path d="${d}"${attrs}/>`;
+  }
+  if (sh === 'hex') return `<path d="M${P(.5, 0)} L${P(1, .25)} L${P(1, .75)} L${P(.5, 1)} L${P(0, .75)} L${P(0, .25)} Z"${attrs}/>`;
+  if (sh === 'arch') {
+    const r = w / 2;
+    return `<path d="M${x0} ${(y0 + h).toFixed(1)} L${x0} ${(y0 + r).toFixed(1)} A${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 ${(x0 + w).toFixed(1)} ${(y0 + r).toFixed(1)} L${(x0 + w).toFixed(1)} ${(y0 + h).toFixed(1)} Z"${attrs}/>`;
+  }
+  if (sh === 'rounded') {
+    const r = Math.max(0, 44 + grow);
+    return `<rect x="${x0}" y="${y0}" width="${w}" height="${h.toFixed(1)}" rx="${r}" ry="${r}"${attrs}/>`;
   }
   return `<rect x="${-grow}" y="${-grow}" width="${MW + 2 * grow}" height="${(g.MH + 2 * grow).toFixed(1)}"${attrs}/>`;
 }
@@ -144,6 +171,7 @@ export function buildSVG(forExport) {
     o += `<defs><linearGradient id="gFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${paper}" stop-opacity="0"/><stop offset=".55" stop-color="${paper}" stop-opacity=".82"/><stop offset="1" stop-color="${paper}" stop-opacity=".95"/></linearGradient></defs>`;
     o += `<rect id="verlauf" x="${g.mx}" y="${y0.toFixed(1)}" width="${MW}" height="${(g.my + g.MH - y0).toFixed(1)}" fill="url(#gFade)" clip-path="url(#cIn)"/>`;
   }
+  if (g.L.kind === 'bartop' && g.barH > 0) o += `<rect id="balken" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.barH).toFixed(1)}" fill="${app.S.bar.color}" clip-path="url(#cOut)"/>`;
   if (g.L.kind === 'bar' && app.S.bar.on && g.barH > 0) o += `<rect id="balken" x="${f.w / 2}" y="${g.barTop.toFixed(1)}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - g.barTop).toFixed(1)}" fill="${app.S.bar.color}" clip-path="url(#cOut)"/>`;
   if (f.w > 0) o += `<rect id="rahmen" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="none" stroke="${f.color}" stroke-width="${f.w}"/>`;
   [['title', g.yT], ['sub', g.yS]].forEach(([k, y]) => {
@@ -151,10 +179,14 @@ export function buildSVG(forExport) {
     if (!t.on || !t.text) return;
     o += `<text id="${k === 'title' ? 'titel' : 'untertitel'}" x="${(g.W / 2 + t.ls / 2).toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" font-family="${t.font}" font-size="${t.size}" letter-spacing="${t.ls}" fill="${t.color}">${esc(t.text)}</text>`;
   });
+  if (g.L.rule && app.S.title.on && app.S.title.text && app.S.sub.on && app.S.sub.text) {
+    const yr = (g.yT + (g.yS - app.S.sub.size * CAP[app.S.sub.font])) / 2;
+    o += `<line id="zierlinie" x1="${(g.W / 2 - 70).toFixed(1)}" x2="${(g.W / 2 + 70).toFixed(1)}" y1="${yr.toFixed(1)}" y2="${yr.toFixed(1)}" stroke="${app.S.title.color}" stroke-width="2.5" stroke-linecap="round"/>`;
+  }
   if (g.L.coords && app.DATA) o += `<text id="koordinaten" x="${(g.W / 2 + 1.5).toFixed(2)}" y="${g.yC.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.cSize}" letter-spacing="3" fill="${app.S.sub.color}" fill-opacity="0.85">${esc(coordText())}</text>`;
   if (app.S.attr.on) {
     const inBar = g.L.kind === 'bar' && app.S.bar.on && g.barH > 0;
-    const onPaper = !inBar && g.L.kind !== 'top';
+    const onPaper = !inBar && g.L.kind !== 'top' && g.L.kind !== 'bartop';
     const col = inBar || onPaper ? app.S.title.color : app.S.mode === 'std' ? BASES[app.S.base].sat || app.S.base === 'dark' || app.S.base === 'fiord' ? '#ffffff' : '#333333' : app.S.cls.haupt.s;
     const x = g.W - g.sw - g.p - 4;
     const y = inBar ? g.H - g.sw - 8 : g.L.kind === 'below' ? g.H - g.sw - Math.min(14, g.p / 2 + 4) : g.my + g.MH - 6;
@@ -169,6 +201,12 @@ export function render() {
   const tmp = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;
   app.poster.setAttribute('viewBox', tmp.getAttribute('viewBox'));
   app.poster.innerHTML = tmp.innerHTML;
+  // Vorschau-Hintergrund (Karomuster = transparent) genau in der Umrissform des Posters
+  const pv = app.previewBg || 'checker';
+  const bgFill = pv === 'checker' ? 'url(#pvChecker)' : pv;
+  const defs = app.poster.querySelector('defs');
+  if (pv === 'checker') defs.insertAdjacentHTML('beforeend', '<pattern id="pvChecker" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="#fff"/><rect width="12" height="12" fill="#ececec"/><rect x="12" y="12" width="12" height="12" fill="#ececec"/></pattern>');
+  defs.insertAdjacentHTML('afterend', `<rect id="vorschau" x="0" y="0" width="100%" height="100%" fill="${bgFill}" clip-path="url(#cOut)" pointer-events="none"/>`);
   const g = geo();
   const hits = document.createElementNS(NS, 'g');
   hits.setAttribute('transform', vT(g));

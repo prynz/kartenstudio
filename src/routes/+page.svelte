@@ -90,8 +90,11 @@
 </div>
 </section>
 </div>
-<div class="wz-foot"><button class="btn" id="wzBack">‹ Zurück</button><button class="btn primary" id="wzNext">Weiter ›</button></div>
-<button class="wz-adv" id="wzAdv">⚙ Erweiterte Einstellungen</button>
+<div class="wz-foot">
+<button class="wz-back" id="wzBack" aria-label="Zurück"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+<button class="wz-advbtn" id="wzAdv" title="Alle Detailregler: Linien, einzelne Häuser, Farben tauschen …"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg><span>Erweitert</span></button>
+<button class="wz-next" id="wzNext"><span id="wzNextLabel">Weiter</span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+</div>
 </div>
 
 <!-- Erweiterte Einstellungen: alle Detailregler aus dem Prototyp -->

@@ -3,13 +3,14 @@
 // wie Rahmen, Karte und Text angeordnet sind. Beides ist frei kombinierbar.
 
 /**
- * @typedef {'bar'|'below'|'top'|'over'} LayKind
+ * @typedef {'bar'|'bartop'|'below'|'top'|'over'} LayKind
  * @typedef {{
- *   kind: LayKind,      // bar: Text im Farbbalken unten · below: Text frei unter der Karte · top: Text über der Karte · over: Text über der Karte gelegt
+ *   kind: LayKind,      // + bartop: Farbbalken oben
+ *   rule?: boolean,     // Zierlinie zwischen Titel und Untertitel      // bar: Text im Farbbalken unten · below: Text frei unter der Karte · top: Text über der Karte · over: Text über der Karte gelegt
  *   textPad: number,    // Luft über und unter dem Textblock (below/top)
  *   inner: number,      // Stärke einer feinen Linie direkt um die Karte (0 = keine)
  *   innerGap: number,   // Abstand dieser Linie zur Karte
- *   shape: 'rect'|'circle',
+ *   shape: 'rect'|'circle'|'heart'|'hex'|'arch'|'rounded',
  *   coords: boolean,    // zusätzliche Zeile mit Koordinaten
  *   fade: boolean       // (over) weicher Verlauf hinter dem Text
  * }} Lay
@@ -20,12 +21,13 @@
  *   lay: Partial<Lay>,
  *   title?: {size?:number, ls?:number},
  *   sub?: {size?:number, ls?:number},
- *   aspect?: number
+ *   aspect?: number,
+ *   gap?: number        // Abstand Titel–Untertitel
  * }} Design
  */
 
 /** @type {Lay} */
-export const LAY_DEFAULT = { kind: 'bar', textPad: 0, inner: 0, innerGap: 0, shape: 'rect', coords: false, fade: false };
+export const LAY_DEFAULT = { kind: 'bar', textPad: 0, inner: 0, innerGap: 0, shape: 'rect', coords: false, fade: false, rule: false };
 
 /** @type {Record<string, Design>} */
 export const DESIGNS = {
@@ -38,6 +40,32 @@ export const DESIGNS = {
 		title: { size: 72, ls: 14 },
 		sub: { size: 38, ls: 1 }
 	},
+	klassisch: {
+		name: 'Klassisch',
+		desc: 'Schlanker, eckiger Rahmen mit Textbalken – zeitlos.',
+		frame: { w: 6, r: 0, pad: 10 },
+		bar: true,
+		lay: { kind: 'bar' },
+		title: { size: 72, ls: 16 },
+		sub: { size: 36, ls: 1 }
+	},
+	balkenoben: {
+		name: 'Balken oben',
+		desc: 'Farbiger Kopfbalken mit dem Ortsnamen, Karte darunter.',
+		frame: { w: 10, r: 28, pad: 12 },
+		lay: { kind: 'bartop' },
+		title: { size: 70, ls: 16 },
+		sub: { size: 36, ls: 1 }
+	},
+	koordinaten: {
+		name: 'Mit Koordinaten',
+		desc: 'Schlanker Rahmen, Balken mit Ort, Region und Koordinaten.',
+		frame: { w: 8, r: 0, pad: 12 },
+		bar: true,
+		lay: { kind: 'bar', coords: true },
+		title: { size: 68, ls: 16 },
+		sub: { size: 34, ls: 1 }
+	},
 	galerie: {
 		name: 'Galerie',
 		desc: 'Feiner Rahmen, viel Luft, der Titel steht frei unter der Karte.',
@@ -45,6 +73,23 @@ export const DESIGNS = {
 		lay: { kind: 'below', textPad: 44 },
 		title: { size: 66, ls: 22 },
 		sub: { size: 34, ls: 1 }
+	},
+	minimal: {
+		name: 'Minimal',
+		desc: 'Ohne Rahmen, viel Weißraum, zurückhaltende Schrift.',
+		frame: { w: 0, r: 0, pad: 40 },
+		lay: { kind: 'below', textPad: 52 },
+		title: { size: 48, ls: 28 },
+		sub: { size: 28, ls: 2 }
+	},
+	linie: {
+		name: 'Elegant',
+		desc: 'Feiner Rahmen, Titel und Untertitel durch eine Zierlinie getrennt.',
+		frame: { w: 1.5, r: 0, pad: 32 },
+		lay: { kind: 'below', textPad: 50, rule: true },
+		title: { size: 60, ls: 24 },
+		sub: { size: 32, ls: 1 },
+		gap: 50
 	},
 	passepartout: {
 		name: 'Passepartout',
@@ -62,6 +107,14 @@ export const DESIGNS = {
 		title: { size: 64, ls: 16 },
 		sub: { size: 34, ls: 1 }
 	},
+	breit: {
+		name: 'Breiter Rahmen',
+		desc: 'Kräftiger, farbiger Rahmen wie bei einem Bilderrahmen.',
+		frame: { w: 34, r: 0, pad: 0 },
+		lay: { kind: 'below', textPad: 42 },
+		title: { size: 66, ls: 18 },
+		sub: { size: 34, ls: 1 }
+	},
 	polaroid: {
 		name: 'Polaroid',
 		desc: 'Gleichmäßiger Rand, unten breit für den Text – wie ein Sofortbild.',
@@ -70,14 +123,13 @@ export const DESIGNS = {
 		title: { size: 62, ls: 12 },
 		sub: { size: 34, ls: 1 }
 	},
-	kreis: {
-		name: 'Kreis',
-		desc: 'Die Karte als runder Ausschnitt, Text darunter.',
-		frame: { w: 0, r: 0, pad: 48 },
-		lay: { kind: 'below', textPad: 42, shape: 'circle', inner: 3, innerGap: 12 },
-		title: { size: 66, ls: 18 },
-		sub: { size: 34, ls: 1 },
-		aspect: 1
+	abgerundet: {
+		name: 'Abgerundet',
+		desc: 'Karte mit weichen Ecken auf hellem Grund, ohne Rahmen.',
+		frame: { w: 0, r: 0, pad: 34 },
+		lay: { kind: 'below', textPad: 46, shape: 'rounded' },
+		title: { size: 64, ls: 18 },
+		sub: { size: 34, ls: 1 }
 	},
 	randlos: {
 		name: 'Randlos',
@@ -95,14 +147,41 @@ export const DESIGNS = {
 		title: { size: 70, ls: 18 },
 		sub: { size: 34, ls: 1 }
 	},
-	koordinaten: {
-		name: 'Mit Koordinaten',
-		desc: 'Schlanker Rahmen, Balken mit Ort, Region und Koordinaten.',
-		frame: { w: 8, r: 0, pad: 12 },
-		bar: true,
-		lay: { kind: 'bar', coords: true },
-		title: { size: 68, ls: 16 },
-		sub: { size: 34, ls: 1 }
+	kreis: {
+		name: 'Kreis',
+		desc: 'Die Karte als runder Ausschnitt, Text darunter.',
+		frame: { w: 0, r: 0, pad: 48 },
+		lay: { kind: 'below', textPad: 42, shape: 'circle', inner: 3, innerGap: 12 },
+		title: { size: 66, ls: 18 },
+		sub: { size: 34, ls: 1 },
+		aspect: 1
+	},
+	bogen: {
+		name: 'Bogenfenster',
+		desc: 'Die Karte als Bogen – wie ein Blick durchs Fenster.',
+		frame: { w: 0, r: 0, pad: 46 },
+		lay: { kind: 'below', textPad: 44, shape: 'arch', inner: 2.5, innerGap: 12 },
+		title: { size: 64, ls: 18 },
+		sub: { size: 34, ls: 1 },
+		aspect: 1.25
+	},
+	sechseck: {
+		name: 'Sechseck',
+		desc: 'Die Karte als Sechseck ausgeschnitten.',
+		frame: { w: 0, r: 0, pad: 46 },
+		lay: { kind: 'below', textPad: 40, shape: 'hex', inner: 3, innerGap: 12 },
+		title: { size: 64, ls: 18 },
+		sub: { size: 34, ls: 1 },
+		aspect: 1.1547
+	},
+	herz: {
+		name: 'Herz',
+		desc: 'Dein Ort in Herzform – ideal als Geschenk.',
+		frame: { w: 0, r: 0, pad: 46 },
+		lay: { kind: 'below', textPad: 36, shape: 'heart', inner: 3, innerGap: 12 },
+		title: { size: 64, ls: 18 },
+		sub: { size: 34, ls: 1 },
+		aspect: 1
 	}
 };
 
@@ -151,7 +230,8 @@ export function applyDesign(S, key, preset, full) {
 		if (D.sub) Object.assign(S.sub, D.sub);
 		S.bar.auto = true;
 	}
-	if (S.lay.kind === 'bar') {
+	if (full) S.bar.gap = D.gap ?? 20;
+	if (S.lay.kind === 'bar' || S.lay.kind === 'bartop') {
 		S.title.color = preset.text;
 		S.sub.color = preset.text;
 	} else {

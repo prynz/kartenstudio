@@ -27,6 +27,8 @@ const $ = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
 export const STEPS = ['ort', 'ausschnitt', 'stil', 'design', 'text', 'fertig'];
 /** Welcher Abschnitt der erweiterten Einstellungen passt zu welchem Schritt */
 /** @type {Record<string,string>} */
+const LABEL = { ort: 'Ort', ausschnitt: 'Ausschnitt', stil: 'Stil', design: 'Design', text: 'Text', fertig: 'Fertig' };
+/** @type {Record<string,string>} */
 const ADV_FOR = { ort: 'ausschnitt', ausschnitt: 'ausschnitt', stil: 'stil', design: 'rahmen', text: 'text', fertig: 'farben' };
 
 let step = 'stil';
@@ -52,9 +54,9 @@ export function goStep(next, animate = true) {
 		b.classList.toggle('done', i < idx);
 		b.setAttribute('aria-current', i === idx ? 'step' : 'false');
 	});
-	$('wzBack').style.visibility = idx === 0 ? 'hidden' : '';
+	/** @type {HTMLButtonElement} */ ($('wzBack')).disabled = idx === 0;
 	$('wzNext').classList.toggle('hidden', idx === STEPS.length - 1);
-	$('wzNext').textContent = idx === STEPS.length - 2 ? 'Fertig ›' : 'Weiter ›';
+	$('wzNextLabel').textContent = idx < STEPS.length - 1 ? `Weiter: ${LABEL[STEPS[idx + 1]]}` : '';
 	const pane = document.querySelector(`.wz-pane[data-step="${next}"]`);
 	if (animate && dir && pane && !reducedMotion()) {
 		pane.animate(
@@ -113,7 +115,7 @@ function renderDesignThumbs() {
 			applyDesign(c, k, PRESETS[c.preset], true);
 			const D = DESIGNS[k];
 			if (D.aspect) c.view.a = D.aspect;
-			else if (keep.lay && keep.lay.shape === 'circle' && keep.aPrev) c.view.a = keep.aPrev;
+			else if (keep.design && DESIGNS[keep.design] && DESIGNS[keep.design].aspect && keep.aPrev) c.view.a = keep.aPrev;
 			app.S = c;
 			clampView(c.view);
 			const url = URL.createObjectURL(new Blob([buildSVG(true)], { type: 'image/svg+xml' }));
@@ -247,7 +249,8 @@ export function initWizard() {
 		b.onclick = () =>
 			change(() => {
 				const S = app.S;
-				const wasCircle = S.lay && S.lay.shape === 'circle';
+				// Formen wie Kreis/Herz brauchen ein festes Seitenverhältnis; beim Verlassen das vorige wiederherstellen
+				const wasCircle = !!(S.design && DESIGNS[S.design] && DESIGNS[S.design].aspect);
 				applyDesign(S, k, PRESETS[S.preset], true);
 				if (DESIGNS[k].aspect) {
 					if (!wasCircle) S.aPrev = S.view.a;

@@ -81,13 +81,10 @@ export function initEditorAnsicht() {
   document.querySelectorAll('[data-bg]').forEach(b => b.onclick = () => {
     const c = $('canvas');
     document.querySelectorAll('[data-bg]').forEach(x => x.classList.toggle('on', x === b));
-    if (b.dataset.bg === 'checker') {
-      c.classList.add('checker');
-      app.poster.style.background = '';
-    } else {
-      c.classList.remove('checker');
-      app.poster.style.background = b.dataset.bg;
-    }
+    // Vorschau-Hintergrund wird im Poster in Rahmenform gezeichnet (siehe render), nicht als Rechteck dahinter
+    c.classList.toggle('checker', b.dataset.bg === 'checker');
+    app.previewBg = b.dataset.bg;
+    render();
   });
   window.addEventListener('resize', zoom);
   $('zoom').addEventListener('input', zoom);
