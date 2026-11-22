@@ -89,6 +89,8 @@ export function newState(presetKey, keep) {
     if (keep.occasion) st.occasion = keep.occasion;
     if (keep.sky) st.sky = { ...keep.sky };
     if (keep.motif) st.motif = keep.motif;
+    if (keep.route) st.route = JSON.parse(JSON.stringify(keep.route));
+    if (keep.multi) st.multi = JSON.parse(JSON.stringify(keep.multi));
   }
   // Design (Aufbau/Rahmen) bleibt beim Wechsel des Farbthemas erhalten
   applyDesign(st, keep && keep.design || 'siegritz', p, !keep);

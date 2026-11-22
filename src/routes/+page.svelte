@@ -56,6 +56,20 @@
 <div class="search wz-search"><input id="wq" type="search" placeholder="Dorf, Stadt oder Adresse" autocomplete="off" enterkeyhint="search"><button class="btn primary" id="wgo">Suchen</button><div class="results hidden" id="wresults"></div></div>
 <div class="lab">Vorlage für einen Anlass</div>
 <div class="occ" data-occ></div>
+<div class="lab">Route einzeichnen</div>
+<p class="wz-hint">Wanderung, Lauf oder Radtour aus deiner Sport-App (Datei .gpx) – die Karte richtet sich nach der Strecke.</p>
+<button type="button" class="btn" id="routeBtn">GPS-Datei laden (.gpx)</button>
+<input type="file" id="routeFile" accept=".gpx,.geojson,.json,application/gpx+xml,application/geo+json" hidden>
+<div class="rt hidden" id="routeBox"><div class="rt-info" id="routeInfo"></div>
+<div class="mk-sw" id="routeCol"></div>
+<div class="row"><span class="k">Linienstärke</span><input type="range" id="routeW" min="2" max="18" step="1"></div>
+<button type="button" class="wz-link" id="routeRm">Route entfernen</button></div>
+<div class="lab">Mehrere Orte</div>
+<label class="tog wz-tog"><input type="checkbox" id="multiOn"><span>Bis zu 3 Orte auf einem Poster</span></label>
+<div class="mo hidden" id="multiBox">
+<div id="multiList"></div>
+<div class="search wz-search" id="multiAdd"><input id="mq" type="search" placeholder="Weiteren Ort hinzufügen" autocomplete="off" enterkeyhint="search"><button class="btn primary" id="mgo">Suchen</button><div class="results hidden" id="mresults"></div></div>
+</div>
 </section>
 <section class="wz-pane" data-step="ausschnitt">
 <h3>Ausschnitt</h3>

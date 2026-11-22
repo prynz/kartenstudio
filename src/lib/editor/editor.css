@@ -468,3 +468,17 @@ aside.nodata .wiz{opacity:.45;pointer-events:none}
 .wz-sky.hidden{display:none}
 .wz-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .wz-row2 .inp{width:100%;box-sizing:border-box}
+/* Mehrere Orte */
+.mo.hidden,#multiAdd.hidden{display:none}
+.mo-row{background:var(--hover,#f3f2ef);border-radius:12px;padding:10px 12px;margin:8px 0}
+.mo-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:13.5px}
+.mo-head span{display:flex;gap:4px}
+.mo-head button{all:unset;width:30px;height:30px;display:grid;place-items:center;border-radius:8px;background:#fff;border:1px solid var(--line,#e4e2dd);cursor:pointer;font-size:15px}
+.mo-head button:hover{border-color:var(--slate,#262c3a)}
+.mo-head button:focus-visible{outline:2px solid var(--accent,#2f6fe4);outline-offset:1px}
+.mo-row .inp{width:100%;box-sizing:border-box}
+/* Route */
+.rt.hidden{display:none}
+.rt-info{font-size:13.5px;margin:10px 0 8px}
+.rt .row{margin-top:8px}
+#routeBtn{width:100%;justify-content:center}

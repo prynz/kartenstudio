@@ -47,6 +47,8 @@ export function pickPlace(f, q) {
   if (!inPicker) {
     // Direkt zum fertigen Poster – ohne Umweg über das Kartenfenster
     const a = app.S ? app.S.view.a : +$('aspect').value || 0.8805;
+    // Neuer Ort: eine geladene Route gehört nicht mehr dazu
+    if (app.S && app.S.route) app.S.route = null;
     loadBounds(placeBounds(p, lon, lat, a), { center: [lon, lat] });
     return;
   }

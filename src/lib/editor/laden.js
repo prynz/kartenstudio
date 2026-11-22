@@ -80,6 +80,23 @@ export async function generate() {
   return loadBounds(frameBounds(), { center: [c.lng, c.lat] });
 }
 
+/**
+ * Kartendaten aus Vektorkacheln holen (mit Rand zum Nachjustieren) – oder null.
+ * Wird auch für zusätzliche Orte (mehrere Orte auf einem Poster) genutzt.
+ */
+export async function tileData(b, place) {
+  const mw = meters(b).w;
+  try {
+    const big = expand(b, mw < 1500 ? 0.5 : mw < 3000 ? 0.35 : 0.2);
+    const tiles = await fetchTiles(big);
+    const data = buildDataTiles(tiles, b, big, place);
+    return data.feats.length ? data : null;
+  } catch (e) {
+    console.warn('Kacheln fehlgeschlagen', e);
+    return null;
+  }
+}
+
 /** Fehlermeldung dort zeigen, wo der Nutzer gerade ist (Kartenfenster oder Editor). */
 function loadErr(t) {
   if (!$('picker').classList.contains('hidden')) setGen(t, 'err');
@@ -90,13 +107,14 @@ function loadErr(t) {
  * Kartendaten für einen Bereich laden und in den Editor übernehmen.
  * Wird vom Kartenfenster („Ausschnitt übernehmen“) und direkt aus der Suche genutzt.
  * @param {{w:number,e:number,n:number,s:number}} b sichtbarer Ausschnitt
- * @param {{center?:number[], keepLoader?:boolean}} [opt]
+ * @param {{center?:number[], keepLoader?:boolean, maxW?:number}} [opt]
  */
 export async function loadBounds(b, opt = {}) {
   if (app.genBusy) return false;
   const m = meters(b);
-  if (!(m.w > 50) || m.w > 6000) {
-    loadErr('Der Ausschnitt ist zu groß (über 6 km breit). Bitte näher heranzoomen.');
+  const maxW = opt.maxW || 6000;
+  if (!(m.w > 50) || m.w > maxW) {
+    loadErr(`Der Ausschnitt ist zu groß (über ${Math.round(maxW / 1000)} km breit). Bitte näher heranzoomen.`);
     return false;
   }
   // Ladeanzeige dort einblenden, wo man gerade ist
@@ -115,20 +133,13 @@ export async function loadBounds(b, opt = {}) {
       region: pl0.region || '',
       center: opt.center || [(b.w + b.e) / 2, (b.n + b.s) / 2]
     };
-    try {
-      const big = expand(b, m.w < 1500 ? 0.5 : m.w < 3000 ? 0.35 : 0.2);
-      const tiles = await fetchTiles(big);
-      data = buildDataTiles(tiles, b, big, place0);
-      if (!data.feats.length) data = null;
-    } catch (e) {
-      console.warn('Kacheln fehlgeschlagen, nutze Overpass', e);
-      data = null;
-    }
+    data = await tileData(b, place0);
     if (!data) {
       if (!L.style.display || L.style.display === 'none') {
         clearTimeout(ldTimer);
         startLoader();
       }
+      if (m.w > 6000) throw new Error('Für so große Gebiete sind keine Kartendaten verfügbar');
       const res = await fetchOSM(b);
       data = buildData(res.osm, b, res.bb, place0);
     }

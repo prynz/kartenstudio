@@ -397,6 +397,63 @@ await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (pag
 });
 
 if (ONLINE)
+	await run('Desktop – Route aus GPS-Datei', { viewport: { width: 1440, height: 900 } }, async (page) => {
+		await page.click('#demoBtn');
+		await page.waitForTimeout(900);
+		await page.click('#wzSteps button[data-step="ort"]');
+		await page.setInputFiles('#routeFile', new globalThis.URL('./fixtures/route-bamberg.gpx', import.meta.url).pathname);
+		await page.waitForSelector('#route', { timeout: 60000 }).catch(() => {});
+		await page.waitForTimeout(800);
+		ok((await page.$('#route')) !== null, 'Route eingezeichnet');
+		ok((await page.textContent('#poster')).includes('BAMBERG-RUNDE'), 'Titel aus der GPS-Datei: „BAMBERG-RUNDE“');
+		ok(/\d+,\d km/.test(await page.textContent('#untertitel')), 'Streckenlänge als Untertitel: ' + (await page.textContent('#untertitel')));
+		const rb = await page.locator('#route').boundingBox();
+		const mb = await page.locator('#poster').boundingBox();
+		ok(rb && rb.width > mb.width * 0.55, 'Karte passt sich der Strecke an');
+		await page.click('#wzSteps button[data-step="ort"]');
+		await page.click('#routeCol button[data-c="#2f6fe4"]');
+		await page.waitForTimeout(400);
+		await page.screenshot({ path: `${OUT}/22-route.png` });
+	});
+
+if (ONLINE)
+	await run('Desktop – Mehrere Orte auf einem Poster', { viewport: { width: 1440, height: 900 } }, async (page) => {
+		await page.click('#demoBtn');
+		await page.waitForTimeout(900);
+		await page.click('#wzSteps button[data-step="ort"]');
+		await page.check('#multiOn');
+		await page.waitForTimeout(400);
+		ok((await page.$$('#kartenInhalt clipPath[id^="mo"]')).length === 1, 'Mehrere Orte eingeschaltet (Siegritz als Kreis)');
+		for (const q of ['Bamberg', 'Nürnberg']) {
+			await page.fill('#mq', q);
+			await page.click('#mgo');
+			await page.waitForSelector('#mresults button', { timeout: 20000 });
+			await page.click('#mresults button');
+			await page.waitForTimeout(400);
+		}
+		await page.waitForFunction(() => !document.querySelector('#kartenInhalt')?.textContent.includes('lädt'), null, { timeout: 60000 }).catch(() => {});
+		await page.waitForTimeout(800);
+		ok((await page.$$('#kartenInhalt clipPath[id^="mo"]')).length === 3, 'Drei Orte nebeneinander');
+		const t = await page.textContent('#kartenInhalt');
+		ok(t.includes('BAMBERG') && t.includes('NÜRNBERG') && t.includes('SIEGRITZ'), 'Alle Ortsnamen beschriftet');
+		await page.fill('#multiList input[data-i="0"]', 'Aufgewachsen');
+		await page.fill('#multiList input[data-i="1"]', 'Studiert · 2012');
+		await page.fill('#multiList input[data-i="2"]', 'Zuhause seit 2020');
+		await page.click('#multiList button[data-act="zin"][data-i="2"]');
+		await page.fill('#wzTitle', 'UNSERE ORTE').catch(() => {});
+		await page.click('#wzSteps button[data-step="text"]');
+		await page.fill('#wzTitle', 'UNSERE ORTE');
+		await page.fill('#wzSub', 'Franken');
+		await page.waitForTimeout(600);
+		ok((await page.textContent('#kartenInhalt')).includes('Zuhause seit 2020'), 'Eigene Zeile je Ort');
+		await page.screenshot({ path: `${OUT}/20-mehrere-orte.png` });
+		await page.click('#wzSteps button[data-step="ausschnitt"]');
+		await page.click('.wz-pane[data-step="ausschnitt"] [data-sizes] button[data-k="a3"]');
+		await page.waitForTimeout(800);
+		await page.screenshot({ path: `${OUT}/21-mehrere-orte-a3.png` });
+	});
+
+if (ONLINE)
 	await run('Desktop – echte Suche „Bamberg“ direkt ins Poster', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }, async (page) => {
 		await page.fill('#lq', 'Bamberg');
 		await page.click('#lgo');

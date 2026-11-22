@@ -13,6 +13,8 @@ import { LAY_DEFAULT } from '../themen/designs.js';
 import { syncWizard } from './assistent.js';
 import { popDefs, popSymbols, popColor, popK } from '../themen/pop.js';
 import { loadSky, skyReady, skySVG } from '../themen/himmel.js';
+import { multiKey, multiOn, multiSVG } from './mehrere.js';
+import { routeSVG } from './route.js';
 import { syncTools } from './bedienung.js';
 import { zoom } from './ansicht.js';
 
@@ -125,8 +127,10 @@ function mapShape(g, grow, attrs) {
  * @param {boolean} forExport
  * @param {number[]} vr Kartenbereich, der gezeichnet wird [x0,y0,x1,y1]
  */
-function mapContent(forExport, vr) {
+export function mapContent(forExport, vr) {
   let o = '';
+  // Mehrere Orte: Kreise nebeneinander (TCP.p ≠ 'tc' heißt: wir zeichnen gerade einen der Orte)
+  if (multiOn() && TCP.p === 'tc') return multiSVG(forExport);
   // Sternenhimmel statt Karte: Kreis füllt die Kartenfläche, unabhängig vom Kartenausschnitt
   if (app.S.motif === 'sterne' && app.S.sky) {
     const v = app.S.view,
@@ -168,12 +172,15 @@ function mapContent(forExport, vr) {
       groups.get(t).push(p);
     });
     groups.forEach((arr, t) => {
-      o += t >= 0 ? `<g clip-path="url(#tc${t})">${arr.join('')}</g>` : arr.join('');
+      o += t >= 0 ? `<g clip-path="url(#${TCP.p}${t})">${arr.join('')}</g>` : arr.join('');
     });
   });
   }
   return o;
 }
+
+/** Kennung der Kachel-Ausschnitte (bei mehreren Orten je Ort eigene) */
+export const TCP = { p: 'tc' };
 
 /* ---------- Zwischenspeicher für die Karte ----------
    Text-, Rahmen- oder Designänderungen bauen die Karte nicht neu auf: Der fertige
@@ -181,7 +188,7 @@ function mapContent(forExport, vr) {
 const MC = { key: '', node: null, hits: null, rect: null, z: 0 };
 function mapKey() {
   const S = app.S;
-  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0]);
+  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, multiKey(), multiOn() ? [S.view.cx, S.view.cy, S.view.a, S.bg, S.title.color, S.sub.font] : 0, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0]);
 }
 /** Sichtbarer Bereich plus großzügiger Rand, damit Verschieben ohne Neuzeichnen geht */
 function cullRect() {
@@ -302,12 +309,13 @@ export const PIN_SHAPES = {
 /** Pins als SVG – in eigener Ebene über der Karte, Größe unabhängig vom Zoom */
 function pinsSVG(g, forExport) {
   const pins = app.S.pins || [];
-  if (!pins.length || app.S.motif === 'sterne') return '';
+  const route = app.S.route ? routeSVG() : '';
+  if ((!pins.length && !route) || app.S.motif === 'sterne' || multiOn()) return '';
   const v = app.S.view,
     k = 1 / v.z,
     sz = (app.S.pinSize || 1) * 1.25;
   const col = app.S.pinColor || '#d64545';
-  let o = `<g id="pins" clip-path="url(#cIn)"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><g id="pinsAnsicht" transform="${vT(g).replace(/^translate\([^)]*\) /, '')}">`;
+  let o = `<g id="pins" clip-path="url(#cIn)"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><g id="pinsAnsicht" transform="${vT(g).replace(/^translate\([^)]*\) /, '')}">` + route;
   pins.forEach((p, i) => {
     const S = PIN_SHAPES[p.i] || PIN_SHAPES.herz;
     const s = (k * sz).toFixed(4);
@@ -328,6 +336,7 @@ export function buildSVG(forExport) {
   [app.S.title, app.S.sub].forEach(t => {
     if (t.on && t.text) fonts.add(t.font);
   });
+  if (multiOn()) ['SgXB', 'SgMD', app.S.sub.font].forEach(f => fonts.add(f));
   if (app.S.attr.on || g.L.coords || g.note || (app.S.motif === 'sterne' && app.S.sky && (app.S.sky.names || app.S.sky.grid))) fonts.add('SgMD');
   o += '<defs>';
   if (forExport && fonts.size) {

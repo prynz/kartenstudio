@@ -22,6 +22,8 @@ import { SIZES, fitPrint, paperOrFree, quality, exportDpi } from './druck.js';
 import { PIN_SHAPES } from './zeichnen.js';
 import { shareLink } from './entwurf.js';
 import { ANLAESSE } from '../themen/anlaesse.js';
+import { initMulti, syncMulti } from './mehrere.js';
+import { initRoute, syncRoute } from './route.js';
 import { SKY_THEMES, defaultSky, loadSky, skyLabel } from '../themen/himmel.js';
 import { viewCenterLL } from './seitenleiste.js';
 import { esc } from './basis.js';
@@ -209,6 +211,8 @@ export function syncWizard() {
 	const n = /** @type {HTMLInputElement} */ ($('wzNote'));
 	if (document.activeElement !== n) n.value = (S.note && S.note.text) || '';
 	syncPins();
+	syncMulti();
+	syncRoute();
 	/** @type {HTMLInputElement} */ ($('fxPaper')).checked = !!(S.fx && S.fx.paper);
 	/** @type {HTMLInputElement} */ ($('fxVig')).checked = !!(S.fx && S.fx.vig);
 	all('[data-occ] button').forEach((b) => b.classList.toggle('on', b.dataset.k === S.occasion));
@@ -613,6 +617,9 @@ export function initWizard() {
 			)
 		)
 	);
+
+	initMulti();
+	initRoute();
 
 	// Anlass-Vorlagen (Startseite und Schritt „Ort“)
 	all('[data-occ]').forEach((box) =>
