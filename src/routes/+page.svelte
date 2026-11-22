@@ -134,8 +134,9 @@
 <div class="row"><span class="k">Linienstärke</span><input type="range" id="routeW" min="2" max="18" step="1"></div>
 <button type="button" class="wz-link" id="routeRm">Route entfernen</button></div>
 <div class="lab">Mehrere Orte</div>
-<label class="tog wz-tog"><input type="checkbox" id="multiOn"><span>Bis zu 3 Orte auf einem Poster</span></label>
+<label class="tog wz-tog"><input type="checkbox" id="multiOn"><span>Bis zu 4 Orte auf einem Poster</span></label>
 <div class="mo hidden" id="multiBox">
+<div class="tabs2" id="multiForm" role="tablist"><button type="button" data-f="kreis">Kreise</button><button type="button" data-f="raster">Raster (bis 4)</button></div>
 <div id="multiList"></div>
 <div class="search wz-search" id="multiAdd"><input id="mq" type="search" placeholder="Weiteren Ort hinzufügen" autocomplete="off" enterkeyhint="search"><button class="btn primary" id="mgo">Suchen</button><div class="results hidden" id="mresults"></div></div>
 </div>
@@ -184,16 +185,23 @@
 <p class="wz-hint">Wie Rahmen, Karte und Text angeordnet sind. Die Farben kommen vom Stil.</p>
 <div class="wz-cards wz-designs kurz" id="wzDesigns"></div>
 <button type="button" class="wz-link wz-alle" data-alle="wzDesigns">Alle Designs anzeigen ›</button>
+<div class="hidden" id="wzFokus"><div class="lab">Farbe des Flecks</div><div class="wz-chips wz-farben" id="wzFokusFarben"><button type="button" data-c="" title="Wie der Stil">Stil</button><button type="button" data-c="#cf2e2e" style="--c:#cf2e2e" aria-label="Rot"></button><button type="button" data-c="#262c3a" style="--c:#262c3a" aria-label="Navy"></button><button type="button" data-c="#d8a93b" style="--c:#d8a93b" aria-label="Gold"></button><button type="button" data-c="#2440d8" style="--c:#2440d8" aria-label="Blau"></button><button type="button" data-c="#2f8f5b" style="--c:#2f8f5b" aria-label="Grün"></button><button type="button" data-c="#f08aa8" style="--c:#f08aa8" aria-label="Rosa"></button></div></div>
 </section>
 <section class="wz-pane" data-step="text">
 <h3>Text</h3>
 <label class="wz-field"><span>Titel</span><input id="wzTitle" class="inp" type="text" autocomplete="off"></label>
 <label class="wz-field"><span>Untertitel</span><input id="wzSub" class="inp" type="text" autocomplete="off"></label>
 <div class="lab">Schriften</div>
-<div class="wz-chips wz-fonts" id="wzFonts"><button type="button" data-t="SgXB" data-s="SgFR"><b style="font-family:SgXB">AB</b> <span style="font-family:SgFR">Fraktur</span></button><button type="button" data-t="SgXB" data-s="SgMD"><b style="font-family:SgXB">AB</b> <span style="font-family:SgMD">Modern</span></button><button type="button" data-t="SgXB" data-s="SgSC"><b style="font-family:SgXB">AB</b> <span style="font-family:SgSC;font-size:17px">Schrift</span></button><button type="button" data-t="SgSC" data-s="SgMD"><b style="font-family:SgSC;font-size:19px;font-weight:400">Schreibschrift</b></button></div>
+<div class="wz-chips wz-fonts" id="wzFonts"><button type="button" data-t="SgXB" data-s="SgFR"><b style="font-family:SgXB">AB</b> <span style="font-family:SgFR">Fraktur</span></button><button type="button" data-t="SgXB" data-s="SgMD"><b style="font-family:SgXB">AB</b> <span style="font-family:SgMD">Modern</span></button><button type="button" data-t="SgXB" data-s="SgSC"><b style="font-family:SgXB">AB</b> <span style="font-family:SgSC;font-size:17px">Schrift</span></button><button type="button" data-t="SgSC" data-s="SgMD"><b style="font-family:SgSC;font-size:19px;font-weight:400">Schreibschrift</b></button><button type="button" data-t="SgBR" data-s="SgMD"><b style="font-family:SgBR;font-size:18px;font-weight:400">Pinsel</b></button></div>
 <label class="wz-field"><span>Datum oder Widmung <i>optional</i></span><input id="wzNote" class="inp" type="text" autocomplete="off" placeholder="z. B. 12.06.2021 · Hier hat alles begonnen"></label>
 <div class="wz-ideen" id="wzNoteIdeen"></div>
 <label class="tog wz-tog"><input type="checkbox" id="wzCoords"><span>Koordinaten anzeigen</span></label>
+<div class="hidden" id="wzInfo"><div class="lab">Zusatztexte <i>für dieses Design</i></div>
+<label class="wz-field" data-info="kopf"><span>Kopfzeile <i>leer = Untertitel</i></span><input id="wzInfoKopf" class="inp" type="text" autocomplete="off" placeholder="z. B. Orte in Franken"></label>
+<label class="wz-field" data-info="nr"><span>Nummer <i>optional</i></span><input id="wzInfoNr" class="inp" type="text" autocomplete="off" placeholder="z. B. 03/10"></label>
+<label class="wz-field" data-info="kicker"><span>Kleine Zeile über dem Titel</span><input id="wzInfoKicker" class="inp" type="text" autocomplete="off" placeholder="z. B. Stadtplan · Am"></label>
+<label class="wz-field" data-info="fakten"><span>Fakten <i>eine pro Zeile, leer = automatisch</i></span><textarea id="wzInfoFakten" class="inp" rows="4" placeholder="Einwohner: 1.240&#10;Höhe: 420 m&#10;Erstmals erwähnt: 1124"></textarea></label>
+</div>
 </section>
 <section class="wz-pane" data-step="extras">
 <h3>Extras</h3>
@@ -205,6 +213,7 @@
 <div class="lab">Effekte</div>
 <label class="tog wz-tog"><input type="checkbox" id="fxPaper"><span>Papier-Struktur</span></label>
 <label class="tog wz-tog"><input type="checkbox" id="fxVig"><span>Vignette (Rand abdunkeln)</span></label>
+<label class="tog wz-tog"><input type="checkbox" id="fxGlow"><span>Leuchten (Lichtschein in der Mitte)</span></label>
 <div class="wz-3d" id="wz3d"><div class="lab">3D-Effekte</div>
 <label class="tog wz-tog"><input type="checkbox" id="fxH3d"><span>3D-Häuser (Gebäude in die Höhe)</span></label>
 <label class="tog wz-tog"><input type="checkbox" id="fxSchatten"><span>Häuser mit Schatten</span></label>
@@ -352,7 +361,7 @@
 <div class="sec" data-s="text"><button class="sh"><span class="num">05</span><span class="tt">Text</span><span class="sum" id="sumT"></span><span class="chev">▾</span></button><div class="sb">
 <div class="tabs2"><button id="tabTitle" class="on">Titel</button><button id="tabSub">Untertitel</button></div>
 <div class="row"><input type="text" class="inp" id="tText" placeholder="Text eingeben"><label class="tog" title="anzeigen"><input type="checkbox" id="tOn"></label></div>
-<div class="row"><span class="k">Schrift</span><select class="inp" id="tFont"><option value="SgXB">Inter Extra Bold</option><option value="SgMD">Inter Medium</option><option value="SgFR">Fraktur</option><option value="SgSC">Schreibschrift</option></select></div>
+<div class="row"><span class="k">Schrift</span><select class="inp" id="tFont"><option value="SgXB">Inter Extra Bold</option><option value="SgMD">Inter Medium</option><option value="SgFR">Fraktur</option><option value="SgSC">Schreibschrift</option><option value="SgBR">Pinsel</option></select></div>
 <div class="row"><span class="k">Größe</span><input type="range" id="tSize" min="10" max="160" step="1"><span class="v" id="tSizev"></span></div>
 <div class="row"><span class="k">Abstand</span><input type="range" id="tLs" min="-5" max="40" step="0.5"><span class="v" id="tLsv"></span></div>
 <div class="row"><span class="k">Farbe</span><div class="col"><input type="color" id="tColor"><div class="sw" data-for="tColor"></div></div></div>

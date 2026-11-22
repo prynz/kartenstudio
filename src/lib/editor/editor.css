@@ -2,6 +2,7 @@
 @font-face{font-family:'SgXB';src:url('../assets/fonts/inter-xb.woff') format('woff');font-display:block}
 @font-face{font-family:'SgMD';src:url('../assets/fonts/inter-md.woff') format('woff');font-display:block}
 @font-face{font-family:'SgFR';src:url('../assets/fonts/frak.woff') format('woff');font-display:block}
+@font-face{font-family:'SgBR';src:url('../assets/fonts/brush.woff') format('woff');font-display:block}
 @font-face{font-family:'SgSC';src:url('../assets/fonts/script.woff') format('woff');font-display:block}
 :root{--ink:#1b1f2a;--slate:#262c3a;--muted:#6b7080;--soft:#9a9eab;--line:#e7e5e0;--line2:#d9d6cf;--canvas:#eceae5;--panel:#fff;--hover:#f5f4f1;--accent:#3b6ef5;--accentbg:#eef3ff;--ok:#1f7a3d;--err:#b42318;--r:12px}
 *{box-sizing:border-box}
@@ -785,3 +786,10 @@ body:not(.wiz-on) .fav-btn,body.mk-on .fav-btn{display:none}
   .wz-panes{overflow-y:auto;min-height:0;overscroll-behavior:contain}
   .wz-foot{position:static}
 }
+
+/* ---------- Neue Designs: Farbe des Flecks, Formen mehrerer Orte ---------- */
+.wz-farben button[data-c^="#"]{min-width:40px;width:40px;padding:0;background:var(--c);border-color:transparent}
+.wz-farben button[data-c^="#"].on{background:var(--c);border-color:#fff;box-shadow:0 0 0 2px var(--slate)}
+#multiForm{display:flex;margin:4px 0 12px}
+#multiForm button{flex:1}
+#wzInfo textarea.inp{height:auto;min-height:96px;padding:10px 12px;line-height:1.45;resize:vertical;font:inherit;font-size:14px}

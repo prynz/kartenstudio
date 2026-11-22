@@ -43,6 +43,9 @@ export function itemData(it) {
 	return null;
 }
 export const multiOn = () => !!(app.S && app.S.multi && app.S.multi.on);
+/** Raster: Orte als Rechtecke nebeneinander (bis 4), sonst Kreise (bis 3) */
+const raster = () => !!(app.S.multi && app.S.multi.form === 'raster');
+const maxZusatz = () => (raster() ? 3 : 2);
 /** Alle Orte (Ort 1 = aktueller) mit Daten, soweit geladen */
 export function multiItems() {
 	const M = app.S.multi;
@@ -61,6 +64,7 @@ export function multiSVG(forExport) {
 		MH = MW * v.a;
 	const items = multiItems();
 	const n = items.length;
+	if (raster()) return rasterSVG(items, forExport);
 	// Kreise nebeneinander oder untereinander – je nachdem, was größer wird
 	const lab = Math.max(40, Math.min(70, MW * 0.06));
 	const dCols = Math.min(MW / n, MH - lab) * 0.86;
@@ -115,6 +119,76 @@ export function multiSVG(forExport) {
 	return o + '</g>';
 }
 
+/**
+ * Raster: jeder Ort als Rechteck mit Beschriftung darunter (wie eine Serie kleiner Stadtpläne).
+ * @param {any[]} items @param {boolean} forExport
+ */
+function rasterSVG(items, forExport) {
+	const S = app.S,
+		v = S.view,
+		MH = MW * v.a,
+		n = items.length;
+	const lab = Math.max(34, Math.min(56, MW * 0.05));
+	const gut = MW * 0.045;
+	// Spaltenzahl so, dass die Felder möglichst groß werden
+	let best = { c: 1, a: 0 };
+	for (let c = 1; c <= n; c++) {
+		const r = Math.ceil(n / c);
+		const w = (MW - gut * (c - 1)) / c,
+			h = (MH - (lab + gut) * r + gut) / r;
+		const a = Math.min(w, h * 1.4) * Math.min(h, w * 1.4);
+		if (h > 40 && a > best.a) best = { c, a };
+	}
+	const cols = best.c,
+		rows = Math.ceil(n / cols);
+	const w = (MW - gut * (cols - 1)) / cols,
+		h = (MH - (lab + gut) * rows + gut) / rows;
+	const ink = inkColor(S);
+	const akz = S.cls.wasser && S.cls.wasser.f !== 'none' && S.cls.wasser.f !== S.bg ? S.cls.wasser.f : ink;
+	let o = `<g transform="translate(${(v.cx - MW / 2 / v.z).toFixed(3)},${(v.cy - MH / 2 / v.z).toFixed(3)}) scale(${(1 / v.z).toFixed(6)})">`;
+	if (S.bg !== 'none') o += `<rect width="${MW}" height="${MH.toFixed(1)}" fill="${S.bg}"/>`;
+	const keep = { DATA: app.DATA, view: S.view, ov: S.ov, scale: S.scale };
+	items.forEach((it, i) => {
+		const x = (i % cols) * (w + gut),
+			y = Math.floor(i / cols) * (h + lab + gut);
+		const cx = x + w / 2,
+			cy = y + h / 2;
+		o += `<defs><clipPath id="mo${i}"><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"/></clipPath></defs>`;
+		if (it.data) {
+			try {
+				app.DATA = it.data;
+				const iv = { ...defView(), z: it.z || 1 };
+				iv.a = h / w;
+				S.view = iv;
+				S.ov = it.main ? keep.ov : {};
+				S.scale = keep.scale * Math.min(1.6, Math.max(0.55, (MW / w) * 0.55));
+				TCP.p = `m${i}t`;
+				const half = MW / 2 / iv.z;
+				const vr = [iv.cx - half, iv.cy - half * iv.a, iv.cx + half, iv.cy + half * iv.a];
+				let defs = '';
+				(it.data.tiles || []).forEach((/** @type {number[]} */ t, /** @type {number} */ j) => {
+					defs += `<clipPath id="m${i}t${j}"><rect x="${t[0].toFixed(2)}" y="${t[1].toFixed(2)}" width="${t[2].toFixed(2)}" height="${t[2].toFixed(2)}"/></clipPath>`;
+				});
+				const k = w / (2 * half);
+				o += `<defs>${defs}</defs><g clip-path="url(#mo${i})"><g transform="translate(${cx.toFixed(1)},${cy.toFixed(1)}) scale(${k.toFixed(5)}) translate(${(-iv.cx).toFixed(2)},${(-iv.cy).toFixed(2)})">${mapContent(true, vr)}</g></g>`;
+			} finally {
+				app.DATA = keep.DATA;
+				S.view = keep.view;
+				S.ov = keep.ov;
+				S.scale = keep.scale;
+				TCP.p = 'tc';
+			}
+		} else {
+			o += `<text x="${cx.toFixed(1)}" y="${(cy + 8).toFixed(1)}" text-anchor="middle" font-family="SgMD" font-size="22" fill="${ink}" fill-opacity=".5">${it.data === false ? 'Keine Kartendaten' : 'lädt …'}</text>`;
+		}
+		o += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="none" stroke="${ink}" stroke-opacity=".22" stroke-width="1.5"/>`;
+		// Beschriftung: eigene Zeile (z. B. „Kennengelernt“) oder Ortsname, in der Akzentfarbe
+		const t = it.label || it.name;
+		o += `<text x="${cx.toFixed(1)}" y="${(y + h + lab * 0.62).toFixed(1)}" text-anchor="middle" font-family="SgXB" font-size="${(lab * 0.4).toFixed(1)}" fill="${akz}">${esc(String(t))}</text>`;
+	});
+	return o + '</g>';
+}
+
 /** Schlüssel für den Karten-Zwischenspeicher */
 export function multiKey() {
 	if (!multiOn()) return 0;
@@ -150,7 +224,7 @@ export function initMulti() {
 	attachSearch('mq', 'mgo', 'mresults', (/** @type {any} */ f, /** @type {string} */ q) => {
 		const p = f.properties;
 		const [lon, lat] = f.geometry.coordinates;
-		if ((app.S.multi.items || []).length >= 2) return;
+		if ((app.S.multi.items || []).length >= maxZusatz()) return;
 		const it = { name: String(p.name || q).slice(0, 40), label: '', z: 1, b: placeBounds(p, lon, lat, 1) };
 		change(() => (app.S.multi = { ...app.S.multi, items: [...(app.S.multi.items || []), it] }));
 		/** @type {HTMLInputElement} */ ($('mq')).value = '';
@@ -180,6 +254,16 @@ export function initMulti() {
 		render();
 	});
 	$('multiList').addEventListener('change', () => commit());
+	document.querySelectorAll('#multiForm button').forEach((b) =>
+		b.addEventListener('click', () =>
+			change(() => {
+				const M = app.S.multi;
+				M.form = /** @type {HTMLElement} */ (b).dataset.f;
+				// Kreise: höchstens 3 Orte
+				if (M.form !== 'raster' && (M.items || []).length > 2) M.items = M.items.slice(0, 2);
+			})
+		)
+	);
 }
 
 let listKey = '';
@@ -191,7 +275,8 @@ export function syncMulti() {
 	if (!on) return;
 	const items = [{ name: (app.DATA && app.DATA.place) || 'Ort 1', label: M.label0 || '' }, ...(M.items || [])];
 	const key = JSON.stringify(items.map((x) => x.name)) + items.length;
-	$('multiAdd').classList.toggle('hidden', items.length >= 3);
+	$('multiAdd').classList.toggle('hidden', items.length >= maxZusatz() + 1);
+	document.querySelectorAll('#multiForm button').forEach((b) => b.classList.toggle('on', /** @type {HTMLElement} */ (b).dataset.f === (raster() ? 'raster' : 'kreis')));
 	if (key !== listKey) {
 		listKey = key;
 		$('multiList').innerHTML = items

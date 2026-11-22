@@ -16,6 +16,7 @@ import { loadSky, skyReady, skySVG } from '../themen/himmel.js';
 import { koordSVG } from '../themen/koordinaten.js';
 import { wolkeSVG } from '../themen/wolke.js';
 import { inkColor } from '../themen/designs.js';
+import { fokusSVG, lupeSVG, gitterSVG, kompassSVG, tabelleSVG, steckbriefSVG, kastenSVG, leuchtenSVG } from '../themen/layouts.js';
 import { multiKey, multiOn, multiSVG } from './mehrere.js';
 import { routeSVG } from './route.js';
 import { contours, reliefBild } from '../karte/hoehen.js';
@@ -36,11 +37,13 @@ export function geo() {
     u = S.sub;
   // Koordinaten-Poster: der Ortsname steht groß im Motiv, nicht noch einmal darunter
   const koord = S.motif === 'koord';
+  // Tabelle/Steckbrief/Kasten zeichnen Untertitel, Koordinaten und Widmung selbst
+  const eigen = L.foot === 'tabelle' || L.kind === 'steckbrief' || L.kind === 'kasten';
   const capT = t.on && t.text && !koord ? t.size * CAP[t.font] : 0,
-    capS = u.on && u.text ? u.size * CAP[u.font] : 0;
+    capS = u.on && u.text && !eigen ? u.size * CAP[u.font] : 0;
   const cSize = Math.round(Math.max(16, (u.size || 34) * 0.62));
-  const capC = L.coords && app.DATA && !koord ? cSize * CAP.SgMD : 0;
-  const nt = S.note && S.note.on !== false && S.note.text ? S.note.text : '';
+  const capC = L.coords && app.DATA && !koord && !eigen ? cSize * CAP.SgMD : 0;
+  const nt = S.note && S.note.on !== false && S.note.text && !eigen ? S.note.text : '';
   const nSize = Math.round(Math.max(18, (u.size || 34) * 0.72));
   const capN = nt ? nSize * CAP.SgMD : 0;
   const gap = capT && capS ? S.bar.gap : 0,
@@ -71,7 +74,13 @@ export function geo() {
     my = sw + (barH > 0 ? barH - sw / 2 : 0) + p;
     H = my + MH + p + sw;
     top = sw / 2 + (barH - sw / 2 - block) / 2;
-  } else if (L.kind === 'over' || L.kind === 'typo') {
+  } else if (L.kind === 'steckbrief') {
+    // Kopfzeile oben, Karte, darunter Titel links + Kästchen + Fakten
+    my = sw + p + 74;
+    barTop = my + MH;
+    H = my + MH + 430 + sw;
+    top = my + MH;
+  } else if (L.kind === 'over' || L.kind === 'typo' || L.kind === 'kasten') {
     my = sw + p;
     barTop = my + MH;
     H = my + MH + p + sw;
@@ -84,6 +93,13 @@ export function geo() {
     H = barTop + (barH > 0 ? barH : sw);
     top = barTop + (barH - sw / 2 - block) / 2;
   }
+  // Info-Leiste (Tabelle) unter der Karte
+  let footY = 0, footH = 0;
+  if (L.foot === 'tabelle') {
+    footH = 132;
+    footY = my + MH + Math.max(56, p);
+    H = footY + footH + Math.max(48, p) + sw;
+  }
   let y = top,
     yT = top,
     yS = top,
@@ -93,7 +109,7 @@ export function geo() {
   if (capS) yS = y += (capT ? gap : 0) + capS;
   if (capC) yC = y += gapC + capC;
   if (capN) yN = y += gapN + capN;
-  return { W, H, sw, p, mx, my, MH, barTop, barH, yT, yS, yC, yN, nSize, note: nt, top, block, cSize, L };
+  return { W, H, sw, p, mx, my, MH, barTop, barH, yT, yS, yC, yN, nSize, note: nt, top, block, cSize, L, footY, footH };
 }
 /** Koordinaten der Kartenmitte als Textzeile. */
 export function coordText() {
@@ -574,7 +590,7 @@ export function renderView() {
 }
 /** Schriftbreite messen (Schriften sind im Dokument geladen) */
 let MESS = null;
-function passendeGroesse(text, font, size, ls, maxW) {
+export function passendeGroesse(text, font, size, ls, maxW) {
   if (typeof document === 'undefined') return size;
   if (!MESS) MESS = document.createElement('canvas').getContext('2d');
   MESS.font = `${size}px ${font}`;
@@ -584,7 +600,7 @@ function passendeGroesse(text, font, size, ls, maxW) {
 /** Sind die Schriften geladen? (Textmotive messen damit – vorher gemessen = falsche Umbrüche) */
 export function schriftenBereit() {
   try {
-    return ['SgXB', 'SgMD', 'SgSC'].map(f => document.fonts.check('30px ' + f)).join('');
+    return ['SgXB', 'SgMD', 'SgSC', 'SgBR'].map(f => document.fonts.check('30px ' + f)).join('');
   } catch (e) {
     return '';
   }
@@ -759,6 +775,8 @@ export function buildSVG(forExport) {
   });
   if (multiOn()) ['SgXB', 'SgMD', app.S.sub.font].forEach(f => fonts.add(f));
   if (g.L.kind === 'typo') fonts.add('SgXB');
+  if (g.L.kind === 'steckbrief' || g.L.kind === 'kasten' || g.L.foot) ['SgXB', 'SgMD', 'SgSC'].forEach(f => fonts.add(f));
+  if (g.L.kind === 'steckbrief') fonts.add('SgMD');
   if (app.S.motif === 'koord') ['SgXB', 'SgMD'].forEach(f => fonts.add(f));
   if (app.S.motif === 'wolke') ['SgXB', 'SgMD', 'SgSC'].forEach(f => fonts.add(f));
   if (app.S.attr.on || g.L.coords || g.note || (app.S.motif === 'sterne' && app.S.sky && (app.S.sky.names || app.S.sky.grid))) fonts.add('SgMD');
@@ -776,12 +794,21 @@ export function buildSVG(forExport) {
     o += `<clipPath id="tc${i}"><rect x="${r[0].toFixed(2)}" y="${r[1].toFixed(2)}" width="${r[2].toFixed(2)}" height="${r[2].toFixed(2)}"/></clipPath>`;
   });
   o += `<clipPath id="cOut"><rect x="0" y="0" width="${g.W.toFixed(1)}" height="${g.H.toFixed(1)}" rx="${R + f.w / 2}" ry="${R + f.w / 2}"/></clipPath></defs>`;
-  if (app.S.bg !== 'none') o += `<rect id="kartenhintergrund" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="${app.S.bg}"/>`;
+  const papierF = g.L.papier || app.S.bg;
+  const verlauf = app.S.bg2 && /^#[0-9a-f]{3,8}$/i.test(app.S.bg2) && app.S.bg !== 'none';
+  if (verlauf) o += `<defs><linearGradient id="gBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${app.S.bg}"/><stop offset="1" stop-color="${app.S.bg2}"/></linearGradient></defs>`;
+  if (papierF !== 'none') o += `<rect id="kartenhintergrund" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="${verlauf && !g.L.papier ? 'url(#gBg)' : papierF}"/>`;
+  // Eigenes Papier außerhalb der Karte (z. B. weiß um einen dunklen Kartenkreis)
+  if (g.L.papier && app.S.bg !== 'none') o += mapShape(g, 0, ` id="kartenflaeche" transform="translate(${g.mx},${g.my})" fill="${verlauf ? 'url(#gBg)' : app.S.bg}"`);
+  o += fokusSVG(g);
   o += `<g id="karte" clip-path="url(#cIn)"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><g id="kartenAnsicht" transform="${vT(g).replace(/^translate\([^)]*\) /, '')}">`;
   o += forExport ? mapContent(true, visRect()) : '<g id="kartenInhalt"/>';
   o += '</g></g></g></g>';
   const ink = app.S.title.color;
   o += fxSVG(g);
+  o += leuchtenSVG(g);
+  o += lupeSVG(g);
+  o += gitterSVG(g);
   o += pinsSVG(g, forExport);
   if (g.L.inner > 0) o += mapShape(g, g.L.innerGap + g.L.inner / 2, ` id="innenlinie" transform="translate(${g.mx},${g.my})" fill="none" stroke="${f.w > 0 ? f.color : ink}" stroke-width="${g.L.inner}"`);
   if (g.L.kind === 'over' && g.L.fade && g.block > 0) {
@@ -793,12 +820,14 @@ export function buildSVG(forExport) {
   if (g.L.kind === 'bartop' && g.barH > 0) o += `<rect id="balken" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.barH).toFixed(1)}" fill="${app.S.bar.color}" clip-path="url(#cOut)"/>`;
   if (g.L.kind === 'bar' && app.S.bar.on && g.barH > 0) o += `<rect id="balken" x="${f.w / 2}" y="${g.barTop.toFixed(1)}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - g.barTop).toFixed(1)}" fill="${app.S.bar.color}" clip-path="url(#cOut)"/>`;
   if (f.w > 0) o += `<rect id="rahmen" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="none" stroke="${f.color}" stroke-width="${f.w}"/>`;
-  const typo = g.L.kind === 'typo';
-  if (typo) o += typoSVG(g);
+  const typo = g.L.kind === 'typo' || g.L.kind === 'steckbrief' || g.L.kind === 'kasten';
+  if (g.L.kind === 'typo') o += typoSVG(g);
+  o += steckbriefSVG(g) + kastenSVG(g) + tabelleSVG(g) + kompassSVG(g);
   [['title', g.yT], ['sub', g.yS]].forEach(([k, y]) => {
     const t = app.S[k];
     if (typo) return;
     if (k === 'title' && app.S.motif === 'koord') return;
+    if (k === 'sub' && g.L.foot === 'tabelle') return;
     if (!t.on || !t.text) return;
     // Lange Namen (z. B. „Rothenburg ob der Tauber“) automatisch verkleinern, damit sie ins Poster passen
     const fs = passendeGroesse(t.text, t.font, t.size, t.ls, g.W - 2 * (g.sw + Math.max(g.p, 24)));
@@ -812,10 +841,10 @@ export function buildSVG(forExport) {
   if (!typo && g.note) o += `<text id="widmung" x="${(g.W / 2 + 1).toFixed(2)}" y="${g.yN.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.nSize}" letter-spacing="2" fill="${app.S.sub.color}">${esc(g.note)}</text>`;
   if (app.S.attr.on && app.S.motif !== 'sterne' && app.S.motif !== 'koord' && app.S.motif !== 'wolke') {
     const inBar = g.L.kind === 'bar' && app.S.bar.on && g.barH > 0;
-    const onPaper = !inBar && g.L.kind !== 'top' && g.L.kind !== 'bartop';
+    const onPaper = (!inBar && g.L.kind !== 'top' && g.L.kind !== 'bartop') || !!g.L.papier;
     const col = inBar || onPaper ? app.S.title.color : app.S.mode === 'std' ? BASES[app.S.base].sat || app.S.base === 'dark' || app.S.base === 'fiord' ? '#ffffff' : '#333333' : app.S.cls.haupt.s;
-    const x = g.W - g.sw - g.p - 4;
-    const y = inBar ? g.H - g.sw - 8 : g.L.kind === 'below' ? g.H - g.sw - Math.min(14, g.p / 2 + 4) : g.my + g.MH - 6;
+    const x = g.W - g.sw - g.p - 4 - (g.L.kind === 'steckbrief' ? 10 : 0);
+    const y = inBar ? g.H - g.sw - 8 : g.L.kind === 'below' || g.L.foot || g.L.kind === 'steckbrief' ? g.H - g.sw - Math.min(14, g.p / 2 + 4) - (g.L.kind === 'steckbrief' ? 18 : 0) : g.my + g.MH - 6;
     let at = app.S.mode === 'std' ? BASES[app.S.base].sat ? 'Luftbild © Bayer. Vermessungsverwaltung (CC BY 4.0) · © OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenStreetMap-Mitwirkende';
     if (((app.S.hoehen && app.S.hoehen.on) || (app.S.fx && app.S.fx.relief && !perspektiveAn())) && app.S.mode !== 'std') at += ' · Höhen © EU-DEM';
     if (std3d() && (app.S.fx.relief || app.S.fx.gelaende)) at += ' · Höhen © EU-DEM';

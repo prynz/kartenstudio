@@ -479,3 +479,50 @@ Object.assign(PRESETS, {
   }, { haus: 0.4, haupt: 3.2, neben: 1.3, weg: 0.7, wasser: 2.2, frame: 26 }),
   senf: MONO('Senf', 'Warmes Senfgelb mit hellen Linien.', '#d2a23b', '#fbefd2', '#ddb662', '#c4942e')
 });
+
+/* ---------- Farbthemen nach Vorbildern aus Grafikdesign & Kartenkunst ----------
+   `ink` = Schriftfarbe auf dem Papier (wenn sie anders sein soll als im Balken),
+   `bg2` = zweite Hintergrundfarbe für einen Verlauf. */
+const mit = (t, extra, fn) => {
+  Object.assign(t, extra);
+  if (fn) fn(t);
+  return t;
+};
+Object.assign(PRESETS, {
+  japan: mit(TH('Japan-Rot', 'Hellgrau mit weißen Straßen, Akzent in Rot – passt zum Design „Fokus“.', {
+    bg: '#e8eaed', haus: ['#dcdfe3', 'none'], haupt: '#ffffff', neben: '#ffffff', weg: '#ffffff',
+    wasser: ['#d3d8df', '#d3d8df'], frame: '#cf2e2e', bar: '#cf2e2e', text: '#ffffff'
+  }, { haus: 0.6, haupt: 7, neben: 3.6, weg: 1.8, wasser: 1 }), { ink: '#1b1f2a' }, (t) => (t.cls.haus.h = true)),
+  koenigsblau: TH('Königsblau', 'Weißes Papier, zarte blaue Straßen, Wasser und Parks in kräftigem Blau.', {
+    bg: '#ffffff', haus: ['#dde0f6', 'none'], haupt: '#bfc6ef', neben: '#d0d5f3', weg: '#dfe2f7',
+    wasser: ['#2440d8', '#2440d8'], gruen: ['#5a6fe3', '#5a6fe3'], frame: '#2440d8', bar: '#2440d8', text: '#ffffff'
+  }, { haus: 0.5, haupt: 3.4, neben: 1.8, weg: 1, wasser: 8 }),
+  neon: mit(TH('Neon-Violett', 'Violette Gassen, pinke Hauptstraßen und türkises Wasser auf Schwarzblau.', {
+    bg: '#0b0e1a', haus: ['#2a2058', 'none'], haupt: '#ff6fb8', neben: '#8b55ff', weg: '#5b38b8',
+    wasser: ['#2fd6e6', '#123a4a'], frame: '#2fd6e6', bar: '#2fd6e6', text: '#0b0e1a'
+  }, { haus: 0.6, haupt: 4.6, neben: 1.7, weg: 0.9, wasser: 2.4 }), { ink: '#3ee8f2' }),
+  goldnacht: mit(TH('Gold & Nacht', 'Goldene Straßen auf tiefem Nachtblau – edel und warm.', {
+    bg: '#0a1828', haus: ['#1c2c42', 'none'], haupt: '#d8a93b', neben: '#8d7a45', weg: '#4d4a3c',
+    wasser: ['#163049', '#0e2236'], frame: '#d8a93b', bar: '#d8a93b', text: '#0a1828'
+  }, { haus: 0.6, haupt: 4.8, neben: 1.5, weg: 0.8 }), { ink: '#d8a93b' }),
+  schwarzweiss: TH('Schwarz & Weiß', 'Feine weiße Linien auf Schwarz – wie ein Siebdruck.', {
+    bg: '#161616', haus: ['#ffffff', 'none'], haupt: '#ffffff', neben: '#e8e8e8', weg: '#9a9a9a',
+    wasser: ['#ffffff', '#ffffff'], frame: '#ffffff', bar: '#161616', text: '#ffffff'
+  }, { haus: 0.7, haupt: 3.4, neben: 1.4, weg: 0.8 }),
+  puls: mit(TH('Am Puls', 'Rote Straßen auf einem Verlauf von Blau nach Magenta – laut und lebendig.', {
+    bg: '#2a1c95', haus: ['#4b2c9e', 'none'], haupt: '#ff2d55', neben: '#ee2a52', weg: '#b8285e',
+    wasser: ['#5a3fd0', '#3a26a8'], frame: '#ffffff', bar: '#ff2d55', text: '#ffffff'
+  }, { haus: 0.5, haupt: 4.2, neben: 1.6, weg: 0.9 }), { bg2: '#a01c5a' }),
+  lichter: mit(TH('Stadtlichter', 'Leuchtende Goldstraßen auf Schwarz – wie eine Stadt bei Nacht (mit Effekt „Leuchten“).', {
+    bg: '#050505', haus: ['#6a5220', '#3d2f12'], haupt: '#f3c46a', neben: '#8a7044', weg: '#3d3424',
+    wasser: ['#1e1e1e', '#151515'], frame: '#f3c46a', bar: '#f3c46a', text: '#050505'
+  }, { haus: 0.5, haupt: 4.4, neben: 1.4, weg: 0.7 }), { ink: '#f3c46a' }),
+  dossier: mit(TH('Dossier', 'Dunkelgraue Karte, Häuser in Signalrot – passt zum Design „Dossier“.', {
+    bg: '#141416', haus: ['#d43a3a', '#8f1f22'], haupt: '#5c5c63', neben: '#404046', weg: '#2e2e33',
+    wasser: ['#2a2a30', '#1d1d22'], frame: '#d43a3a', bar: '#d43a3a', text: '#ffffff'
+  }, { haus: 0.6, haupt: 4, neben: 1.8, weg: 1 }), { ink: '#e0403f' }),
+  wimmel: mit(POP('Wimmelbild', 'Illustrierter Stadtplan in Koralle, Türkis und Schieferblau.', '#ece2cc', ['#e8553e', '#e8553e', '#d9472f'], '#3d5a73', '#5cb4b6'), {}, (t) => {
+    t.cls.haupt.s = '#3d5a73';
+    t.cls.neben.s = '#3d5a73';
+  })
+});

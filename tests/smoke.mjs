@@ -728,6 +728,49 @@ await run('3D: Schatten und Perspektive', { viewport: { width: 1440, height: 900
 	ok(!(await page.$('#perspektive')) && !(await page.$('#schatten')), 'Rückgängig nimmt 3D-Effekte zurück');
 });
 
+await run('Designs nach Vorbildern: Fokus, Studie, Steckbrief, Kasten, Lupe, Dossier, Raster', { viewport: { width: 1440, height: 900 } }, async (page) => {
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	const design = async (d) => {
+		await page.click(`#wzDesigns button[data-d="${d}"]`);
+		await page.waitForTimeout(400);
+	};
+	await design('fokus');
+	ok((await page.$('#poster #fokus')) && (await page.getAttribute('#titel', 'font-family')) === 'SgBR', 'Fokus: Farbfleck unter den Straßen, Pinselschrift');
+	ok((await page.textContent('#titel')).trim() === 'Siegritz', 'Fokus: Titel in normaler Schreibweise');
+	await page.click('#wzFokusFarben [data-c="#2440d8"]');
+	await page.waitForTimeout(300);
+	ok((await page.getAttribute('#fokus', 'fill')) === '#2440d8', 'Fokus: Farbe des Flecks wählbar');
+	await design('studie');
+	ok((await page.$('#poster #tabelle')) && (await page.getAttribute('#kartenhintergrund', 'fill')) === '#ffffff', 'Studie: Info-Leiste und weißes Papier');
+	await design('steckbrief');
+	ok((await page.textContent('#titel')).trim() === 'SIEGRITZ', 'Nach Pinsel-Design wieder Großbuchstaben');
+	await page.fill('#wzInfoNr', '03/10');
+	await page.fill('#wzInfoFakten', 'Einwohner: 120');
+	await page.waitForTimeout(300);
+	const sb = await page.textContent('#steckbrief');
+	ok(sb.includes('03/10') && (await page.textContent('#poster')).includes('EINWOHNER'), 'Steckbrief: Nummer und eigene Fakten im Poster');
+	await design('kasten');
+	ok(!!(await page.$('#poster #kasten')), 'Kasten: Textraster in der Mitte');
+	await design('dossier');
+	ok((await page.$('#poster #lupe')) && (await page.$('#poster #gitter')) && (await page.$('#poster #kompass')), 'Dossier: Lupe, Gitter, Kompass');
+	await page.click('#wzSteps button[data-step="stil"]');
+	await page.evaluate(() => document.querySelector('#wzStyles button[data-p="puls"]').click());
+	await page.waitForTimeout(400);
+	ok((await page.getAttribute('#kartenhintergrund', 'fill')) === 'url(#gBg)', 'Thema „Am Puls“ mit Farbverlauf');
+	await page.check('#fxGlow');
+	await page.waitForTimeout(300);
+	ok(!!(await page.$('#poster #leuchten')), 'Effekt „Leuchten“');
+	await page.screenshot({ path: `${OUT}/60-neue-designs.png` });
+	// SVG-Export mit eingebetteter Pinselschrift
+	await design('fokus');
+	await page.click('#dlBtn');
+	await page.click('#dlFmt button[data-f="svg"]');
+	const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#dlGo')]);
+	const txt = fs.readFileSync(await dl.path(), 'utf8');
+	ok(txt.includes("font-family:'SgBR'"), 'SVG-Export bettet die Pinselschrift ein');
+});
+
 await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {
 	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });

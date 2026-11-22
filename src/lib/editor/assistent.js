@@ -334,6 +334,17 @@ export function syncWizard() {
 		/** @type {HTMLElement} */ (i.closest('label')).classList.toggle('dis', i.disabled);
 	});
 	$('wzFree').classList.toggle('hidden', !!pr);
+	// Zusatztexte nur bei Designs, die sie zeigen
+	const kind = (S.lay && S.lay.kind) || '';
+	const zeigInfo = { kopf: kind === 'steckbrief', nr: kind === 'steckbrief', kicker: kind === 'steckbrief' || kind === 'kasten', fakten: kind === 'steckbrief' };
+	$('wzInfo').classList.toggle('hidden', kind !== 'steckbrief' && kind !== 'kasten');
+	all('#wzInfo [data-info]').forEach((l) => l.classList.toggle('hidden', !(/** @type {any} */ (zeigInfo)[/** @type {string} */ (l.dataset.info)])));
+	[['wzInfoKopf', 'kopf'], ['wzInfoNr', 'nr'], ['wzInfoKicker', 'kicker'], ['wzInfoFakten', 'fakten']].forEach(([id, k]) => {
+		const e = /** @type {HTMLInputElement} */ ($(id));
+		if (document.activeElement !== e) e.value = (S.info && S.info[k]) || '';
+	});
+	$('wzFokus').classList.toggle('hidden', !(S.lay && S.lay.fokus));
+	all('#wzFokusFarben button').forEach((b) => b.classList.toggle('on', (b.dataset.c || '') === ((S.info && S.info.fokus) || '')));
 	const n = /** @type {HTMLInputElement} */ ($('wzNote'));
 	if (document.activeElement !== n) n.value = (S.note && S.note.text) || '';
 	syncPins();
@@ -342,6 +353,7 @@ export function syncWizard() {
 	syncRoute();
 	/** @type {HTMLInputElement} */ ($('fxPaper')).checked = !!(S.fx && S.fx.paper);
 	/** @type {HTMLInputElement} */ ($('fxVig')).checked = !!(S.fx && S.fx.vig);
+	/** @type {HTMLInputElement} */ ($('fxGlow')).checked = !!(S.fx && S.fx.glow);
 	/** @type {HTMLInputElement} */ ($('fxSchatten')).checked = !!(S.fx && S.fx.schatten);
 	/** @type {HTMLInputElement} */ ($('fxH3d')).checked = !!(S.fx && S.fx.h3d);
 	$('fxSchatten').closest('label')?.classList.toggle('hidden', !!(S.fx && S.fx.h3d) || S.mode === 'std');
@@ -452,7 +464,7 @@ export function enableWolke() {
 			if (!D || D.aspect || (D.lay && D.lay.kind === 'typo')) pickDesign(S, 'galerie');
 		})
 	);
-	Promise.all(['SgXB', 'SgMD', 'SgSC'].map((f) => document.fonts.load('30px ' + f))).then(() => render());
+	Promise.all(['SgXB', 'SgMD', 'SgSC', 'SgBR'].map((f) => document.fonts.load('30px ' + f))).then(() => render());
 }
 
 /** Ausschnitt um die aktuelle Mitte 2,5-mal größer neu laden (bis 40 km) */
@@ -893,6 +905,11 @@ export function initWizard() {
 	};
 	textInput('wzTitle', (v) => (app.S.title.text = v));
 	textInput('wzSub', (v) => (app.S.sub.text = v));
+	// Zusatztexte für Steckbrief/Kasten
+	/** @type {[string, string][]} */ ([['wzInfoKopf', 'kopf'], ['wzInfoNr', 'nr'], ['wzInfoKicker', 'kicker'], ['wzInfoFakten', 'fakten']]).forEach(([id, k]) =>
+		textInput(id, (v) => (app.S.info = { ...(app.S.info || {}), [k]: v }))
+	);
+	all('#wzFokusFarben button').forEach((b) => (b.onclick = () => change(() => (app.S.info = { ...(app.S.info || {}), fokus: b.dataset.c || '' }))));
 	$('wzCoords').addEventListener('change', (e) =>
 		change(() => (app.S.lay = { ...(app.S.lay || {}), coords: /** @type {HTMLInputElement} */ (e.target).checked }))
 	);
@@ -993,11 +1010,12 @@ export function initWizard() {
 	);
 
 	// Effekte (Design-Schritt)
-	/** @param {string} id @param {'paper'|'vig'|'schatten'|'relief'|'h3d'|'gelaende'} key */
+	/** @param {string} id @param {'paper'|'vig'|'glow'|'schatten'|'relief'|'h3d'|'gelaende'} key */
 	const fxToggle = (id, key) =>
 		$(id).addEventListener('change', (e) => change(() => (app.S.fx = { ...(app.S.fx || {}), [key]: /** @type {HTMLInputElement} */ (e.target).checked })));
 	fxToggle('fxPaper', 'paper');
 	fxToggle('fxVig', 'vig');
+	fxToggle('fxGlow', 'glow');
 	fxToggle('fxSchatten', 'schatten');
 	fxToggle('fxH3d', 'h3d');
 	fxToggle('fxGelaende', 'gelaende');
@@ -1029,6 +1047,7 @@ export function initWizard() {
 							sf = /** @type {string} */ (b.dataset.s);
 						const was = S.title.font;
 						S.title.font = tf;
+						S.title.fontDesign = false;
 						S.sub.font = sf;
 						const t = S.title.text || '';
 						// Schreibschrift sieht nur in normaler Schreibweise gut aus, Blockschrift in Großbuchstaben

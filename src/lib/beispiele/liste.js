@@ -7,9 +7,9 @@
  *   id: string, titel: string, text: string, ort: string, breite?: number,
  *   preset: string, design: string, motif?: 'karte'|'sterne'|'koord'|'wolke',
  *   sub?: string, note?: string, pin?: string, pinColor?: string,
- *   fx?: {paper?: boolean, vig?: boolean}, hoehen?: boolean,
+ *   fx?: {paper?: boolean, vig?: boolean, glow?: boolean}, hoehen?: boolean,
  *   sky?: Record<string, any>, koord?: {text?: string, align?: string}, wolke?: {text?: string, form?: string, schrift?: boolean},
- *   titelSchrift?: 'SgSC'
+ *   titelSchrift?: 'SgSC', info?: {kopf?: string, nr?: string, kicker?: string, fakten?: string}
  * }} Beispiel
  */
 
@@ -28,5 +28,17 @@ export const BEISPIELE = [
 	{ id: 'erlangen-koord', titel: 'Koordinaten-Poster', text: 'Große Koordinaten und eine kleine Geschichte', ort: 'erlangen', preset: 'petrol', design: 'minimal', motif: 'koord', koord: { text: 'Hier haben wir studiert, uns kennengelernt und unsere erste Wohnung bezogen.', align: 'links' } },
 	{ id: 'rothenburg-mittelmeer', titel: 'Mittelmeer-Sonne', text: 'Warme Farben im Polaroid-Look', ort: 'rothenburg-ob-der-tauber', breite: 1200, preset: 'mittelmeer', design: 'polaroid' },
 	{ id: 'regensburg-lavendel', titel: 'Lavendel, Schrift', text: 'Einfarbig mit Schreibschrift-Titel', ort: 'regensburg', breite: 1700, preset: 'lavendel', design: 'galerie', titelSchrift: 'SgSC' },
+	// Nach Vorbildern aus Grafikdesign & Kartenkunst
+	{ id: 'bamberg-fokus', titel: 'Fokus in Rot', text: 'Roter Fleck im Herzen der Stadt, Pinselschrift', ort: 'bamberg', breite: 2200, preset: 'japan', design: 'fokus', sub: 'Weltkulturerbe' },
+	{ id: 'bayreuth-steckbrief', titel: 'Steckbrief', text: 'Kartenkreis mit Nordpfeil und Fakten – wie eine Sammelserie', ort: 'bayreuth', breite: 2400, preset: 'schwarzweiss', design: 'steckbrief', info: { kopf: 'Städte in Franken', nr: '03/10', kicker: 'Stadt Plan' } },
+	{ id: 'coburg-studie', titel: 'Studie in Navy', text: 'Kartenkreis auf Weiß mit Info-Leiste', ort: 'coburg', breite: 1800, preset: 'dunkel', design: 'studie' },
+	{ id: 'fuerth-puls', titel: 'Am Puls', text: 'Rote Straßen auf Farbverlauf, Textkasten in der Mitte', ort: 'fuerth', breite: 2600, preset: 'puls', design: 'kasten', info: { kicker: 'Am' } },
+	{ id: 'erlangen-neon', titel: 'Neon-Nacht', text: 'Pink und Violett auf Schwarzblau', ort: 'erlangen', breite: 2600, preset: 'neon', design: 'nachtstadt' },
+	{ id: 'regensburg-gold', titel: 'Gold & Nacht', text: 'Goldene Straßen, gesperrter Titel', ort: 'regensburg', breite: 2600, preset: 'goldnacht', design: 'nachtstadt' },
+	{ id: 'augsburg-lichter', titel: 'Stadtlichter', text: 'Leuchtende Straßen auf Schwarz', ort: 'augsburg', breite: 3200, preset: 'lichter', design: 'leise', fx: { glow: true } },
+	{ id: 'ansbach-dossier', titel: 'Dossier', text: 'Gestrichelter Kreis, Gitter und rote Häuser', ort: 'ansbach', breite: 1800, preset: 'dossier', design: 'dossier' },
+	{ id: 'passau-lupe', titel: 'Lupe', text: 'Die Altstadt im Kreis hervorgehoben', ort: 'passau', breite: 2400, preset: 'schwarzweiss', design: 'lupe' },
+	{ id: 'nuernberg-koenigsblau', titel: 'Königsblau', text: 'Zarte Straßen, Wasser und Parks in Blau', ort: 'nuernberg', breite: 3000, preset: 'koenigsblau', design: 'galerie' },
+	{ id: 'wuerzburg-wimmel', titel: 'Wimmelbild', text: 'Illustrierter Stadtplan in Koralle und Türkis', ort: 'wuerzburg', breite: 1300, preset: 'wimmel', design: 'polaroid' },
 	{ id: 'goessweinstein-heimat', titel: 'Heimat mit Vignette', text: 'Waldgrün, abgedunkelter Rand, Fraktur', ort: 'goessweinstein', preset: 'wald', design: 'linie', fx: { vig: true }, sub: 'Fränkische Schweiz' }
 ];

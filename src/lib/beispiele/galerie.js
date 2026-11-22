@@ -39,7 +39,8 @@ export function lookZustand(B, keep, mitOrt) {
 	S.motif = B.motif || 'karte';
 	if (S.multi) S.multi.on = false;
 	pickDesign(S, B.design);
-	S.fx = { ...(S.fx || {}), paper: false, vig: false, ...(B.fx || {}) };
+	S.fx = { ...(S.fx || {}), paper: false, vig: false, glow: false, ...(B.fx || {}) };
+	S.info = { ...(S.info || {}), ...(B.info || {}) };
 	S.hoehen = B.hoehen ? { ...(S.hoehen || {}), on: true } : S.hoehen ? { ...S.hoehen, on: false } : S.hoehen;
 	if (B.motif === 'sterne') {
 		S.sky = { ...defaultSky(lat, lon), ...(B.sky || {}) };
@@ -68,7 +69,7 @@ export function lookZustand(B, keep, mitOrt) {
 
 /* ---------- Vorschläge für den eigenen Ort ----------
    Direkt nach der Suche: sechs fertige Looks als Vorschaubild mit DEINEM Ort. Ein Tippen übernimmt den Look. */
-const VORSCHLAEGE = ['waischenfeld-heimat', 'bamberg-typo', 'nuernberg-nacht', 'muenchen-kreis', 'rothenburg-mittelmeer', 'regensburg-lavendel'];
+const VORSCHLAEGE = ['waischenfeld-heimat', 'bayreuth-steckbrief', 'bamberg-fokus', 'regensburg-gold', 'muenchen-kreis', 'bamberg-typo'];
 let vorKey = '';
 /** @type {string[]} */
 let vorUrls = [];
@@ -122,7 +123,7 @@ export function lookAnwenden(B, mitOrt) {
 	change(() => (app.S = lookZustand(B, app.S, mitOrt)));
 	// Text-Motive messen die Schrift aus, der Himmel braucht seine Sterndaten → danach einmal neu zeichnen
 	if (B.motif === 'sterne') loadSky().then(() => render());
-	if (B.motif === 'koord' || B.motif === 'wolke' || B.titelSchrift) Promise.all(['SgXB', 'SgMD', 'SgSC'].map((f) => document.fonts.load('30px ' + f))).then(() => render());
+	if (B.motif === 'koord' || B.motif === 'wolke' || B.titelSchrift) Promise.all(['SgXB', 'SgMD', 'SgSC', 'SgBR'].map((f) => document.fonts.load('30px ' + f))).then(() => render());
 }
 
 /** Beispiel komplett öffnen (Startseite): Ort laden, danach Look anwenden (siehe wizardAfterLoad) @param {string} id */

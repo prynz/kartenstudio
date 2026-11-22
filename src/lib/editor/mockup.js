@@ -191,7 +191,7 @@ function wallScene(P) {
 	const uh = Math.max(80 / (B + hcm + 10), Math.min(44 / hcm, 1.6));
 	const uw = (set ? 88 : 72) / gesamt;
 	const cls = `mk-art mk-${auf ? 'gerahmt mk-auf' : P.type}${framed && P.mat && !auf ? ' mk-matted' : ''}`;
-	const paperBg = app.S.bg && app.S.bg !== 'none' ? app.S.bg : '#ffffff';
+	const paperBg = (app.S.lay && app.S.lay.papier) || (app.S.bg && app.S.bg !== 'none' ? app.S.bg : '#ffffff');
 	const dims = `${String(Z.w).replace('.', ',')} × ${String(Z.h).replace('.', ',')} cm`;
 	const label = !fixed ? 'ca. ' + dims : /^\d/.test(Z.name) ? dims : `${Z.name.replace(' quer', '')} · ${dims}`;
 	return `<div class="mk-room mk-r-${roomKey}" style="--wall:${wall};--u:min(${uh.toFixed(3)}cqh,${uw.toFixed(3)}cqw);--ft:min(12cqh,calc(90cqh - var(--u) * ${(B + hcm).toFixed(1)}));--wcm:${Z.w};--hcm:${Z.h};--b:${B}">

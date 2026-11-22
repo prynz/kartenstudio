@@ -3,7 +3,7 @@
 // wie Rahmen, Karte und Text angeordnet sind. Beides ist frei kombinierbar.
 
 /**
- * @typedef {'bar'|'bartop'|'below'|'top'|'over'|'typo'} LayKind
+ * @typedef {'bar'|'bartop'|'below'|'top'|'over'|'typo'|'steckbrief'|'kasten'} LayKind
  * @typedef {{
  *   kind: LayKind,      // + bartop: Farbbalken oben
  *   rule?: boolean,     // Zierlinie zwischen Titel und Untertitel      // bar: Text im Farbbalken unten · below: Text frei unter der Karte · top: Text über der Karte · over: Text über der Karte gelegt
@@ -12,14 +12,19 @@
  *   innerGap: number,   // Abstand dieser Linie zur Karte
  *   shape: 'rect'|'circle'|'heart'|'hex'|'arch'|'rounded'|'house',
  *   coords: boolean,    // zusätzliche Zeile mit Koordinaten
- *   fade: boolean       // (over) weicher Verlauf hinter dem Text
+ *   fade: boolean,      // (over) weicher Verlauf hinter dem Text
+ *   papier?: string,    // eigene Papierfarbe außerhalb der Karte (Karte behält die Themenfarbe)
+ *   foot?: 'tabelle',   // Info-Leiste mit 4 Feldern unter der Karte
+ *   fokus?: number,     // farbige Fläche unter den Straßen (Radius relativ zur Karte)
+ *   lupe?: number,      // hervorgehobener Kreis, außen gedämpft (Radius relativ zur Karte)
+ *   lupeStrich?: boolean, gitter?: boolean, kompass?: boolean
  * }} Lay
  * @typedef {{
  *   name: string, desc: string,
  *   frame: {w:number, r:number, pad:number},
  *   bar?: boolean,
  *   lay: Partial<Lay>,
- *   title?: {size?:number, ls?:number},
+ *   title?: {size?:number, ls?:number, font?:string},
  *   sub?: {size?:number, ls?:number},
  *   aspect?: number,
  *   gap?: number        // Abstand Titel–Untertitel
@@ -234,6 +239,74 @@ export const DESIGNS = {
 		sub: { size: 30, ls: 2 },
 		aspect: 1.33
 	},
+	// ---------- Nach Vorbildern aus Grafikdesign & Kartenkunst (siehe themen/layouts.js) ----------
+	fokus: {
+		name: 'Fokus',
+		desc: 'Farbiger Fleck mitten im Ort – die Straßen schneiden ihn in Blöcke. Titel in Pinselschrift.',
+		frame: { w: 0, r: 0, pad: 0 },
+		lay: { kind: 'over', fade: true, fokus: 0.33 },
+		title: { size: 132, ls: 2, font: 'SgBR' },
+		sub: { size: 28, ls: 4 }
+	},
+	studie: {
+		name: 'Studie',
+		desc: 'Kartenkreis auf weißem Papier, kleiner Titel oben, unten eine Info-Leiste mit Koordinaten, Legende und Maßstab.',
+		frame: { w: 0, r: 0, pad: 70 },
+		lay: { kind: 'top', textPad: 66, shape: 'circle', papier: '#ffffff', foot: 'tabelle' },
+		title: { size: 40, ls: 18, font: 'SgMD' },
+		sub: { size: 30, ls: 1 },
+		aspect: 1
+	},
+	steckbrief: {
+		name: 'Steckbrief',
+		desc: 'Wie eine Sammelserie: Kopfzeile, großer Kartenkreis, Titel links, Nordpfeil und Fakten zum Ort.',
+		frame: { w: 0, r: 0, pad: 52 },
+		lay: { kind: 'steckbrief', shape: 'circle', inner: 2.5, innerGap: 0 },
+		title: { size: 132, ls: 1 },
+		sub: { size: 34, ls: 1 },
+		aspect: 1
+	},
+	kasten: {
+		name: 'Kasten',
+		desc: 'Die Karte füllt alles, in der Mitte ein Textraster mit Titel, Koordinaten und Widmung – wie ein Festivalplakat.',
+		frame: { w: 0, r: 0, pad: 0 },
+		lay: { kind: 'kasten' },
+		title: { size: 72, ls: 4 },
+		sub: { size: 34, ls: 1 }
+	},
+	nachtstadt: {
+		name: 'Schwebend',
+		desc: 'Randlose Karte, gesperrter Titel mit Linie, darunter Region und Koordinaten – ideal für dunkle Stile.',
+		frame: { w: 0, r: 0, pad: 0 },
+		lay: { kind: 'over', fade: true, rule: true, coords: true },
+		title: { size: 80, ls: 34 },
+		sub: { size: 30, ls: 2 },
+		gap: 48
+	},
+	lupe: {
+		name: 'Lupe',
+		desc: 'Ein Kreis hebt das Herz des Ortes hervor, ringsum wird die Karte blasser.',
+		frame: { w: 0, r: 0, pad: 0 },
+		lay: { kind: 'over', fade: true, lupe: 0.4 },
+		title: { size: 70, ls: 20 },
+		sub: { size: 32, ls: 1 }
+	},
+	dossier: {
+		name: 'Dossier',
+		desc: 'Gestrichelter Kreis, feines Gitter und gesperrter Titel – wie eine Einsatzkarte.',
+		frame: { w: 0, r: 0, pad: 0 },
+		lay: { kind: 'over', fade: true, lupe: 0.4, lupeStrich: true, gitter: true, coords: true, kompass: true },
+		title: { size: 74, ls: 42 },
+		sub: { size: 28, ls: 2 }
+	},
+	leise: {
+		name: 'Leise',
+		desc: 'Nur die Karte – randlos, mit kleinem Ortsnamen ganz unten.',
+		frame: { w: 0, r: 0, pad: 0 },
+		lay: { kind: 'over', fade: true },
+		title: { size: 40, ls: 8 },
+		sub: { size: 22, ls: 2 }
+	},
 	bogenlinie: {
 		name: 'Bogen elegant',
 		desc: 'Bogenfenster mit feiner Zierlinie zwischen Titel und Untertitel.',
@@ -266,11 +339,15 @@ export function lum(c) {
  * @param {any} S Editor-Zustand
  */
 export function inkColor(S) {
-	const paper = S.bg === 'none' ? '#ffffff' : S.bg;
-	const dark = [S.bar && S.bar.color, S.frame && S.frame.color, S.cls && S.cls.haupt && S.cls.haupt.s, '#1b1f2a'];
+	const eigen = S.lay && S.lay.papier;
+	const paper = eigen || (S.bg === 'none' ? '#ffffff' : S.bg);
+	// Eigenes Papier um eine dunkle Karte: Schrift in der Kartenfarbe (wie Siebdruck in einer Farbe)
+	const dark = [eigen && S.bg, S.bar && S.bar.color, S.frame && S.frame.color, S.cls && S.cls.haupt && S.cls.haupt.s, '#1b1f2a'];
 	const light = [S.title && S.title.color, S.frame && S.frame.color, '#ffffff'];
 	if (lum(paper) > 0.4) return dark.find((c) => c && c !== 'none' && lum(c) < 0.18) || '#1b1f2a';
-	return light.find((c) => c && c !== 'none' && lum(c) > 0.6) || '#ffffff';
+	// Dunkles Papier: Themen-Schriftfarbe, wenn sie hell genug ist oder kräftig absticht (Gold, Neon …)
+	const k = (/** @type {string} */ c) => (Math.max(lum(c), lum(paper)) + 0.05) / (Math.min(lum(c), lum(paper)) + 0.05);
+	return light.find((c, i) => c && c !== 'none' && (lum(c) > 0.6 || (i === 0 && k(c) >= 4.5))) || '#ffffff';
 }
 
 /**
@@ -287,7 +364,18 @@ export function applyDesign(S, key, preset, full) {
 	S.frame = { ...S.frame, ...D.frame };
 	S.bar.on = !!D.bar;
 	if (full) {
+		// Schrift, die ein Design mitbringt (z. B. Pinsel bei „Fokus“), beim Wechsel wieder zurücksetzen
+		if (S.title.fontDesign && !(D.title && D.title.font)) S.title.font = 'SgXB';
+		// Hatte ein Design den Titel in normale Schreibweise gesetzt (Pinsel), wieder in Großbuchstaben
+		if (S.title.klein && !(D.title && D.title.font === 'SgBR')) {
+			S.title.text = (S.title.text || '').toUpperCase();
+			S.title.klein = false;
+		}
+		S.title.fontDesign = !!(D.title && D.title.font);
 		if (D.title) Object.assign(S.title, D.title);
+		// Pinselschrift wirkt in normaler Schreibweise („Bamberg“ statt „BAMBERG“)
+		const t = S.title.text || '';
+		if (S.title.font === 'SgBR' && t === t.toUpperCase() && (S.title.klein = true)) S.title.text = t.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (/** @type {string} */ m, /** @type {string} */ a, /** @type {string} */ c) => a + c.toUpperCase());
 		if (D.sub) Object.assign(S.sub, D.sub);
 		S.bar.auto = true;
 	}
@@ -296,7 +384,11 @@ export function applyDesign(S, key, preset, full) {
 		S.title.color = preset.text;
 		S.sub.color = preset.text;
 	} else {
-		const ink = inkColor({ ...S, title: { ...S.title, color: preset.text } });
+		// Themen mit eigener Schriftfarbe fürs Papier (Gold, Neon …), wenn sie dort gut lesbar ist
+		const paper = (S.lay && S.lay.papier) || (S.bg === 'none' ? '#ffffff' : S.bg);
+		const p = /** @type {any} */ (preset);
+		const ok = p.ink && (Math.max(lum(p.ink), lum(paper)) + 0.05) / (Math.min(lum(p.ink), lum(paper)) + 0.05) >= 3;
+		const ink = ok ? p.ink : inkColor({ ...S, title: { ...S.title, color: preset.text } });
 		S.title.color = ink;
 		S.sub.color = ink;
 	}

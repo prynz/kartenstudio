@@ -17,6 +17,7 @@ export function newState(presetKey, keep) {
     ov: {},
     scale: 1,
     bg: p.bg,
+    bg2: p.bg2 || '',
     frame: {
       ...p.frame
     },
@@ -94,6 +95,7 @@ export function newState(presetKey, keep) {
     if (keep.route) st.route = JSON.parse(JSON.stringify(keep.route));
     if (keep.hoehen) st.hoehen = { ...keep.hoehen };
     if (keep.multi) st.multi = JSON.parse(JSON.stringify(keep.multi));
+    if (keep.info) st.info = { ...keep.info };
   }
   // Design (Aufbau/Rahmen) bleibt beim Wechsel des Farbthemas erhalten
   applyDesign(st, keep && keep.design || 'poster', p, !keep);
