@@ -683,6 +683,13 @@ await run('3D: Schatten und Perspektive', { viewport: { width: 1440, height: 900
 	await dl.saveAs(f);
 	const svg = fs.readFileSync(f, 'utf8');
 	ok(svg.includes('id="perspektive"') && svg.includes('id="schatten"'), 'SVG-Export enthält Perspektive und Schatten');
+	await page.click('#wzSteps button[data-step="gestalten"]');
+	await page.locator('#fxH3d').scrollIntoViewIfNeeded();
+	await page.check('#fxH3d');
+	await page.waitForTimeout(500);
+	ok((await page.$$('#haeuser3d path')).length > 200 && !(await page.$('#schatten')), '3D-Häuser (Wände + Dächer), Schatten dann aus');
+	await page.screenshot({ path: `${OUT}/51-3d-haeuser.png` });
+	await page.click('#undo');
 	for (let i = 0; i < 3; i++) await page.click('#undo'); // Verschieben, Perspektive, Schatten
 	await page.waitForTimeout(400);
 	ok(!(await page.$('#perspektive')) && !(await page.$('#schatten')), 'Rückgängig nimmt 3D-Effekte zurück');

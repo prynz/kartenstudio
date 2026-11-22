@@ -168,7 +168,7 @@ function kippProj(deg) {
 }
 const PAAR = /(-?\d+(?:\.\d+)?)[ ,](-?\d+(?:\.\d+)?)/g;
 /** Fertigen Karteninhalt in die Perspektive umrechnen (Pfade, Linienstärken, Kachel-Ausschnitte) */
-function kippen(o, P) {
+function kippen(o, P, extra = '') {
   const v = app.S.view;
   const pd = (d) => d.replace(PAAR, (m, a, b) => {
     const q = P.f(+a, +b);
@@ -201,8 +201,106 @@ function kippen(o, P) {
     if (!r) return;
     defs += `<clipPath id="tk${i}"><path d="${pd(`M${r[0]} ${r[1]}L${r[0] + r[2]} ${r[1]}L${r[0] + r[2]} ${r[1] + r[2]}L${r[0]} ${r[1] + r[2]}Z`)}"/></clipPath>`;
   });
-  return `<g id="perspektive" transform="translate(${(v.cx - MW / 2 / v.z).toFixed(3)},${(v.cy - MW * v.a / 2 / v.z).toFixed(3)}) scale(${(1 / v.z).toFixed(6)})">` + (defs ? `<defs>${defs}</defs>` : '') + o + '</g>';
+  return `<g id="perspektive" transform="translate(${(v.cx - MW / 2 / v.z).toFixed(3)},${(v.cy - MW * v.a / 2 / v.z).toFixed(3)}) scale(${(1 / v.z).toFixed(6)})">` + (defs ? `<defs>${defs}</defs>` : '') + o + extra + '</g>';
 }
+/** Farbe abdunkeln (k > 0) oder aufhellen (k < 0); nur Hex-Farben */
+function mischen(c, k) {
+  let h = String(c || '').trim();
+  if (/^#[0-9a-f]{3}$/i.test(h)) h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
+  if (!/^#[0-9a-f]{6}$/i.test(h)) return c;
+  const n = parseInt(h.slice(1), 16), z = k > 0 ? 0 : 255, a = Math.abs(k);
+  const ch = (v) => Math.round(v + (z - v) * a).toString(16).padStart(2, '0');
+  return '#' + ch(n >> 16 & 255) + ch(n >> 8 & 255) + ch(n & 255);
+}
+/** Zufällige, aber feste Zahl 0…1 je Gebäude */
+function zufall(id) {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  return (h >>> 0) / 4294967295;
+}
+/**
+ * 3D-Häuser: Grundriss wird nach oben gezogen (Wände + Dach), Häuser hinten zuerst gezeichnet.
+ * Ohne Perspektive als Schrägansicht, mit Perspektive passend zum Kippwinkel.
+ * Ergebnis in Kartenfeld-Koordinaten (0…MW, 0…MH).
+ */
+function haeuser3d(liste, P) {
+  const v = app.S.view, z = v.z, MH = MW * v.a, D = app.DATA;
+  const pr = P ? P.f : (x, y) => [(x - v.cx) * z + MW / 2, (y - v.cy) * z + MH / 2, 1];
+  // Meter je Kartenfeld-Punkt
+  const my = D.proj.y0 + (D.ext.y0 + D.ext.y1) / 2 / D.proj.sc;
+  const mpu = 40075016.686 * Math.cos(Math.atan(Math.sinh(Math.PI * (1 - 2 * my)))) / D.proj.sc / z;
+  // Höhen überhöhen, damit sie im Poster wirken (große Städte stärker)
+  const ueber = Math.max(2, Math.min(4.5, 2 * mpu / 1.1));
+  const winkel = Math.max(kippWinkel(), 35) * Math.PI / 180;
+  const k = ueber / mpu * Math.sin(winkel);
+  const paper = app.S.bg !== 'none' ? app.S.bg : '#ffffff';
+  const sw = app.S.scale;
+  const H = [];
+  liste.forEach(({ ft, e }) => {
+    const rings = [];
+    ft.d.split('M').forEach(r => {
+      if (!r) return;
+      const pts = [];
+      r.replace(PAAR, (m, a, b) => {
+        pts.push(pr(+a, +b));
+        return m;
+      });
+      if (pts.length > 2) rings.push(pts);
+    });
+    if (!rings.length) return;
+    let hm = ft.h || 0;
+    if (hm <= 5.5) hm = 5 + zufall(ft.id) * 4; // unbekannt: Wohnhaus 5–9 m
+    let maxY = -1e9;
+    rings[0].forEach(q => (maxY = Math.max(maxY, q[1])));
+    H.push({ rings, hm, maxY, e });
+  });
+  H.sort((a, b) => a.maxY - b.maxY);
+  let o = '';
+  H.forEach(({ rings, hm, e }) => {
+    const roof = e.f && e.f !== 'none' ? e.f : paper;
+    const lw = +(e.w * sw * 0.8).toFixed(3);
+    let sued = '', ost = '', west = '', dach = '';
+    const sign0 = Math.sign(flaeche(rings[0])) || 1;
+    rings.forEach((R, ri) => {
+      // Löcher (Innenhöfe) laufen andersherum; dort liegt das Haus außerhalb des Rings
+      const sr = Math.sign(flaeche(R)) || 1;
+      const sg = ri && sr !== sign0 ? -sr : sr;
+      const n = R.length;
+      for (let i = 0; i < n; i++) {
+        const a = R[i], b = R[(i + 1) % n];
+        const dx = b[0] - a[0], dy = b[1] - a[1];
+        const ny = -dx * sg; // Außennormale (y-Anteil); > 0 = zeigt zum Betrachter
+        if (ny <= 0) continue;
+        const ha = hm * k * a[2], hb = hm * k * b[2];
+        const q = `M${a[0].toFixed(1)} ${a[1].toFixed(1)}L${b[0].toFixed(1)} ${b[1].toFixed(1)}L${b[0].toFixed(1)} ${(b[1] - hb).toFixed(1)}L${a[0].toFixed(1)} ${(a[1] - ha).toFixed(1)}Z`;
+        const nx = dy * sg;
+        if (Math.abs(nx) < ny * 0.6) sued += q; else if (nx > 0) ost += q; else west += q;
+      }
+      dach += R.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + (q[1] - hm * k * q[2]).toFixed(1)).join('') + 'Z';
+    });
+    const st = `stroke="${e.s}" stroke-width="${lw}" stroke-linejoin="round"`;
+    if (west) o += `<path d="${west}" fill="${mischen(roof, 0.12)}" ${st}/>`;
+    if (sued) o += `<path d="${sued}" fill="${mischen(roof, 0.22)}" ${st}/>`;
+    if (ost) o += `<path d="${ost}" fill="${mischen(roof, 0.34)}" ${st}/>`;
+    o += `<path d="${dach}" fill="${roof}" fill-rule="evenodd" ${st}/>`;
+  });
+  return o;
+}
+/** Vorzeichenbehaftete Fläche eines Rings (Bildschirm-Koordinaten) */
+function flaeche(R) {
+  let a = 0;
+  for (let i = 0, n = R.length; i < n; i++) {
+    const p = R[i], q = R[(i + 1) % n];
+    a += p[0] * q[1] - q[0] * p[1];
+  }
+  return a / 2;
+}
+/** Hülle, die Kartenfeld-Koordinaten in die Kartenansicht setzt */
+function feldGruppe(id, inhalt) {
+  const v = app.S.view;
+  return `<g id="${id}" transform="translate(${(v.cx - MW / 2 / v.z).toFixed(3)},${(v.cy - MW * v.a / 2 / v.z).toFixed(3)}) scale(${(1 / v.z).toFixed(6)})">${inhalt}</g>`;
+}
+
 /** Höhendaten laden (für Höhenlinien und Relief) – liefert sie, sobald sie da sind */
 function hoehenDaten() {
   const D = app.DATA;
@@ -281,7 +379,10 @@ export function mapContent(forExport, vr) {
     }
   }
   // Schatten der Häuser: Licht von links oben, Schatten fällt nach rechts unten
-  const schatten = fx.schatten ? new Map() : null;
+  const h3d = !!fx.h3d && !pop;
+  /** @type {{ft:any, e:any}[]} */
+  const haus3 = [];
+  const schatten = fx.schatten && !h3d ? new Map() : null;
   const su = (P ? app.S.scale : app.S.scale / app.S.view.z) * 2.6;
   ORDER.forEach(k => {
     if (k === 'weg') o += relief;
@@ -292,6 +393,10 @@ export function mapContent(forExport, vr) {
       if (e.h) return;
       const bx = ft.bx;
       if (bx[2] < vr[0] || bx[0] > vr[2] || bx[3] < vr[1] || bx[1] > vr[3]) return;
+      if (h3d && k === 'haus') {
+        if (ft.a) haus3.push({ ft, e });
+        return;
+      }
       const lc = k === 'haus' ? 'stroke-linejoin="miter"' : 'stroke-linecap="round" stroke-linejoin="round"';
       let fill = ft.a ? e.f : 'none';
       // Pop-Art: jedes Haus bekommt eine feste Zufallsfarbe (außer es wurde einzeln umgefärbt)
@@ -319,7 +424,10 @@ export function mapContent(forExport, vr) {
       o += t >= 0 ? `<g clip-path="url(#${TCP.p}${t})">${arr.join('')}</g>` : arr.join('');
     });
   });
-  if (P) o = kippen(o, P);
+  // 3D-Häuser zuletzt: sie verdecken Straßen dahinter
+  const h3 = haus3.length ? haeuser3d(haus3, P) : '';
+  if (P) o = kippen(o, P, h3 ? `<g id="haeuser3d">${h3}</g>` : '');
+  else if (h3) o += feldGruppe('haeuser3d', h3);
   }
   return o;
 }
@@ -333,7 +441,7 @@ export const TCP = { p: 'tc' };
 const MC = { key: '', node: null, hits: null, rect: null, z: 0 };
 function mapKey() {
   const S = app.S;
-  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, S.hoehen, !!(app.DATA && app.DATA._contours), multiKey(), multiOn() ? [S.view.cx, S.view.cy, S.view.a, S.bg, S.title.color, S.sub.font] : 0, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.motif === 'wolke' || S.motif === 'koord' ? schriftenBereit() : 0, S.motif === 'wolke' ? [S.wolke, S.bg, S.cls.haupt.s, S.bar.color, S.frame.color, S.view.cx, S.view.cy, S.view.a] : 0, S.motif === 'koord' ? [S.koord, S.title.text, S.bg, S.view.cx, S.view.cy, S.view.a, S.cls.haupt.s, S.bar.color, S.frame.color] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0, S.fx ? [S.fx.schatten, S.fx.relief, S.fx.kipp] : 0, kippWinkel() ? [S.view.cx, S.view.cy, S.view.a] : 0, !!(app.DATA && app.DATA._relief)]);
+  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, S.hoehen, !!(app.DATA && app.DATA._contours), multiKey(), multiOn() ? [S.view.cx, S.view.cy, S.view.a, S.bg, S.title.color, S.sub.font] : 0, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.motif === 'wolke' || S.motif === 'koord' ? schriftenBereit() : 0, S.motif === 'wolke' ? [S.wolke, S.bg, S.cls.haupt.s, S.bar.color, S.frame.color, S.view.cx, S.view.cy, S.view.a] : 0, S.motif === 'koord' ? [S.koord, S.title.text, S.bg, S.view.cx, S.view.cy, S.view.a, S.cls.haupt.s, S.bar.color, S.frame.color] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0, S.fx ? [S.fx.schatten, S.fx.relief, S.fx.kipp, S.fx.h3d] : 0, kippWinkel() || (S.fx && S.fx.h3d) ? [S.view.cx, S.view.cy, S.view.a] : 0, !!(app.DATA && app.DATA._relief)]);
 }
 /** Sichtbarer Bereich plus großzügiger Rand, damit Verschieben ohne Neuzeichnen geht */
 function cullRect() {
@@ -356,7 +464,7 @@ function mapNodes() {
   const hits = document.createElementNS(NS, 'g');
   const hw = (12 / app.S.view.z).toFixed(2);
   // In der Perspektive passen die Klickflächen nicht zur Ansicht → dann keine
-  if (!kippWinkel()) node.querySelectorAll('path[data-k]').forEach(p => {
+  if (!kippWinkel() && !(app.S.fx && app.S.fx.h3d)) node.querySelectorAll('path[data-k]').forEach(p => {
     if (p.getAttribute('fill') !== 'none' || p.dataset.k === 'haus') {
       p.setAttribute('pointer-events', 'all');
       p.style.cursor = 'pointer';
@@ -384,7 +492,7 @@ export function renderView() {
   if (!app.DATA) return;
   const inner = app.poster.querySelector('#kartenAnsicht');
   // Perspektive: Verschieben ändert die Verzerrung → jedes Mal neu zeichnen
-  if (!inner || !MC.node || !cacheCovers() || kippWinkel()) {
+  if (!inner || !MC.node || !cacheCovers() || kippWinkel() || (app.S.fx && app.S.fx.h3d)) {
     render();
     return;
   }

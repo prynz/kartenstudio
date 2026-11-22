@@ -278,6 +278,8 @@ export function syncWizard() {
 	/** @type {HTMLInputElement} */ ($('fxPaper')).checked = !!(S.fx && S.fx.paper);
 	/** @type {HTMLInputElement} */ ($('fxVig')).checked = !!(S.fx && S.fx.vig);
 	/** @type {HTMLInputElement} */ ($('fxSchatten')).checked = !!(S.fx && S.fx.schatten);
+	/** @type {HTMLInputElement} */ ($('fxH3d')).checked = !!(S.fx && S.fx.h3d);
+	$('fxSchatten').closest('label')?.classList.toggle('hidden', !!(S.fx && S.fx.h3d));
 	/** @type {HTMLInputElement} */ ($('fxRelief')).checked = !!(S.fx && S.fx.relief);
 	const kp = (S.fx && +S.fx.kipp) || 0;
 	if (document.activeElement !== $('fxKipp')) /** @type {HTMLInputElement} */ ($('fxKipp')).value = String(kp);
@@ -902,12 +904,13 @@ export function initWizard() {
 	);
 
 	// Effekte (Design-Schritt)
-	/** @param {string} id @param {'paper'|'vig'|'schatten'|'relief'} key */
+	/** @param {string} id @param {'paper'|'vig'|'schatten'|'relief'|'h3d'} key */
 	const fxToggle = (id, key) =>
 		$(id).addEventListener('change', (e) => change(() => (app.S.fx = { ...(app.S.fx || {}), [key]: /** @type {HTMLInputElement} */ (e.target).checked })));
 	fxToggle('fxPaper', 'paper');
 	fxToggle('fxVig', 'vig');
 	fxToggle('fxSchatten', 'schatten');
+	fxToggle('fxH3d', 'h3d');
 	fxToggle('fxRelief', 'relief');
 	const kipp = /** @type {HTMLInputElement} */ ($('fxKipp'));
 	kipp.addEventListener('input', () => {

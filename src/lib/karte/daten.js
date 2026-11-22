@@ -50,7 +50,9 @@ export function buildDataTiles(tiles, b, big, place) {
           d,
           pts,
           bx,
-          t: ti
+          t: ti,
+          // Gebäudehöhe in Metern (für 3D-Häuser)
+          h: lname === 'building' ? +ft.props.render_height || 0 : 0
         });
       });
     });
@@ -76,6 +78,13 @@ export function buildDataTiles(tiles, b, big, place) {
     center: place.center,
     src: 'tiles'
   };
+}
+/** Gebäudehöhe aus OSM-Merkmalen (Meter), 0 = unbekannt */
+function hoehe(tags) {
+  const h = parseFloat(tags.height);
+  if (h > 0) return h;
+  const l = parseFloat(tags['building:levels']);
+  return l > 0 ? l * 3 + 2 : 0;
 }
 export function buildData(osm, b, big, place) {
   const [x0, y0] = merc(b.w, b.n),
@@ -125,6 +134,7 @@ export function buildData(osm, b, big, place) {
         k,
         a: area,
         t: -1,
+        h: k === 'haus' ? hoehe(el.tags) : 0,
         ...r
       });
     } else if (el.type === 'relation' && el.members) {
