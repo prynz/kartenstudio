@@ -148,6 +148,7 @@
 <ul class="trust"><li>Kostenloser Ersatz bei Transportschaden</li><li>Druckdatei zu jeder Bestellung gratis</li><li>Personalisiert – jedes Stück ein Unikat</li></ul>
 <div class="mk-opt" data-for="poster gerahmt leinwand alu download"><div class="lab">Größe</div><div class="wz-chips wz-sizes" data-sizes></div>
 <label class="tog wz-tog wz-quer"><input type="checkbox" data-quer><span>Querformat</span></label></div>
+<div class="mk-opt" data-for="poster gerahmt leinwand alu"><label class="tog wz-tog"><input type="checkbox" id="mkSet"><span>Als 3er-Set zeigen (Koordinaten · Karte · Sternenhimmel)</span></label></div>
 <div class="mk-opt" data-for="poster gerahmt leinwand alu aufsteller"><div class="lab">Raum</div><div class="mk-sw mk-rooms" id="mkRoomSw"></div></div>
 <div class="mk-opt" data-for="gerahmt aufsteller"><div class="lab">Rahmen</div><div class="mk-sw" id="mkFrameSw"></div>
 <label class="tog wz-tog"><input type="checkbox" id="mkMat"><span>Passepartout (heller Rand)</span></label></div>

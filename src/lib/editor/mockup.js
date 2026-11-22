@@ -3,7 +3,10 @@
 // es werden keine fremden Bilder oder Dienste gebraucht.
 import { app as appUntyped } from './app.js';
 import { buildSVG, geo } from './zeichnen.js';
-import { paper, paperOrFree } from './druck.js';
+import { paper, paperOrFree, fitPrint } from './druck.js';
+import { clampView } from './zustand.js';
+import { viewCenterLL } from './seitenleiste.js';
+import { defaultSky, loadSky, skyLabel, skyReady } from '../themen/himmel.js';
 
 /** @type {any} */
 const app = appUntyped;
@@ -66,6 +69,42 @@ export function product(S) {
 }
 
 let url = '';
+/** @type {string[]} */
+let setUrls = [];
+
+/**
+ * Passendes 3er-Set: Koordinaten-Poster, die eigene Karte, Sternenhimmel – gleicher Stil, gleiches Design.
+ * @returns {string[]} Bild-Adressen [links, mitte, rechts]
+ */
+function setBilder() {
+	const keep = app.S;
+	const [lon, lat] = viewCenterLL();
+	/** @param {(c:any)=>void} fn */
+	const variante = (fn) => {
+		const c = JSON.parse(JSON.stringify(keep));
+		fn(c);
+		app.S = c;
+		try {
+			fitPrint(c);
+			clampView(c.view);
+			return URL.createObjectURL(new Blob([buildSVG(true)], { type: 'image/svg+xml' }));
+		} finally {
+			app.S = keep;
+		}
+	};
+	const links = variante((c) => {
+		c.motif = 'koord';
+		c.koord = c.koord || { lat: +lat.toFixed(5), lon: +lon.toFixed(5), text: '', align: 'mitte' };
+		c.pins = [];
+	});
+	const mitte = keep.motif === 'karte' || !keep.motif ? url : variante((c) => (c.motif = 'karte'));
+	const rechts = variante((c) => {
+		c.motif = 'sterne';
+		c.sky = c.sky || defaultSky(lat, lon);
+		c.note = { on: true, text: skyLabel(c.sky), auto: true };
+	});
+	return [links, mitte, rechts];
+}
 let timer = 0;
 
 /** Mockup neu zeichnen (verzögert, damit schnelles Tippen flüssig bleibt) */
@@ -81,6 +120,13 @@ export function renderMockup() {
 	const g = geo();
 	const old = url;
 	url = URL.createObjectURL(new Blob([buildSVG(true)], { type: 'image/svg+xml' }));
+	const alteSet = setUrls;
+	setUrls = [];
+	const istSet = !!P.set && /^(poster|gerahmt|leinwand|alu)$/.test(P.type);
+	if (istSet) {
+		if (!skyReady()) loadSky().then(() => renderMockup());
+		setUrls = setBilder();
+	}
 	let html = '';
 	if (P.type === 'shirt') html = shirtScene(P);
 	else if (P.type === 'tasse') html = mugScene();
@@ -89,7 +135,9 @@ export function renderMockup() {
 	box.innerHTML = html;
 	const img = box.querySelector('.mk-img');
 	if (img) /** @type {HTMLImageElement|SVGImageElement} */ (img).setAttribute(img.tagName === 'image' ? 'href' : 'src', url);
+	box.querySelectorAll('.mk-set-img').forEach((el) => el.setAttribute('src', setUrls[+(/** @type {HTMLElement} */ (el).dataset.i || 0)] || url));
 	if (old) setTimeout(() => URL.revokeObjectURL(old), 1000);
+	alteSet.forEach((u) => setTimeout(() => URL.revokeObjectURL(u), 1000));
 }
 
 /** Möbel als SVG in cm (1 Einheit = 1 cm), unten bündig auf dem Boden */
@@ -135,10 +183,13 @@ function wallScene(P) {
 	const wcm = Z.w + extra,
 		hcm = Z.h + extra;
 	// surf = Höhe der Abstellfläche (Oberkante Möbel ohne Deko)
-	const B = auf ? /** @type {any} */ (R).surf ?? R.top : R.top + R.gap; // Unterkante über dem Boden (cm); der Aufsteller steht direkt auf dem Möbel
+	const B = auf ? /** @type {any} */ (R).surf ?? R.top : R.top + R.gap;
+	const set = !!P.set && !auf;
+	const luecke = Math.max(6, Z.w * 0.18); // Abstand zwischen den Postern im Set (cm)
+	const gesamt = set ? wcm * 3 + luecke * 2 : wcm; // Unterkante über dem Boden (cm); der Aufsteller steht direkt auf dem Möbel
 	// Maßstab: alles passt hinein – kleine Poster werden etwas näher „fotografiert“ (Möbel ragen dann unten heraus)
 	const uh = Math.max(80 / (B + hcm + 10), Math.min(44 / hcm, 1.6));
-	const uw = 72 / wcm;
+	const uw = (set ? 88 : 72) / gesamt;
 	const cls = `mk-art mk-${auf ? 'gerahmt mk-auf' : P.type}${framed && P.mat && !auf ? ' mk-matted' : ''}`;
 	const paperBg = app.S.bg && app.S.bg !== 'none' ? app.S.bg : '#ffffff';
 	const dims = `${String(Z.w).replace('.', ',')} × ${String(Z.h).replace('.', ',')} cm`;
@@ -147,8 +198,12 @@ function wallScene(P) {
 <div class="mk-light"></div>
 <div class="mk-floor"></div>
 <div class="mk-furn">${FURN[roomKey]}</div>
-<div class="${cls}" style="${framed ? `--frame:${frame.css};` : ''}--paper:${paperBg}"><div class="mk-paper"><img class="mk-img" alt="Vorschau deines Motivs"></div></div>
-<div class="mk-size">${label}</div>
+${
+		set
+			? `<div class="mk-set" style="--gap:${luecke}">${[0, 1, 2].map((i) => `<div class="${cls}" style="${framed ? `--frame:${frame.css};` : ''}--paper:${paperBg}"><div class="mk-paper"><img class="mk-set-img" data-i="${i}" alt="Poster ${i + 1} des Sets"></div></div>`).join('')}</div>`
+			: `<div class="${cls}" style="${framed ? `--frame:${frame.css};` : ''}--paper:${paperBg}"><div class="mk-paper"><img class="mk-img" alt="Vorschau deines Motivs"></div></div>`
+	}
+<div class="mk-size">${set ? '3er-Set · je ' : ''}${label}</div>
 </div>`;
 }
 

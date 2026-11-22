@@ -121,6 +121,7 @@ function syncProduct() {
 	all('.mk-opt').forEach((o) => o.classList.toggle('hidden', !(o.dataset.for || '').split(' ').includes(P.type)));
 	/** @type {HTMLInputElement} */ ($('mkMat')).checked = !!P.mat;
 	/** @type {HTMLInputElement} */ ($('mkModel')).checked = !!P.model;
+	/** @type {HTMLInputElement} */ ($('mkSet')).checked = !!P.set;
 	/** @type {HTMLElement} */ ($('mkMat').closest('label')).classList.toggle('hidden', P.type !== 'gerahmt');
 	const pr = preis(P, app.S.print);
 	$('priceVal').textContent = pr.text;
@@ -863,6 +864,7 @@ export function initWizard() {
 
 	// Raum und Model (Produkt)
 	swatches('mkRoomSw', ROOMS, 'room');
+	$('mkSet').addEventListener('change', (e) => setProduct({ set: /** @type {HTMLInputElement} */ (e.target).checked }));
 	$('mkModel').addEventListener('change', (e) => setProduct({ model: /** @type {HTMLInputElement} */ (e.target).checked }));
 
 	// Teilen

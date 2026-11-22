@@ -503,6 +503,12 @@ await run('Desktop – Marktcheck-Runde 1', { viewport: { width: 1440, height: 9
 	await page.waitForTimeout(300);
 	ok((await page.textContent('#priceVal')) === '24,90 €' && /Lieferung voraussichtlich \w\w, \d\d\.\d\d\./.test(await page.textContent('#priceShip')), 'A5-Aufsteller 24,90 € mit Lieferdatum');
 	ok((await page.textContent('.mk-size')).includes('A5'), 'Aufsteller in A5 im Raum');
+	await page.click('#wzProd button[data-t="gerahmt"]');
+	await page.check('#mkSet');
+	await page.waitForTimeout(1800);
+	const ok3 = await page.$$eval('.mk-set-img', (a) => a.length === 3 && a.every((i) => i.complete && i.naturalWidth > 0));
+	ok(ok3 && (await page.textContent('#priceDet')).includes('Set-Rabatt'), 'Galerie-Wand: 3er-Set mit Set-Rabatt');
+	await page.uncheck('#mkSet');
 	const res = await page.goto(URL.replace(/\/$/, '') + '/lizenzen');
 	ok(res.ok() && (await page.textContent('body')).includes('Copernicus'), 'Lizenzseite mit Copernicus-Hinweis');
 });

@@ -78,6 +78,12 @@ export function preis(P, print) {
 			}
 		}
 	}
+	// 3er-Set (Galerie-Wand): drei Poster, 15 % günstiger als einzeln
+	if (P.set && /^(poster|gerahmt|leinwand|alu)$/.test(typ)) {
+		const einzeln = p * 3;
+		p = Math.floor(einzeln * 0.85) + 0.9; // „,90“-Preis
+		details.unshift(`3er-Set statt ${fmt(einzeln)} – 15 % Set-Rabatt`);
+	}
 	return { preis: p, text: fmt(p), details };
 }
 
