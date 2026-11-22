@@ -659,3 +659,66 @@ body:not(.wiz-on) .fav-btn,body.mk-on .fav-btn{display:none}
 .wz-3d .nur-std{display:none}
 .wz-3d.std .nur-std{display:flex}
 .wz-3d.std p.nur-std{display:block}
+
+/* ---------- Werkzeugleiste (Ort · Stil · Design · Text · Extras · Fertig) ---------- */
+.wz-steps{gap:2px;padding:8px 8px 6px}
+.wz-steps button{gap:3px;padding:7px 0 6px;border-radius:12px;color:var(--soft);transition:background .2s cubic-bezier(.2,.8,.2,1),color .2s}
+.wz-steps button svg{transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.wz-steps button span{font-size:11.5px;font-weight:500;color:inherit}
+.wz-steps button:hover{color:var(--ink);background:var(--hover)}
+.wz-steps button.on{color:var(--slate);background:#eef0f4}
+.wz-steps button.on span{color:var(--slate);font-weight:650}
+.wz-steps button.on svg{transform:translateY(-1px) scale(1.07)}
+.wz-steps button:focus-visible{box-shadow:0 0 0 3px var(--accentbg)}
+.wz-foot .wz-back{display:none}
+.wz-alllink{display:none}
+.hdr-fertig{display:none}
+.wz-pane h3{font-size:18px;margin:14px 0 8px}
+@media(max-width:900px){
+  /* Leiste fest unten, wie in Foto-Apps; die Einstellungen sitzen darüber */
+  body.wiz-on:has(#side:not(.nodata)) .app{height:calc(100vh - 56px - 62px);height:calc(100dvh - 56px - 62px - env(safe-area-inset-bottom))}
+  .wz-steps,.sheet-grip + .wiz .wz-steps{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:25;padding:5px 6px calc(5px + env(safe-area-inset-bottom));background:rgba(255,255,255,.98);border-top:1px solid var(--line);border-bottom:0;box-shadow:0 -4px 16px rgba(20,24,35,.06)}
+  .wz-steps button{padding:6px 0 4px}
+  .wz-steps button span,.wz-steps button.on span{display:block;font-size:10.5px}
+  .wz-steps button:hover{background:none}
+  .wz-steps button.on{background:#eef0f4}
+  .wz-foot{display:none}
+  .wz-alllink{display:block;margin:18px auto 10px;text-align:center}
+  .hdr-fertig{display:inline-flex}
+  #dlBtn{display:none}
+  /* Vorschläge als wischbare Reihe */
+  .vs-grid{display:flex;overflow-x:auto;scrollbar-width:none;gap:10px;margin:0 -16px;padding:2px 16px 8px;scroll-snap-type:x mandatory}
+  .vs-grid::-webkit-scrollbar{display:none}
+  .vs-grid .vs{flex:0 0 30%;scroll-snap-align:start}
+}
+
+/* ---------- Fertig: Reiter Produkt · Herunterladen · Teilen ---------- */
+.fz-tabs{display:flex;margin:12px 0 14px}
+.fz-tabs button{flex:1}
+#wiz[data-fz="produkt"] [data-fsub]:not([data-fsub="produkt"]),
+#wiz[data-fz="laden"] [data-fsub]:not([data-fsub="laden"]),
+#wiz[data-fz="teilen"] [data-fsub]:not([data-fsub="teilen"]){display:none}
+.wz-order{margin:10px 0 4px}
+@media(max-width:900px){
+  .fz-tabs{margin:6px 0 10px}
+  .wz-head .wz-dice{height:34px;padding:0 12px;font-size:13px}
+  .wz-head .wz-dice svg{width:16px;height:16px}
+  .vs-grid,.wz-cards,.wz-prod,.mk-sw{scroll-padding-inline:16px}
+  .vs-grid .vs{flex:0 0 24%}
+  .vs b{font-size:11px}
+}
+@media(max-width:900px){
+  /* Ort am Handy: Name steht schon im Poster → direkt Suche und Ausschnitt-Knöpfe */
+  .wz-place{display:none}
+  .wz-pane[data-step="ausschnitt"] h3,.wz-pane[data-step="ausschnitt"] > .wz-hint{display:none}
+  .wz-pane.on+.wz-pane.on{margin-top:6px;padding-top:0;border-top:0}
+  .wz-search{margin-top:8px}
+}
+@media(max-width:900px){.wz-pane[data-step="ausschnitt"] h3{display:none!important}}
+.wz-3d > .lab{margin-top:18px}
+
+/* ---------- Vorschaufläche: ruhiger „Studio“-Hintergrund statt Punktraster ---------- */
+.canvas{background-color:#ebe8e2;background-image:radial-gradient(120% 90% at 50% 38%,#f8f7f4 0%,#efece6 55%,#e4e0d8 100%);background-size:100% 100%;background-attachment:local}
+#poster{box-shadow:0 1px 2px rgba(20,24,35,.06),0 6px 14px rgba(20,24,35,.07),0 26px 60px -12px rgba(20,24,35,.22)}
+.wiz-on .canvas{padding:48px 56px}
+@media(max-width:900px){.wiz-on .canvas{padding:18px 22px}}

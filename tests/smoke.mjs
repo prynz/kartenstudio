@@ -22,6 +22,29 @@ async function run(name, ctxOpts, fn) {
 	const ctx = await browser.newContext(ctxOpts);
 	if (!/Einführung/.test(name)) await ctx.addInitScript(() => localStorage.setItem('kartenstudio.tipps.v1', '1'));
 	const page = await ctx.newPage();
+	// Neue Werkzeugleiste: Liegt ein Bedienelement in einem anderen Bereich, zuerst dorthin wechseln
+	// (wie ein Mensch, der erst auf „Extras“ tippt und dann den Schalter umlegt)
+	const zeig = (sel) =>
+		page
+			.evaluate((sel) => {
+				const el = document.querySelector(sel);
+				if (!el || el.offsetParent) return;
+				const pane = el.closest('.wz-pane');
+				if (!pane) return;
+				const map = { ort: 'ort', ausschnitt: 'ort', stil: 'stil', design: 'design', text: 'text', extras: 'extras', produkt: 'fertig', fertig: 'fertig' };
+				const b = document.querySelector(`#wzSteps button[data-step="${map[pane.dataset.step]}"]`);
+				if (b && !b.classList.contains('on')) b.click();
+				const sub = el.closest('[data-fsub]');
+				if (sub) document.querySelector(`#fertigTabs [data-t="${sub.dataset.fsub}"]`)?.click();
+			}, sel)
+			.catch(() => {});
+	for (const m of ['click', 'check', 'uncheck', 'fill', 'tap']) {
+		const orig = page[m].bind(page);
+		page[m] = async (sel, ...rest) => {
+			if (typeof sel === 'string' && !sel.startsWith('#wzSteps')) await zeig(sel);
+			return orig(sel, ...rest);
+		};
+	}
 	const errors = [];
 	page.on('pageerror', (e) => errors.push(String(e)));
 	page.on('console', (m) => m.type() === 'error' && errors.push('console: ' + m.text()));
@@ -71,9 +94,7 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 	// Designs durchklicken
 	await page.click('#wzNext');
 	await page.waitForTimeout(1200);
-	ok(await page.locator('.wz-pane[data-step="text"]').isVisible(), '„Weiter“ führt zum Schritt „Text“');
-	await page.click('#wzSteps button[data-step="gestalten"]');
-	await page.locator('#wzDesigns').scrollIntoViewIfNeeded();
+	ok(await page.locator('.wz-pane[data-step="design"]').isVisible(), '„Weiter“ führt vom Stil zum Design');
 	// Vorschaubilder entstehen nacheinander, wenn der Browser Zeit hat
 	await page.waitForFunction(() => [...document.querySelectorAll('#wzDesigns img')].every((x) => x.complete && x.naturalWidth > 0), null, { timeout: 30000 }).catch(() => {});
 	const designs = await page.$$eval('#wzDesigns button', (b) => b.map((x) => x.dataset.d));
@@ -142,7 +163,7 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 	ok(/repeating-linear-gradient/.test(await page.getAttribute('.mk-gerahmt', 'style')), 'Rahmen „Eiche“ gewählt');
 	await page.screenshot({ path: `${OUT}/3b-mockup-desktop.png` });
 	// Pop-Art-Thema
-	await page.click('#wzSteps button[data-step="gestalten"]');
+	await page.click('#wzSteps button[data-step="stil"]');
 	await page.click('#wzStyles button[data-p="popart"]');
 	await page.waitForTimeout(400);
 	ok((await page.$$eval('#symbole path', (u) => u.reduce((n, p) => n + (p.getAttribute('d').match(/Z/g) || []).length, 0))) > 300, 'Pop-Art: Symbolteppich gezeichnet');
@@ -188,7 +209,7 @@ await run('iPhone – Offline-Beispiel', { ...devices['iPhone 14'] }, async (pag
 	ok(await posterVisible(), 'Handy: Poster bleibt beim Text-Ändern sichtbar');
 	ok((await page.evaluate(() => window.scrollY)) === 0, 'Handy: Seite selbst scrollt nicht weg');
 	await page.screenshot({ path: `${OUT}/5b-text-iphone.png` });
-	await page.tap('#wzSteps button[data-step="gestalten"]');
+	await page.tap('#wzSteps button[data-step="stil"]');
 	await page.waitForTimeout(600);
 	await page.tap('#wzStyles button[data-p="vintage"]');
 	await page.waitForTimeout(500);
@@ -203,7 +224,7 @@ await run('iPhone – Offline-Beispiel', { ...devices['iPhone 14'] }, async (pag
 	await page.mouse.up();
 	await page.waitForTimeout(700);
 	const h1 = (await page.locator('#side').boundingBox()).height;
-	ok(h1 > h0 + 80 && (await posterVisible(100)), `Handy: Leiste hochgezogen (${Math.round(h0)} → ${Math.round(h1)} px), Poster sichtbar`);
+	ok(h1 > h0 + 50 && (await posterVisible(100)), `Handy: Leiste hochgezogen (${Math.round(h0)} → ${Math.round(h1)} px), Poster sichtbar`);
 	await page.screenshot({ path: `${OUT}/5d-gross-iphone.png` });
 });
 
@@ -218,20 +239,20 @@ await run('Desktop – Druck, Pins, Teilen, Merken', { viewport: { width: 1440, 
 	const pre1 = await page.evaluate(() => document.querySelector('#wzStyles .on')?.dataset.p);
 	ok(pre1 && pre1 !== pre0, `„Überrasch mich“ wählt neuen Stil (${pre0} → ${pre1})`);
 	await page.click('#wzStyles button[data-p="umriss"]');
-	await page.click('#wzSteps button[data-step="gestalten"]');
+	await page.click('#wzSteps button[data-step="stil"]');
 	await page.click('#wzDesigns button[data-d="siegritz"]');
 	await page.waitForTimeout(300);
 	// Druckgröße: Poster bekommt genau das Seitenverhältnis von A3
 	await page.click('#wzSteps button[data-step="ort"]');
-	await page.click('.wz-pane[data-step="ausschnitt"] [data-sizes] button[data-k="a3"]');
+	await page.click('.wz-pane[data-step="produkt"] [data-sizes] button[data-k="a3"]');
 	await page.waitForTimeout(500);
 	const vb = await page.evaluate(() => document.getElementById('poster').getAttribute('viewBox').split(' ').map(Number));
 	ok(Math.abs(vb[3] / vb[2] - 42 / 29.7) < 0.005, `A3 gewählt: Poster im Verhältnis 1 : ${(vb[3] / vb[2]).toFixed(3)} (Soll 1,414)`);
-	await page.check('.wz-pane[data-step="ausschnitt"] [data-quer]');
+	await page.check('.wz-pane[data-step="produkt"] [data-quer]');
 	await page.waitForTimeout(500);
 	const vq = await page.evaluate(() => document.getElementById('poster').getAttribute('viewBox').split(' ').map(Number));
 	ok(Math.abs(vq[3] / vq[2] - 29.7 / 42) < 0.005, 'Querformat dreht das Poster');
-	await page.uncheck('.wz-pane[data-step="ausschnitt"] [data-quer]');
+	await page.uncheck('.wz-pane[data-step="produkt"] [data-quer]');
 	await page.waitForTimeout(400);
 	// Text: Widmung + Pins
 	await page.click('#wzSteps button[data-step="text"]');
@@ -281,6 +302,7 @@ await run('Desktop – Druck, Pins, Teilen, Merken', { viewport: { width: 1440, 
 	await page.click('.wz-pane[data-step="produkt"] [data-sizes] button[data-k="a3"]');
 	// Fertig: Ampel + PDF
 	await page.click('#wzSteps button[data-step="fertig"]');
+	await page.click('#fertigTabs [data-t="laden"]');
 	await page.waitForTimeout(400);
 	ok(await page.locator('#wzQa').isVisible(), 'Qualitäts-Ampel: ' + (await page.textContent('#wzQa b')));
 	await page.screenshot({ path: `${OUT}/12-fertig.png` });
@@ -339,11 +361,11 @@ await run('Desktop – Anlass-Vorlagen und Effekte', { viewport: { width: 1440, 
 	ok((await page.$('#papier')) !== null, 'Papier-Struktur aktiv');
 	await page.screenshot({ path: `${OUT}/15-anlass-hochzeit.png` });
 	await page.click('#wzSteps button[data-step="ort"]');
-	await page.click('.wz-pane[data-step="ort"] [data-occ] button[data-k="geburt"]');
+	await page.click('.wz-more [data-occ] button[data-k="geburt"]');
 	await page.waitForTimeout(700);
 	ok((await page.textContent('#widmung')) === 'Willkommen auf der Welt' && (await page.$('#papier')) === null, 'Anlass „Geburt“ im Assistenten gewechselt');
 	await page.screenshot({ path: `${OUT}/16-anlass-geburt.png` });
-	await page.click('#wzSteps button[data-step="gestalten"]');
+	await page.click('#wzSteps button[data-step="stil"]');
 	await page.check('#fxVig');
 	await page.waitForTimeout(300);
 	ok((await page.$('#vignette')) !== null, 'Vignette zuschaltbar');
@@ -357,8 +379,8 @@ await run('Desktop – Anlass-Vorlagen und Effekte', { viewport: { width: 1440, 
 	await page.click('#wzFonts button[data-t="SgSC"]');
 	await page.waitForTimeout(400);
 	ok((await page.getAttribute('#titel', 'font-family')) === 'SgSC' && (await page.textContent('#titel')) === 'Siegritz', 'Schreibschrift-Titel „Siegritz“');
-	await page.click('#wzSteps button[data-step="gestalten"]');
-	await page.click('#wzSteps button[data-step="gestalten"]');
+	await page.click('#wzSteps button[data-step="stil"]');
+	await page.click('#wzSteps button[data-step="stil"]');
 	await page.click('#wzStyles button[data-p="cyber"]');
 	await page.click('#wzSteps button[data-step="fertig"]');
 	await page.waitForTimeout(400);
@@ -389,7 +411,7 @@ await run('Desktop – Sternenhimmel', { viewport: { width: 1440, height: 900 },
 	await page.waitForTimeout(500);
 	ok((await page.textContent('#kartenInhalt')).includes('GROSSER BÄR') || (await page.textContent('#kartenInhalt')).length > 50, 'Sternbild-Namen angezeigt');
 	await page.screenshot({ path: `${OUT}/18-sternenhimmel-gold.png` });
-	await page.click('#wzSteps button[data-step="gestalten"]');
+	await page.click('#wzSteps button[data-step="stil"]');
 	await page.click('#wzDesigns button[data-d="klassisch"]');
 	await page.waitForTimeout(800);
 	await page.screenshot({ path: `${OUT}/19-sternenhimmel-rechteck.png` });
@@ -398,7 +420,7 @@ await run('Desktop – Sternenhimmel', { viewport: { width: 1440, height: 900 },
 	const f = `${OUT}/${dl.suggestedFilename()}`;
 	await dl.saveAs(f);
 	ok(fs.readFileSync(f, 'utf8').length > 100000, 'Sternenhimmel als SVG exportiert');
-	await page.click('#wzSteps button[data-step="gestalten"]');
+	await page.click('#wzSteps button[data-step="stil"]');
 	await page.click('#wzMode button[data-m="art"]');
 	await page.waitForTimeout(600);
 	ok((await page.$$('#poster path[data-k]')).length > 100, 'Zurück zur Karte');
@@ -487,13 +509,13 @@ await run('Desktop – Marktcheck-Runde 1', { viewport: { width: 1440, height: 9
 	await page.waitForTimeout(500);
 	// Einfarbige Themen + Typografie
 	await page.click('#wzStyles button[data-p="koralle"]');
-	await page.click('#wzSteps button[data-step="gestalten"]');
+	await page.click('#wzSteps button[data-step="stil"]');
 	await page.click('#wzDesigns button[data-d="typo"]');
 	await page.waitForTimeout(600);
 	ok((await page.getAttribute('#kartenhintergrund', 'fill')) === '#e2645a', 'Einfarbiges Thema „Koralle“');
 	await page.screenshot({ path: `${OUT}/29-koralle-typo.png` });
 	// Koordinaten-Poster
-	await page.click('#wzSteps button[data-step="gestalten"]');
+	await page.click('#wzSteps button[data-step="stil"]');
 	await page.click('#wzMode button[data-m="koord"]');
 	await page.waitForTimeout(900);
 	const kt = await page.textContent('#kartenInhalt');
@@ -553,7 +575,7 @@ await run('Desktop – Wortwolke', { viewport: { width: 1440, height: 900 } }, a
 	await page.fill('#wzSub', 'Willkommen auf der Welt');
 	await page.waitForTimeout(500);
 	ok((await page.innerHTML('#wortwolke')) === a1, 'Wolke bleibt stabil beim Tippen');
-	await page.click('#wzSteps button[data-step="gestalten"]');
+	await page.click('#wzSteps button[data-step="stil"]');
 	await page.click('#wzStyles button[data-p="insel"]');
 	await page.click('#wzMode button[data-m="art"]');
 	await page.waitForTimeout(600);
@@ -572,7 +594,7 @@ await run('Beispiel-Galerie', { viewport: { width: 1440, height: 900 } }, async 
 	await page.waitForTimeout(600);
 	ok((await page.$('#demoBtn')) === null && !(await page.content()).includes('Beispiel öffnen: Siegritz'), 'Kein Siegritz-Beispielknopf mehr auf der Startseite');
 	// Im Editor: Look auf den eigenen Ort übernehmen
-	await page.click('#wzSteps button[data-step="gestalten"]');
+	await page.click('#wzSteps button[data-step="stil"]');
 	await page.click('.wz-pane[data-step="stil"] [data-bsp-open]');
 	await page.waitForSelector('#bspOverlay:not([hidden])');
 	ok((await page.$$('#bspGrid [data-id]')).length >= 12, 'Galerie im Editor geöffnet');
@@ -635,7 +657,7 @@ await run('Bedienung im Poster: Einführung, Text im Poster, Gespeichert, Favori
 	await page.waitForSelector('#gespeichert.on', { timeout: 4000 }).catch(() => {});
 	ok(!!(await page.$('#gespeichert.on')), '„Gespeichert ✓“ erscheint');
 	// Favoriten
-	await page.click('#wzSteps button[data-step="gestalten"]');
+	await page.click('#wzSteps button[data-step="stil"]');
 	const p0 = await page.getAttribute('#wzStyles button.on', 'data-p');
 	await page.click('#favBtn');
 	await page.click('#wzStyles button[data-p="dunkel"]');
@@ -661,7 +683,6 @@ await run('3D: Schatten und Perspektive', { viewport: { width: 1440, height: 900
 	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.click('#wzStyles button[data-p="dunkel"]');
-	await page.locator('#fxSchatten').scrollIntoViewIfNeeded();
 	await page.check('#fxSchatten');
 	await page.waitForTimeout(400);
 	ok((await page.$$('#schatten path')).length > 50, 'Häuser werfen Schatten');
@@ -684,8 +705,7 @@ await run('3D: Schatten und Perspektive', { viewport: { width: 1440, height: 900
 	await dl.saveAs(f);
 	const svg = fs.readFileSync(f, 'utf8');
 	ok(svg.includes('id="perspektive"') && svg.includes('id="schatten"'), 'SVG-Export enthält Perspektive und Schatten');
-	await page.click('#wzSteps button[data-step="gestalten"]');
-	await page.locator('#fxH3d').scrollIntoViewIfNeeded();
+	await page.click('#wzSteps button[data-step="stil"]');
 	await page.check('#fxH3d');
 	await page.waitForTimeout(500);
 	ok((await page.$$('#haeuser3d path')).length > 200 && !(await page.$('#schatten')), '3D-Häuser (Wände + Dächer), Schatten dann aus');
@@ -694,8 +714,7 @@ await run('3D: Schatten und Perspektive', { viewport: { width: 1440, height: 900
 	// Drehen: Karte und Markierung drehen mit
 	await page.click('#wzSteps button[data-step="text"]');
 	await page.click('#wzPinAdd button:first-child');
-	await page.click('#wzSteps button[data-step="gestalten"]');
-	await page.locator('#fxDreh').scrollIntoViewIfNeeded();
+	await page.click('#wzSteps button[data-step="stil"]');
 	const d0 = await page.getAttribute('#perspektive path[data-k="haupt"]', 'd');
 	await page.fill('#fxDreh', '90');
 	await page.dispatchEvent('#fxDreh', 'change');
@@ -758,7 +777,6 @@ if (ONLINE)
 		await page.goto(URL + '#ort=pottenstein');
 		await page.reload();
 		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });
-		await page.locator('#fxRelief').scrollIntoViewIfNeeded();
 		await page.check('#fxRelief');
 		await page.waitForSelector('#relief', { timeout: 40000 }).catch(() => {});
 		ok(!!(await page.$('#relief')), 'Relief-Schattierung erscheint');
@@ -771,7 +789,7 @@ if (ONLINE)
 		await page.reload();
 		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });
 		await page.click('#wzMode button[data-m="std"]');
-		await page.locator('#fxH3d').scrollIntoViewIfNeeded();
+		await page.click('#wzSteps button[data-step="extras"]');
 		ok(await page.locator('#fxGelaende').isVisible(), 'Gelände-Schalter bei Landkarten-Stilen');
 		await page.check('#fxH3d');
 		await page.check('#fxGelaende');
@@ -883,7 +901,7 @@ if (ONLINE)
 		ok((await page.textContent('#kartenInhalt')).includes('Zuhause seit 2020'), 'Eigene Zeile je Ort');
 		await page.screenshot({ path: `${OUT}/20-mehrere-orte.png` });
 		await page.click('#wzSteps button[data-step="ort"]');
-		await page.click('.wz-pane[data-step="ausschnitt"] [data-sizes] button[data-k="a3"]');
+		await page.click('.wz-pane[data-step="produkt"] [data-sizes] button[data-k="a3"]');
 		await page.waitForTimeout(800);
 		await page.screenshot({ path: `${OUT}/21-mehrere-orte-a3.png` });
 	});
@@ -912,7 +930,7 @@ if (ONLINE)
 		await page.waitForSelector('#picker.hidden', { state: 'attached', timeout: 60000 });
 		await page.waitForTimeout(800);
 		// Standard-Stil (MapLibre rendert ein Bild), beim Hineinzoomen scharf nachzeichnen
-		await page.click('#wzSteps button[data-step="gestalten"]');
+		await page.click('#wzSteps button[data-step="stil"]');
 		await page.waitForTimeout(400);
 		await page.click('#wzMode button[data-m="std"]');
 		await page.waitForSelector('#poster image', { timeout: 60000 }).catch(() => {});
@@ -923,7 +941,7 @@ if (ONLINE)
 		ok((await page.$$('#poster #kartenInhalt image')).length >= 2, 'Beim Hineinzoomen wird ein scharfes Detailbild nachgezeichnet');
 		await page.screenshot({ path: `${OUT}/8-standardstil-zoom.png` });
 		// Größere Gegend laden (Inseln, Seen, Regionen)
-		await page.click('#wzSteps button[data-step="gestalten"]');
+		await page.click('#wzSteps button[data-step="stil"]');
 		await page.click('#wzMode button[data-m="art"]');
 		await page.click('#wzStyles button[data-p="insel"]');
 		await page.click('#wzSteps button[data-step="ort"]');

@@ -96,7 +96,7 @@ export function newState(presetKey, keep) {
     if (keep.multi) st.multi = JSON.parse(JSON.stringify(keep.multi));
   }
   // Design (Aufbau/Rahmen) bleibt beim Wechsel des Farbthemas erhalten
-  applyDesign(st, keep && keep.design || 'siegritz', p, !keep);
+  applyDesign(st, keep && keep.design || 'poster', p, !keep);
   return st;
 }
 export function defView() {

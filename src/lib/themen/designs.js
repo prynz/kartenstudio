@@ -31,6 +31,14 @@ export const LAY_DEFAULT = { kind: 'bar', textPad: 0, inner: 0, innerGap: 0, sha
 
 /** @type {Record<string, Design>} */
 export const DESIGNS = {
+	poster: {
+		name: 'Poster',
+		desc: 'Das reine Poster: Karte mit weißem Rand, Titel darunter – ohne Rahmen. Rahmen und Formen wählst du danach.',
+		frame: { w: 0, r: 0, pad: 34 },
+		lay: { kind: 'below', textPad: 58 },
+		title: { size: 64, ls: 18 },
+		sub: { size: 32, ls: 1 }
+	},
 	siegritz: {
 		name: 'Siegritz',
 		desc: 'Kräftiger, abgerundeter Rahmen mit farbigem Textbalken – das Ursprungsdesign.',

@@ -26,7 +26,7 @@ const P = PRESETS;
 export async function restoreDraft(d) {
 	const S = d.S;
 	if (!P[S.preset]) S.preset = 'umriss';
-	if (S.design && !(/** @type {Record<string, any>} */ (DESIGNS))[S.design]) S.design = 'siegritz';
+	if (S.design && !(/** @type {Record<string, any>} */ (DESIGNS))[S.design]) S.design = 'poster';
 	const base = P[S.preset];
 	Object.keys(CLS).forEach((k) => {
 		if (!S.cls[k]) S.cls[k] = JSON.parse(JSON.stringify(base.cls[k]));

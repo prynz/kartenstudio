@@ -836,7 +836,8 @@ export function render() {
   const tmp = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;
   app.poster.setAttribute('viewBox', tmp.getAttribute('viewBox'));
   // Vorschau-Hintergrund (Karomuster = transparent) genau in der Umrissform des Posters
-  const pv = app.previewBg || 'checker';
+  // Vorschau zeigt Papier (weiß) – das Karomuster für „durchsichtig“ wirkte unfertig
+  const pv = app.previewBg || '#ffffff';
   const bgFill = pv === 'checker' ? 'url(#pvChecker)' : pv;
   const tdefs = tmp.querySelector('defs');
   if (pv === 'checker') tdefs.insertAdjacentHTML('beforeend', '<pattern id="pvChecker" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="#fff"/><rect width="12" height="12" fill="#ececec"/><rect x="12" y="12" width="12" height="12" fill="#ececec"/></pattern>');

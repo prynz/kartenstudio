@@ -79,6 +79,7 @@
 <span class="gesp" id="gespeichert" aria-live="polite"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Gespeichert</span></span>
 <button class="ibtn" id="undo" title="Rückgängig (Strg+Z)">↶</button><button class="ibtn" id="redo" title="Wiederholen (Strg+Y)">↷</button>
 <span style="width:8px"></span>
+<button class="btn primary hdr-fertig" id="hdrFertig" type="button">Fertig</button>
 <button class="btn primary" id="dlBtn">Herunterladen <span style="opacity:.7">▾</span></button>
 </span>
 <div class="pop hidden" id="dlPop">
@@ -96,19 +97,30 @@
 <div class="sheet-grip" id="sheetGrip" role="slider" aria-label="Einstellungen größer oder kleiner ziehen" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0"></div>
 <!-- Geführter Ablauf (Assistent): immer nur ein Schritt sichtbar -->
 <div class="wiz" id="wiz">
-<nav class="wz-steps" id="wzSteps" aria-label="Schritte">
-<button data-step="ort"><i>1</i><span>Ort</span></button>
-<button data-step="gestalten"><i>2</i><span>Gestalten</span></button>
-<button data-step="text"><i>3</i><span>Text</span></button>
-<button data-step="fertig"><i>4</i><span>Fertig</span></button>
+<nav class="wz-steps" id="wzSteps" aria-label="Werkzeuge">
+<button data-step="ort"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span>Ort</span></button>
+<button data-step="stil"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.9 1.8-1.8 0-1.4-1.1-1.8-1.1-3 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11.5" r="1.1"/><circle cx="10" cy="7.3" r="1.1"/><circle cx="14.8" cy="7.3" r="1.1"/></svg><span>Stil</span></button>
+<button data-step="design"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M5 15h14M9 18h6"/></svg><span>Design</span></button>
+<button data-step="text"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7V4.5h14V7M12 4.5v15M9 19.5h6"/></svg><span>Text</span></button>
+<button data-step="extras"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.5l1.7 4.4 4.4 1.7-4.4 1.7L11 15.7l-1.7-4.4-4.4-1.7 4.4-1.7z"/><path d="M18 14.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg><span>Extras</span></button>
+<button data-step="fertig"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.2 12.4l2.6 2.6 5-5.6"/></svg><span>Fertig</span></button>
 </nav>
 <div class="wz-panes">
 <section class="wz-pane" data-step="ort">
 <h3>Welcher Ort?</h3>
 <div class="wz-place"><div class="pin">⌖</div><div><b id="wzPlace">–</b><span id="wzPlaceInfo"></span></div></div>
-<p class="wz-hint">Du kannst jederzeit einen anderen Ort suchen.</p>
-<div class="search wz-search"><input id="wq" type="search" placeholder="Dorf, Stadt oder Adresse" autocomplete="off" enterkeyhint="search"><button class="btn primary" id="wgo">Suchen</button><div class="results hidden" id="wresults"></div></div>
+<div class="search wz-search"><input id="wq" type="search" placeholder="Anderen Ort suchen …" autocomplete="off" enterkeyhint="search"><button class="btn primary" id="wgo">Suchen</button><div class="results hidden" id="wresults"></div></div>
 <button type="button" class="lp-geo" id="wgeo"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>Mein Standort</button>
+</section>
+<section class="wz-pane" data-step="ausschnitt">
+<h3>Ausschnitt</h3>
+<p class="wz-hint">Tipp: <b>Karte im Poster ziehen</b> und mit zwei Fingern oder dem Mausrad zoomen.</p>
+<div class="lab">Wie viel vom Ort?</div>
+<div class="wz-chips" id="wzUmfang"><button type="button" data-z="kern">Ortskern</button><button type="button" data-z="ort">Ganzer Ort</button><button type="button" data-z="weit">Mit Umgebung</button></div>
+<div class="lab">Zoom</div>
+<div class="wz-zoom"><button class="btn" id="wzZOut" aria-label="Herauszoomen">−</button><button class="btn" id="wzZIn" aria-label="Hineinzoomen">+</button><button class="btn ghost" id="wzReset">Zurücksetzen</button></div>
+<button type="button" class="wz-link" id="wzPick">Ausschnitt auf der Landkarte neu wählen ›</button>
+<button type="button" class="wz-link" id="wzWider">Größere Gegend laden (Inseln, Seen, Regionen bis 40 km) ›</button>
 <details class="wz-more"><summary>Mehr: Anlass-Vorlage, Route, mehrere Orte</summary>
 <div class="lab">Vorlage für einen Anlass</div>
 <div class="occ" data-occ></div>
@@ -128,25 +140,10 @@
 </div>
 </details>
 </section>
-<section class="wz-pane" data-step="ausschnitt">
-<h3>Ausschnitt</h3>
-<p class="wz-hint"><b>Karte im Poster ziehen</b>, um sie zu verschieben. Zoomen mit <b>zwei Fingern</b>, <b>+ / −</b> oder am PC mit dem Mausrad.</p>
-<div class="lab">Druckgröße</div>
-<div class="wz-chips wz-sizes" data-sizes></div>
-<label class="tog wz-tog wz-quer"><input type="checkbox" data-quer><span>Querformat</span></label>
-<div class="wz-free" id="wzFree"><div class="lab">Seitenverhältnis der Karte</div>
-<div class="wz-chips" id="wzFmt"><button data-a="0.8805">8 : 7</button><button data-a="1">1 : 1</button><button data-a="1.25">4 : 5</button><button data-a="1.3333">3 : 4</button><button data-a="0.6667">3 : 2</button></div></div>
-<div class="lab">Wie viel vom Ort?</div>
-<div class="wz-chips" id="wzUmfang"><button type="button" data-z="kern">Ortskern</button><button type="button" data-z="ort">Ganzer Ort</button><button type="button" data-z="weit">Mit Umgebung</button></div>
-<div class="lab">Zoom</div>
-<div class="wz-zoom"><button class="btn" id="wzZOut" aria-label="Herauszoomen">−</button><button class="btn" id="wzZIn" aria-label="Hineinzoomen">+</button><button class="btn ghost" id="wzReset">Zurücksetzen</button></div>
-<button type="button" class="wz-link" id="wzPick">Ausschnitt auf der Landkarte neu wählen ›</button>
-<button type="button" class="wz-link" id="wzWider">Größere Gegend laden (Inseln, Seen, Regionen bis 40 km) ›</button>
-</section>
 <section class="wz-pane" data-step="stil">
 <div class="wz-head"><h3>Stil</h3><button type="button" class="wz-dice wz-bsp" data-bsp-open><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="6" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="12.5" width="7" height="8" rx="1.5"/></svg>Beispiele</button><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>
 <div class="fav-box" id="favBox" hidden><div class="lab">Deine Favoriten <i id="favN"></i><button type="button" class="wz-link fav-cmp" id="favCmp" hidden>Vergleichen ›</button></div><div class="fav-grid" id="favGrid"></div></div>
-<div class="lab vs-lab">Vorschläge für deinen Ort <i>antippen übernimmt den Look</i></div>
+<div class="lab vs-lab">Vorschläge für deinen Ort</div>
 <div class="vs-grid" id="wzVorschlaege"></div>
 <div class="lab">Oder selbst wählen</div>
 <div class="tabs2 wz-mode wz-mode3" id="wzMode"><button data-m="art">Gezeichnet</button><button data-m="std">Landkarte</button><button data-m="sterne">Sternenhimmel</button><button data-m="koord">Koordinaten</button><button data-m="wolke">Wortwolke</button></div>
@@ -186,6 +183,24 @@
 <p class="wz-hint">Wie Rahmen, Karte und Text angeordnet sind. Die Farben kommen vom Stil.</p>
 <div class="wz-cards wz-designs kurz" id="wzDesigns"></div>
 <button type="button" class="wz-link wz-alle" data-alle="wzDesigns">Alle Designs anzeigen ›</button>
+</section>
+<section class="wz-pane" data-step="text">
+<h3>Text</h3>
+<label class="wz-field"><span>Titel</span><input id="wzTitle" class="inp" type="text" autocomplete="off"></label>
+<label class="wz-field"><span>Untertitel</span><input id="wzSub" class="inp" type="text" autocomplete="off"></label>
+<div class="lab">Schriften</div>
+<div class="wz-chips wz-fonts" id="wzFonts"><button type="button" data-t="SgXB" data-s="SgFR"><b style="font-family:SgXB">AB</b> <span style="font-family:SgFR">Fraktur</span></button><button type="button" data-t="SgXB" data-s="SgMD"><b style="font-family:SgXB">AB</b> <span style="font-family:SgMD">Modern</span></button><button type="button" data-t="SgXB" data-s="SgSC"><b style="font-family:SgXB">AB</b> <span style="font-family:SgSC;font-size:17px">Schrift</span></button><button type="button" data-t="SgSC" data-s="SgMD"><b style="font-family:SgSC;font-size:19px;font-weight:400">Schreibschrift</b></button></div>
+<label class="wz-field"><span>Datum oder Widmung <i>optional</i></span><input id="wzNote" class="inp" type="text" autocomplete="off" placeholder="z. B. 12.06.2021 · Hier hat alles begonnen"></label>
+<div class="wz-ideen" id="wzNoteIdeen"></div>
+<label class="tog wz-tog"><input type="checkbox" id="wzCoords"><span>Koordinaten anzeigen</span></label>
+</section>
+<section class="wz-pane" data-step="extras">
+<h3>Extras</h3>
+<div class="lab">Orte markieren</div>
+<p class="wz-hint">Herz, Pin oder Stern ins Poster setzen und an die richtige Stelle ziehen.</p>
+<div class="wz-pinadd" id="wzPinAdd"></div>
+<div class="wz-pins" id="wzPins"></div>
+<div class="mk-sw wz-pincol" id="wzPinCol"></div>
 <div class="lab">Effekte</div>
 <label class="tog wz-tog"><input type="checkbox" id="fxPaper"><span>Papier-Struktur</span></label>
 <label class="tog wz-tog"><input type="checkbox" id="fxVig"><span>Vignette (Rand abdunkeln)</span></label>
@@ -199,39 +214,31 @@
 <p class="wz-hint" id="wz3dHint">Für Karten – bei Sternenhimmel, Koordinaten, Wortwolke und mehreren Orten nicht verfügbar.</p>
 <p class="wz-hint nur-std" id="wz3dStd">Echte 3D-Ansicht: Kamera kippen und drehen, Gebäude und Berge in 3D. Markierungen lassen sich dabei nicht verschieben.</p></div>
 </section>
-<section class="wz-pane" data-step="text">
-<h3>Text</h3>
-<label class="wz-field"><span>Titel</span><input id="wzTitle" class="inp" type="text" autocomplete="off"></label>
-<label class="wz-field"><span>Untertitel</span><input id="wzSub" class="inp" type="text" autocomplete="off"></label>
-<div class="lab">Schriften</div>
-<div class="wz-chips wz-fonts" id="wzFonts"><button type="button" data-t="SgXB" data-s="SgFR"><b style="font-family:SgXB">AB</b> <span style="font-family:SgFR">Fraktur</span></button><button type="button" data-t="SgXB" data-s="SgMD"><b style="font-family:SgXB">AB</b> <span style="font-family:SgMD">Modern</span></button><button type="button" data-t="SgXB" data-s="SgSC"><b style="font-family:SgXB">AB</b> <span style="font-family:SgSC;font-size:17px">Schrift</span></button><button type="button" data-t="SgSC" data-s="SgMD"><b style="font-family:SgSC;font-size:19px;font-weight:400">Schreibschrift</b></button></div>
-<label class="wz-field"><span>Datum oder Widmung <i>optional</i></span><input id="wzNote" class="inp" type="text" autocomplete="off" placeholder="z. B. 12.06.2021 · Hier hat alles begonnen"></label>
-<div class="wz-ideen" id="wzNoteIdeen"></div>
-<label class="tog wz-tog"><input type="checkbox" id="wzCoords"><span>Koordinaten anzeigen</span></label>
-<div class="lab">Orte markieren</div>
-<div class="wz-pinadd" id="wzPinAdd"></div>
-<div class="wz-pins" id="wzPins"></div>
-<div class="mk-sw wz-pincol" id="wzPinCol"></div>
-</section>
 <section class="wz-pane" data-step="produkt">
-<h3>Produkt &amp; Vorschau</h3>
-<p class="wz-hint">So sieht dein Motiv als fertiges Produkt aus.</p>
+<div class="tabs2 fz-tabs" id="fertigTabs" role="tablist"><button type="button" data-t="produkt">Produkt</button><button type="button" data-t="laden">Herunterladen</button><button type="button" data-t="teilen">Teilen</button></div>
+<div data-fsub="produkt">
 <div class="wz-prod" id="wzProd"></div>
 <div class="price" id="wzPrice"><b id="priceVal">–</b><span>inkl. MwSt. · <i>Beispielpreis</i></span><small id="priceDet"></small><small class="ship" id="priceShip"></small></div>
-<ul class="trust"><li>Kostenloser Ersatz bei Transportschaden</li><li>Druckdatei zu jeder Bestellung gratis</li><li>Personalisiert – jedes Stück ein Unikat</li></ul>
+<button type="button" class="btn wz-order" disabled title="Kommt bald"><span id="orderLabel">Bestellen</span><small>bald verfügbar</small></button>
 <div class="mk-opt" data-for="poster gerahmt leinwand alu download"><div class="lab">Größe</div><div class="wz-chips wz-sizes" data-sizes></div>
-<label class="tog wz-tog wz-quer"><input type="checkbox" data-quer><span>Querformat</span></label></div>
-<div class="mk-opt" data-for="poster gerahmt leinwand alu"><label class="tog wz-tog"><input type="checkbox" id="mkSet"><span>Als 3er-Set zeigen (Koordinaten · Karte · Sternenhimmel)</span></label></div>
-<div class="mk-opt" data-for="poster gerahmt leinwand alu aufsteller"><div class="lab">Raum</div><div class="mk-sw mk-rooms" id="mkRoomSw"></div></div>
+<label class="tog wz-tog wz-quer"><input type="checkbox" data-quer><span>Querformat</span></label>
+<div class="wz-free" id="wzFree"><div class="lab">Seitenverhältnis der Karte</div>
+<div class="wz-chips" id="wzFmt"><button data-a="0.8805">8 : 7</button><button data-a="1">1 : 1</button><button data-a="1.25">4 : 5</button><button data-a="1.3333">3 : 4</button><button data-a="0.6667">3 : 2</button></div></div>
+</div>
 <div class="mk-opt" data-for="gerahmt aufsteller"><div class="lab">Rahmen</div><div class="mk-sw" id="mkFrameSw"></div>
 <label class="tog wz-tog"><input type="checkbox" id="mkMat"><span>Passepartout (heller Rand)</span></label></div>
 <div class="mk-opt" data-for="shirt"><div class="lab">Shirtfarbe</div><div class="mk-sw" id="mkShirtSw"></div>
 <label class="tog wz-tog"><input type="checkbox" id="mkModel"><span>Am Model zeigen</span></label></div>
+<details class="wz-more mk-opt" data-for="poster gerahmt leinwand alu aufsteller"><summary>Vorschau anpassen: Raum, Wandfarbe, 3er-Set</summary>
+<div class="mk-opt" data-for="poster gerahmt leinwand alu aufsteller"><div class="lab">Raum</div><div class="mk-sw mk-rooms" id="mkRoomSw"></div></div>
 <div class="mk-opt" data-for="poster gerahmt leinwand alu aufsteller"><div class="lab">Wandfarbe</div><div class="mk-sw" id="mkWallSw"></div></div>
-<p class="wz-hint mk-note">Bestellen kommt bald. Die Druckdatei kannst du weiter unten schon herunterladen.</p>
+<div class="mk-opt" data-for="poster gerahmt leinwand alu"><label class="tog wz-tog"><input type="checkbox" id="mkSet"><span>Als 3er-Set zeigen (Koordinaten · Karte · Sternenhimmel)</span></label></div>
+</details>
+<p class="wz-hint mk-note">Bestellen kommt bald – die Druckdatei gibt es schon jetzt unter „Herunterladen“.</p>
+</div>
 </section>
 <section class="wz-pane" data-step="fertig">
-<h3>Herunterladen</h3>
+<div data-fsub="laden">
 <div class="qa" id="wzQa"></div>
 <label class="tog wz-tog wz-proof"><input type="checkbox" id="softproof"><span>Druckfarben simulieren</span></label>
 <div class="wz-dl">
@@ -244,6 +251,8 @@
 <p class="wz-hint">PNG und SVG haben einen transparenten Hintergrund – ideal für T-Shirts.</p>
 <div class="lab">Bestellen</div>
 <button type="button" class="btn wz-order" disabled title="Kommt bald"><span id="orderLabel">Bestellen</span><small>bald verfügbar</small></button>
+</div>
+<div data-fsub="teilen">
 <div class="lab">Meinung einholen</div>
 <button type="button" class="btn wz-share" id="shareImg"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>Vorschau als Bild teilen</button>
 <p class="wz-hint">Schick das Bild per WhatsApp &amp; Co. an Familie oder Freunde.</p>
@@ -256,7 +265,9 @@
 <button type="button" class="btn wz-share" id="wzShare"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4L12 5.6"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/></svg>Link zum Entwurf kopieren</button>
 <p class="wz-legal"><a href={resolve('/impressum')} data-sveltekit-reload>Impressum</a> · <a href={resolve('/datenschutz')} data-sveltekit-reload>Datenschutz</a> · <a href={resolve('/agb')} data-sveltekit-reload>AGB</a> · <a href={resolve('/lizenzen')} data-sveltekit-reload>Lizenzen</a></p>
 <p class="wz-hint">Dein Entwurf wird automatisch in diesem Browser gemerkt. Mit dem Link kannst du ihn auf einem anderen Gerät öffnen oder jemandem zeigen.</p>
+</div>
 </section>
+<button type="button" class="wz-link wz-alllink" data-adv-open>Alle Einstellungen für den Feinschliff ›</button>
 </div>
 <div class="wz-foot">
 <button class="wz-back" id="wzBack" aria-label="Zurück"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>

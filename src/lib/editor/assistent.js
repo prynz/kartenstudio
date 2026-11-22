@@ -49,18 +49,18 @@ const PRESETS = PRESETS_UNTYPED;
 const $ = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
 
 /** Vier Schritte; jeder zeigt einen oder zwei Bereiche (Panes) untereinander */
-export const STEPS = ['ort', 'gestalten', 'text', 'fertig'];
+export const STEPS = ['ort', 'stil', 'design', 'text', 'extras', 'fertig'];
 /** @type {Record<string,string[]>} */
-const GRUPPE = { ort: ['ort', 'ausschnitt'], gestalten: ['stil', 'design'], text: ['text'], fertig: ['produkt', 'fertig'] };
+const GRUPPE = { ort: ['ort', 'ausschnitt'], stil: ['stil'], design: ['design'], text: ['text'], extras: ['extras'], fertig: ['produkt', 'fertig'] };
 /** Alter Bereichsname → Schritt (für Links, Chat-Knöpfe, gespeicherte Entwürfe) @param {string} n */
-export const schrittVon = (n) => (GRUPPE[n] ? n : Object.keys(GRUPPE).find((g) => GRUPPE[g].includes(n)) || '');
+export const schrittVon = (n) => (n === 'gestalten' ? 'stil' : GRUPPE[n] ? n : Object.keys(GRUPPE).find((g) => GRUPPE[g].includes(n)) || '');
 /** @type {Record<string,string>} */
-const LABEL = { ort: 'Ort & Ausschnitt', gestalten: 'Gestalten', text: 'Text', fertig: 'Fertig' };
+const LABEL = { ort: 'Ort', stil: 'Stil', design: 'Design', text: 'Text', extras: 'Extras', fertig: 'Fertig' };
 /** Welcher Abschnitt der erweiterten Einstellungen passt zu welchem Schritt */
 /** @type {Record<string,string>} */
-const ADV_FOR = { ort: 'ausschnitt', gestalten: 'stil', text: 'text', fertig: 'farben' };
+const ADV_FOR = { ort: 'ausschnitt', stil: 'stil', design: 'rahmen', text: 'text', extras: 'elemente', fertig: 'farben' };
 
-let step = 'gestalten';
+let step = 'stil';
 let advOpen = false;
 
 const wizOn = () => !advOpen;
@@ -83,7 +83,7 @@ export function goStep(ziel, animate = true) {
 	const idx = STEPS.indexOf(next);
 	all('#wzSteps button').forEach((b, i) => {
 		b.classList.toggle('on', i === idx);
-		b.classList.toggle('done', i < idx);
+
 		b.setAttribute('aria-current', i === idx ? 'step' : 'false');
 	});
 	/** @type {HTMLButtonElement} */ ($('wzBack')).disabled = idx === 0;
@@ -103,12 +103,24 @@ export function goStep(ziel, animate = true) {
 	}
 	const side = $('side');
 	// Bereich weiter unten im Schritt angefragt (z. B. „Design“) → dorthin scrollen, sonst nach oben
-	const unten = ziel !== next && GRUPPE[next].indexOf(ziel) > 0 ? document.querySelector(`.wz-pane[data-step="${ziel}"]`) : null;
+	if (next === 'fertig') fertigReiter(ziel === 'produkt' ? 'produkt' : $('wiz').dataset.fz || 'produkt');
+	const unten = next !== 'fertig' && ziel !== next && GRUPPE[next].indexOf(ziel) > 0 ? /** @type {HTMLElement|null} */ (document.querySelector(`.wz-pane[data-step="${ziel}"]`)) : null;
 	if (unten) requestAnimationFrame(() => unten.scrollIntoView({ block: 'start', behavior: reducedMotion() || !animate ? 'auto' : 'smooth' }));
 	else if (side) side.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
-	if (next === 'gestalten') scheduleDesignThumbs(0);
+	if (next === 'design') scheduleDesignThumbs(0);
 	setMockup(next === 'fertig' && !advOpen);
 	syncWizard();
+}
+
+/** Reiter im Bereich „Fertig“: Produkt · Herunterladen · Teilen @param {string} t */
+export function fertigReiter(t) {
+	$('wiz').dataset.fz = t;
+	all('#fertigTabs button').forEach((b) => {
+		b.classList.toggle('on', b.dataset.t === t);
+		b.setAttribute('aria-selected', String(b.dataset.t === t));
+	});
+	const box = document.querySelector(`[data-fsub="${t}"]`);
+	if (box && !reducedMotion()) box.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: EASE });
 }
 
 /** Produktauswahl ändern (mit Rückgängig). @param {Record<string, any>} patch */
@@ -179,7 +191,7 @@ let thumbLauf = 0;
 let designSichtbar = false;
 let designBeobachter = /** @type {IntersectionObserver|null} */ (null);
 function renderDesignThumbs() {
-	if (!app.DATA || !app.S || step !== 'gestalten' || advOpen) return;
+	if (!app.DATA || !app.S || step !== 'design' || advOpen) return;
 	if (!designBeobachter && 'IntersectionObserver' in window) {
 		designBeobachter = new IntersectionObserver(
 			(e) => {
@@ -284,7 +296,7 @@ export function syncWizard() {
 			b.title = ok ? 'Amtliches Luftbild (40 cm) – Bayerische Vermessungsverwaltung' : 'Luftbilder gibt es bisher nur für Orte in Bayern';
 		});
 	}
-	all('#wzDesigns button').forEach((b) => b.classList.toggle('on', b.dataset.d === (S.design || 'siegritz')));
+	all('#wzDesigns button').forEach((b) => b.classList.toggle('on', b.dataset.d === (S.design || 'poster')));
 	all('#wzFmt button').forEach((b) => b.classList.toggle('on', Math.abs(+(b.dataset.a || 0) - S.view.a) < 0.01));
 	const t = /** @type {HTMLInputElement} */ ($('wzTitle')),
 		u = /** @type {HTMLInputElement} */ ($('wzSub'));
@@ -327,11 +339,11 @@ export function syncWizard() {
 	if (document.activeElement !== $('fxDreh')) /** @type {HTMLInputElement} */ ($('fxDreh')).value = String(dr);
 	$('fxDrehV').textContent = dr ? (dr > 0 ? dr + '° ↻' : -dr + '° ↺') : 'Nord';
 	all('[data-occ] button').forEach((b) => b.classList.toggle('on', b.dataset.k === S.occasion));
-	if (step === 'gestalten') {
-		scheduleDesignThumbs();
+	if (step === 'stil') {
 		vorschlaegeZeichnen();
 		favoritenZeichnen();
 	}
+	if (step === 'design') scheduleDesignThumbs();
 	if (step === 'fertig') {
 		syncFinish();
 		scheduleMockup();
@@ -402,7 +414,7 @@ export function enableKoord() {
 			const [lon, lat] = viewCenterLL();
 			if (!S.koord) S.koord = { lat: +lat.toFixed(5), lon: +lon.toFixed(5), text: STORY_BEISPIEL, align: 'links' };
 			// Formen wie Kreis/Herz/Typografie passen nicht zu einem Textposter
-			const D = /** @type {any} */ (DESIGNS)[S.design || 'siegritz'];
+			const D = /** @type {any} */ (DESIGNS)[S.design || 'poster'];
 			if (!D || D.aspect || (D.lay && D.lay.kind === 'typo')) pickDesign(S, 'minimal');
 		})
 	);
@@ -418,7 +430,7 @@ export function enableWolke() {
 			S.motif = 'wolke';
 			S.mode = 'art';
 			if (!S.wolke) S.wolke = { text: wolkeBeispiel((app.DATA && app.DATA.place) || 'Heimat', (app.DATA && app.DATA.region) || ''), form: 'herz', schrift: true };
-			const D = /** @type {any} */ (DESIGNS)[S.design || 'siegritz'];
+			const D = /** @type {any} */ (DESIGNS)[S.design || 'poster'];
 			if (!D || D.aspect || (D.lay && D.lay.kind === 'typo')) pickDesign(S, 'galerie');
 		})
 	);
@@ -457,7 +469,7 @@ export function enableSky() {
 			S.motif = 'sterne';
 			const [lon, lat] = viewCenterLL();
 			if (!S.sky) S.sky = defaultSky(lat, lon);
-			const D = /** @type {any} */ (DESIGNS)[S.design || 'siegritz'];
+			const D = /** @type {any} */ (DESIGNS)[S.design || 'poster'];
 			if (!D || !D.aspect) pickDesign(S, 'kreiskoord');
 			if (!S.note || !S.note.text || S.note.auto) S.note = { on: true, text: skyLabel(S.sky), auto: true };
 		})
@@ -557,7 +569,7 @@ export function surprise() {
 		return a[Math.floor(Math.random() * a.length)];
 	};
 	const pk = pick(Object.keys(PRESETS), S.preset);
-	const dk = pick(Object.keys(DESIGNS), S.design || 'siegritz');
+	const dk = pick(Object.keys(DESIGNS), S.design || 'poster');
 	smooth(() =>
 		change(() => {
 			app.S = newState(pk, S);
@@ -611,15 +623,28 @@ function card(b, html) {
 
 export function initWizard() {
 	// Schritte
-	all('#wzSteps button').forEach((b) => (b.onclick = () => goStep(/** @type {string} */ (b.dataset.step))));
+	all('#wzSteps button').forEach(
+		(b) =>
+			(b.onclick = () => {
+				if (advOpen) showAdvanced(false);
+				goStep(/** @type {string} */ (b.dataset.step));
+			})
+	);
 	$('wzBack').onclick = () => goStep(STEPS[Math.max(0, STEPS.indexOf(step) - 1)]);
 	$('wzNext').onclick = () => {
 		if (step !== 'fertig') return goStep(STEPS[STEPS.indexOf(step) + 1]);
-		// Letzter Schritt: zu den Druckdateien scrollen
-		const dl = document.querySelector('.wz-pane[data-step="fertig"]');
-		if (dl) dl.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
+		// Letzter Schritt: zu den Druckdateien
+		fertigReiter('laden');
 	};
+	all('#fertigTabs button').forEach((b) => (b.onclick = () => fertigReiter(/** @type {string} */ (b.dataset.t))));
+	fertigReiter('produkt');
 	$('wzAdv').onclick = () => showAdvanced(true);
+	all('[data-adv-open]').forEach((b) => (b.onclick = () => showAdvanced(true)));
+	// Kopfzeile am Handy: „Fertig“ führt direkt zu Produkt, Preis und Download
+	$('hdrFertig').onclick = () => {
+		if (advOpen) showAdvanced(false);
+		goStep('fertig');
+	};
 	$('advBack').onclick = () => showAdvanced(false);
 	all('[data-dice]').forEach((b) => (b.onclick = surprise));
 	$('wzPick').onclick = () => {
@@ -699,7 +724,7 @@ export function initWizard() {
 	// (erst nachdem alle Karten erzeugt sind – das passiert weiter unten)
 	setTimeout(() => {
 		nachVorn('wzStyles', ['umriss', 'dunkel', 'vintage', 'koralle', 'blaupause', 'popart'], 'p');
-		nachVorn('wzDesigns', ['siegritz', 'klassisch', 'galerie', 'kreiskoord', 'herz', 'typo'], 'd');
+		nachVorn('wzDesigns', ['poster', 'klassisch', 'siegritz', 'galerie', 'kreiskoord', 'herz'], 'd');
 	}, 0);
 	all('[data-alle]').forEach(
 		(b) =>

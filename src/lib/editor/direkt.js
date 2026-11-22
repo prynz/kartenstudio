@@ -71,7 +71,7 @@ const TIPPS_KEY = 'kartenstudio.tipps.v1';
 const TIPPS = [
 	['#poster', 'Karte verschieben', 'Zieh die Karte direkt im Poster. Zoomen geht mit zwei Fingern oder dem Mausrad.'],
 	['#titel', 'Text antippen', 'Tipp auf den Ortsnamen – du kannst ihn gleich im Poster ändern.'],
-	['#wzNext', 'Schritt für Schritt', 'Hier geht es weiter. Alles wird automatisch gespeichert.']
+	['#wzSteps', 'Alles an einem Ort', 'Hier wechselst du zwischen Ort, Stil, Design, Text, Extras und Fertig. Alles wird automatisch gespeichert.']
 ];
 let tippAktiv = false;
 export function einfuehrung() {
@@ -213,7 +213,7 @@ function merken() {
 	h.classList.add('on');
 	if (!reducedMotion()) h.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 360, easing: EASE });
 	setTimeout(() => h.classList.remove('on'), 1200);
-	msg('Gemerkt ♥ – unter „Gestalten“ kannst du Favoriten vergleichen', 'ok');
+	msg('Gemerkt ♥ – unter „Stil“ kannst du Favoriten vergleichen', 'ok');
 	favoritenZeichnen();
 }
 /** @param {number} t */

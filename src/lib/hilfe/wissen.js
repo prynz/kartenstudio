@@ -19,8 +19,8 @@ export const FAQ = [
 		id: 'preis',
 		q: 'Was kostet ein Poster?',
 		k: ['preis', 'kosten', 'kostet', 'teuer', 'euro', '€', 'günstig'],
-		a: 'Beispielpreise: Poster A4 ab 19,90 €, 50 × 70 cm 39,90 €, gerahmt ab 44,90 €, Leinwand ab 34,90 €, T-Shirt 29,90 €, Tasse 19,90 €. Den genauen Preis siehst du im Schritt „Fertig“. Die Druckdatei zum Selbstdrucken kannst du schon jetzt kostenlos herunterladen.',
-		act: { label: 'Zum Schritt Produkt', step: 'produkt' }
+		a: 'Beispielpreise: Poster A4 ab 19,90 €, 50 × 70 cm 39,90 €, gerahmt ab 44,90 €, Leinwand ab 34,90 €, T-Shirt 29,90 €, Tasse 19,90 €. Den genauen Preis siehst du im Bereich „Fertig“. Die Druckdatei zum Selbstdrucken kannst du schon jetzt kostenlos herunterladen.',
+		act: { label: 'Zum Bereich Produkt', step: 'produkt' }
 	},
 	{
 		id: 'bestellen',
@@ -33,14 +33,14 @@ export const FAQ = [
 		id: 'groesse',
 		q: 'Welche Größen gibt es?',
 		k: ['größe', 'groesse', 'format', 'a4', 'a3', 'a2', '50x70', '70x100', 'quer', 'querformat', 'quadrat'],
-		a: 'A4, A3, A2, 30 × 40, 50 × 70, 70 × 100 cm sowie quadratisch 30 × 30 und 50 × 50 cm – jeweils auch quer. Wähl die Größe im Schritt „Ort“; das Poster passt sich dann genau an.',
-		act: { label: 'Größe wählen', step: 'ausschnitt' }
+		a: 'A4, A3, A2, 30 × 40, 50 × 70, 70 × 100 cm sowie quadratisch 30 × 30 und 50 × 50 cm – jeweils auch quer. Wähl die Größe im Bereich „Fertig“ unter „Größe“; das Poster passt sich dann genau an.',
+		act: { label: 'Größe wählen', step: 'produkt' }
 	},
 	{
 		id: 'qualitaet',
 		q: 'Ist die Datei gut genug für den Druck?',
 		k: ['qualität', 'qualitaet', 'dpi', 'auflösung', 'scharf', 'unscharf', 'druckerei', 'pdf', 'vektor', 'beschnitt'],
-		a: 'Ja. Das „PDF für die Druckerei“ ist eine Vektordatei: gestochen scharf in jeder Größe, Schriften eingebettet, mit 3 mm Beschnitt. Im Schritt „Fertig“ zeigt dir eine Ampel, ob alles gut druckbar ist (z. B. keine zu feinen Linien).',
+		a: 'Ja. Das „PDF für die Druckerei“ ist eine Vektordatei: gestochen scharf in jeder Größe, Schriften eingebettet, mit 3 mm Beschnitt. Im Bereich „Fertig“ zeigt dir eine Ampel, ob alles gut druckbar ist (z. B. keine zu feinen Linien).',
 		act: { label: 'Zur Qualitäts-Ampel', step: 'fertig' }
 	},
 	{
@@ -59,43 +59,43 @@ export const FAQ = [
 		id: 'ausschnitt',
 		q: 'Wie verschiebe oder zoome ich die Karte?',
 		k: ['verschieben', 'zoomen', 'zoom', 'ausschnitt', 'größer', 'kleiner', 'näher'],
-		a: 'Zieh die Karte direkt im Poster. Zoomen geht mit zwei Fingern, mit + / − im Schritt „Ort“ oder am PC mit dem Mausrad.',
+		a: 'Zieh die Karte direkt im Poster. Zoomen geht mit zwei Fingern, mit + / − im Bereich „Ort“ oder am PC mit dem Mausrad.',
 		act: { label: 'Zum Ausschnitt', step: 'ausschnitt' }
 	},
 	{
 		id: 'sterne',
 		q: 'Gibt es einen Sternenhimmel?',
 		k: ['stern', 'sterne', 'sternenhimmel', 'himmel', 'sternbild', 'nacht', 'geburt datum'],
-		a: 'Ja: Im Schritt „Gestalten“ auf „Sternenhimmel“ tippen, Datum und Uhrzeit eintragen – der Himmel wird aus echten Sterndaten für genau diesen Ort und Moment berechnet. Sternbilder, Namen, Milchstraße und Farben sind einstellbar.',
+		a: 'Ja: Im Bereich „Stil“ auf „Sternenhimmel“ tippen, Datum und Uhrzeit eintragen – der Himmel wird aus echten Sterndaten für genau diesen Ort und Moment berechnet. Sternbilder, Namen, Milchstraße und Farben sind einstellbar.',
 		act: { label: 'Sternenhimmel öffnen', do: 'sterne' }
 	},
 	{
 		id: 'route',
 		q: 'Kann ich eine Route einzeichnen?',
 		k: ['route', 'gpx', 'strecke', 'lauf', 'marathon', 'wanderung', 'radtour', 'strava', 'komoot'],
-		a: 'Ja. Im Schritt „Ort“ eine GPS-Datei (.gpx oder GeoJSON) aus deiner Sport-App laden. Die Karte richtet sich nach der Strecke, Name und Länge stehen automatisch auf dem Poster.',
-		act: { label: 'Zum Schritt Ort', step: 'ort' }
+		a: 'Ja. Im Bereich „Ort“ eine GPS-Datei (.gpx oder GeoJSON) aus deiner Sport-App laden. Die Karte richtet sich nach der Strecke, Name und Länge stehen automatisch auf dem Poster.',
+		act: { label: 'Zum Bereich Ort', step: 'ort' }
 	},
 	{
 		id: 'mehrere',
 		q: 'Kann ich mehrere Orte auf ein Poster bringen?',
 		k: ['mehrere', 'zwei orte', 'drei orte', 'kennengelernt', 'kombinieren'],
-		a: 'Ja, bis zu drei Orte nebeneinander (z. B. „Kennengelernt – Geheiratet – Zuhause“). Im Schritt „Ort“ unter „Mehrere Orte“ einschalten und weitere Orte suchen.',
-		act: { label: 'Zum Schritt Ort', step: 'ort' }
+		a: 'Ja, bis zu drei Orte nebeneinander (z. B. „Kennengelernt – Geheiratet – Zuhause“). Im Bereich „Ort“ unter „Mehrere Orte“ einschalten und weitere Orte suchen.',
+		act: { label: 'Zum Bereich Ort', step: 'ort' }
 	},
 	{
 		id: 'pins',
 		q: 'Kann ich einen Ort markieren?',
 		k: ['markieren', 'markierung', 'pin', 'herz', 'stern setzen', 'punkt', 'unser haus'],
-		a: 'Ja: Im Schritt „Text“ unter „Orte markieren“ Herz, Pin, Stern oder Punkt hinzufügen und im Poster an die richtige Stelle ziehen.',
-		act: { label: 'Zum Schritt Text', step: 'text' }
+		a: 'Ja: Im Bereich „Extras“ unter „Orte markieren“ Herz, Pin, Stern oder Punkt hinzufügen und im Poster an die richtige Stelle ziehen.',
+		act: { label: 'Zu den Extras', step: 'extras' }
 	},
 	{
 		id: 'text',
 		q: 'Wie ändere ich Titel, Datum oder Schrift?',
 		k: ['titel', 'text', 'untertitel', 'datum', 'widmung', 'schrift', 'schriftart', 'schreibschrift', 'koordinaten'],
-		a: 'Im Schritt „Text“: Titel, Untertitel, eine Zeile für Datum oder Widmung, Koordinaten an/aus und vier Schrift-Kombinationen (z. B. Schreibschrift).',
-		act: { label: 'Zum Schritt Text', step: 'text' }
+		a: 'Im Bereich „Text“: Titel, Untertitel, eine Zeile für Datum oder Widmung, Koordinaten an/aus und vier Schrift-Kombinationen (z. B. Schreibschrift).',
+		act: { label: 'Zum Bereich Text', step: 'text' }
 	},
 	{
 		id: 'anlass',
@@ -108,7 +108,7 @@ export const FAQ = [
 		id: 'geschenk',
 		q: 'Kann ich das Poster verschenken?',
 		k: ['geschenk', 'verschenken', 'gutschein', 'schenken', 'karte'],
-		a: 'Ja: Im Schritt „Fertig“ eine Botschaft schreiben und einen Geschenk-Link kopieren (öffnet das Poster mit deinem Gruß) oder eine Geschenkkarte als Bild herunterladen.',
+		a: 'Ja: Im Bereich „Fertig“ eine Botschaft schreiben und einen Geschenk-Link kopieren (öffnet das Poster mit deinem Gruß) oder eine Geschenkkarte als Bild herunterladen.',
 		act: { label: 'Zum Verschenken', step: 'fertig' }
 	},
 	{
@@ -121,8 +121,8 @@ export const FAQ = [
 		id: 'produkte',
 		q: 'Welche Produkte gibt es?',
 		k: ['produkt', 'rahmen', 'leinwand', 'tasse', 'shirt', 't-shirt', 'mockup', 'vorschau', 'wand'],
-		a: 'Poster, Poster mit Rahmen (7 Rahmen, optional Passepartout), Leinwand, T-Shirt (7 Farben) und Tasse. Im Schritt „Fertig“ siehst du alles maßstäblich im Raum oder am Model.',
-		act: { label: 'Zum Schritt Produkt', step: 'produkt' }
+		a: 'Poster, Poster mit Rahmen (7 Rahmen, optional Passepartout), Leinwand, T-Shirt (7 Farben) und Tasse. Im Bereich „Fertig“ siehst du alles maßstäblich im Raum oder am Model.',
+		act: { label: 'Zum Bereich Produkt', step: 'produkt' }
 	},
 	{
 		id: 'widerruf',
@@ -146,7 +146,7 @@ export const FAQ = [
 		id: 'hoehe',
 		q: 'Gibt es Höhenlinien?',
 		k: ['höhe', 'höhenlinien', 'berg', 'berge', 'gelände', 'relief'],
-		a: 'Ja: Im Schritt „Gestalten“ „Höhenlinien“ einschalten – besonders schön bei hügeligen Orten.'
+		a: 'Ja: Im Bereich „Stil“ „Höhenlinien“ einschalten – besonders schön bei hügeligen Orten.'
 	},
 	{
 		id: 'datenschutz',
