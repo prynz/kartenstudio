@@ -1,6 +1,8 @@
 // Geführter Ablauf („Assistent“): Ort → Ausschnitt → Stil → Design → Text → Fertig.
 // Es ist immer nur ein Schritt sichtbar. Alle Detailregler aus dem Prototyp
 // bleiben unter „Erweiterte Einstellungen“ erreichbar.
+import { fokusOpt, akzent } from '../themen/layouts.js';
+import { typoOpt, geo } from './zeichnen.js';
 import { sheetZeigen, sheetOffen } from './sheet.js';
 import { textImPoster, einfuehrung, favoritenZeichnen } from './direkt.js';
 import { app as appUntyped } from './app.js';
@@ -345,7 +347,25 @@ export function syncWizard() {
 		if (document.activeElement !== e) e.value = (S.info && S.info[k]) || '';
 	});
 	$('wzFokus').classList.toggle('hidden', !(S.lay && S.lay.fokus));
-	all('#wzFokusFarben button').forEach((b) => b.classList.toggle('on', (b.dataset.c || '') === ((S.info && S.info.fokus) || '')));
+	if (S.lay && S.lay.fokus) {
+		const F = fokusOpt(geo());
+		all('#wzFokusFarben button').forEach((b) => b.classList.toggle('on', (b.dataset.c || '') === ((S.info && S.info.fokus) || '')));
+		all('#wzFokusForm button').forEach((b) => b.classList.toggle('on', b.dataset.v === F.form));
+		/** @type {[string, number][]} */ ([['wzFokusGr', F.gr], ['wzFokusX', F.x], ['wzFokusY', F.y]]).forEach(([id, v]) => {
+			if (document.activeElement !== $(id)) /** @type {HTMLInputElement} */ ($(id)).value = String(v);
+		});
+		/** @type {HTMLInputElement} */ ($('wzFokusEigen')).value = akzent(S).length === 7 ? akzent(S) : '#cf2e2e';
+	}
+	$('wzTypo').classList.toggle('hidden', kind !== 'typo');
+	if (kind === 'typo') {
+		const T = typoOpt();
+		all('#wzTypoStil button').forEach((b) => b.classList.toggle('on', b.dataset.v === T.stil));
+		all('#wzTypoSchrift button').forEach((b) => b.classList.toggle('on', b.dataset.v === T.schrift));
+		all('#wzTypoZeilen button').forEach((b) => b.classList.toggle('on', +(b.dataset.v || 0) === T.zeilen));
+		all('#wzTypoFarben button').forEach((b) => b.classList.toggle('on', (b.dataset.c || '') === T.farbe));
+		if (document.activeElement !== $('wzTypoDeck')) /** @type {HTMLInputElement} */ ($('wzTypoDeck')).value = String(T.deck >= 0 ? T.deck : 0.85);
+		$('wzTypoDeck').closest('.row')?.classList.toggle('hidden', T.stil === 'schnitt');
+	}
 	const n = /** @type {HTMLInputElement} */ ($('wzNote'));
 	if (document.activeElement !== n) n.value = (S.note && S.note.text) || '';
 	syncPins();
@@ -584,7 +604,9 @@ export function smooth(fn) {
 	const d = /** @type {any} */ (document);
 	if (reducedMotion()) return fn();
 	if (d.startViewTransition) {
-		d.startViewTransition(fn);
+		const t = d.startViewTransition(fn);
+		// schnelles Weiterklicken bricht die vorige Überblendung ab – das ist kein Fehler
+		[t.ready, t.finished, t.updateCallbackDone].forEach((p) => p && p.catch(() => {}));
 		return;
 	}
 	fn();
@@ -910,7 +932,31 @@ export function initWizard() {
 	/** @type {[string, string][]} */ ([['wzInfoKopf', 'kopf'], ['wzInfoNr', 'nr'], ['wzInfoKicker', 'kicker'], ['wzInfoFakten', 'fakten'], ['wzInfoAbsatz', 'absatz']]).forEach(([id, k]) =>
 		textInput(id, (v) => (app.S.info = { ...(app.S.info || {}), [k]: v }))
 	);
-	all('#wzFokusFarben button').forEach((b) => (b.onclick = () => change(() => (app.S.info = { ...(app.S.info || {}), fokus: b.dataset.c || '' }))));
+	// Fokus & Typografie anpassen
+	const setInfo = (/** @type {string} */ k, /** @type {any} */ v) => (app.S.info = { ...(app.S.info || {}), [k]: v });
+	const setTypo = (/** @type {string} */ k, /** @type {any} */ v) => (app.S.typo = { ...(app.S.typo || {}), [k]: v });
+	all('#wzFokusFarben button').forEach((b) => (b.onclick = () => smooth(() => change(() => setInfo('fokus', b.dataset.c || '')))));
+	all('#wzFokusForm button').forEach((b) => (b.onclick = () => smooth(() => change(() => setInfo('fokusForm', b.dataset.v)))));
+	all('#wzTypoStil button').forEach((b) => (b.onclick = () => smooth(() => change(() => setTypo('stil', b.dataset.v)))));
+	all('#wzTypoSchrift button').forEach((b) => (b.onclick = () => smooth(() => change(() => setTypo('schrift', b.dataset.v)))));
+	all('#wzTypoZeilen button').forEach((b) => (b.onclick = () => smooth(() => change(() => setTypo('zeilen', +(b.dataset.v || 0))))));
+	all('#wzTypoFarben button').forEach((b) => (b.onclick = () => smooth(() => change(() => setTypo('farbe', b.dataset.c || '')))));
+	/** Schieberegler/Farbwähler: live zeichnen, ein Rückgängig-Schritt je Bewegung */
+	const regler = (/** @type {string} */ id, /** @type {(v: string) => void} */ set) => {
+		const e = /** @type {HTMLInputElement} */ ($(id));
+		e.addEventListener('input', () => {
+			begin();
+			set(e.value);
+			render();
+		});
+		e.addEventListener('change', () => commit());
+	};
+	regler('wzFokusGr', (v) => setInfo('fokusGr', +v));
+	regler('wzFokusX', (v) => setInfo('fokusX', +v));
+	regler('wzFokusY', (v) => setInfo('fokusY', +v));
+	regler('wzFokusEigen', (v) => setInfo('fokus', v));
+	regler('wzTypoDeck', (v) => setTypo('deck', +v));
+	regler('wzTypoEigen', (v) => setTypo('farbe', v));
 	$('wzCoords').addEventListener('change', (e) =>
 		change(() => (app.S.lay = { ...(app.S.lay || {}), coords: /** @type {HTMLInputElement} */ (e.target).checked }))
 	);

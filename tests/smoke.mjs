@@ -754,6 +754,23 @@ await run('Designs nach Vorbildern: Fokus, Studie, Steckbrief, Kasten, Lupe, Dos
 	ok(!!(await page.$('#poster #kasten')), 'Kasten: Textraster in der Mitte');
 	await design('dossier');
 	ok((await page.$('#poster #lupe')) && (await page.$('#poster #gitter')) && (await page.$('#poster #kompass')), 'Dossier: Lupe, Gitter, Kompass');
+	// Fokus anpassen: Form, Größe
+	await design('fokus');
+	await page.click('#wzFokusForm [data-v="kreis"]');
+	await page.waitForTimeout(300);
+	ok((await page.evaluate(() => document.querySelector('#fokus').tagName)) === 'circle', 'Fokus: Form „Kreis“ wählbar');
+	await page.fill('#wzFokusGr', '0.2');
+	await page.waitForTimeout(300);
+	ok(+(await page.getAttribute('#fokus', 'r')) < 220, 'Fokus: Größe per Schieberegler');
+	// Typografie anpassen: Karte in Buchstaben, Schrift, Zeilen
+	await design('typo');
+	await page.click('#wzTypoStil [data-v="schnitt"]');
+	await page.waitForTimeout(300);
+	ok((await page.getAttribute('#karte', 'clip-path')) === 'url(#cTypo)', 'Typografie: Karte nur in den Buchstaben');
+	await page.click('#wzTypoZeilen [data-v="1"]');
+	await page.click('#wzTypoSchrift [data-v="SgBR"]');
+	await page.waitForTimeout(300);
+	ok((await page.$$('#titel text')).length === 1 && (await page.getAttribute('#titel text', 'font-family')) === 'SgBR', 'Typografie: Schrift und Zeilenzahl wählbar');
 	await design('einsatz');
 	ok((await page.$('#poster #einsatz')) && (await page.$('#poster #absatz')) && !(await page.$('#poster #untertitel')), 'Einsatzkarte: rotes Viertel, Text oben, ohne Untertitel');
 	await page.fill('#wzInfoAbsatz', 'Hier fing alles an.');

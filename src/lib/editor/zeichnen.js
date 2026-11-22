@@ -615,11 +615,40 @@ function kontrast(a, b) {
 }
 
 /* ---------- Typografie-Design: riesige Buchstaben über der Karte ---------- */
-/** Ortsname in 2–4 Zeilen gleichmäßig aufteilen (BARCELONA → BAR/CEL/ONA) */
-export function typoLines(text) {
-  const t = [...String(text || '').replace(/\s+/g, '').toUpperCase()];
-  if (!t.length) return [];
-  const n = Math.max(1, Math.min(4, Math.ceil(t.length / 3)));
+/** Einstellungen der Typografie: eigene Wahl (S.typo) vor Vorgabe des Designs */
+export function typoOpt() {
+  const L = { ...LAY_DEFAULT, ...(app.S.lay || {}) },
+    T = app.S.typo || {};
+  const zahl = (v, d) => (v === '' || v == null || Number.isNaN(+v) ? d : +v);
+  return {
+    stil: T.stil || L.typoStil || 'voll',
+    schrift: T.schrift || L.typoSchrift || 'SgXB',
+    zeilen: zahl(T.zeilen, L.typoZeilen || 0),
+    farbe: /^#[0-9a-f]{3,8}$/i.test(T.farbe || '') ? T.farbe : '',
+    deck: zahl(T.deck, -1)
+  };
+}
+/** Schreib- und Pinselschriften wirken in normaler Schreibweise, Blockschriften in Großbuchstaben */
+const FEIN = { SgBR: 1, SgSC: 1, SgFR: 1 };
+/** Ortsname in 1–4 Zeilen gleichmäßig aufteilen (BARCELONA → BAR/CEL/ONA) */
+export function typoLines(text, zeilen, schrift) {
+  const fein = schrift && FEIN[schrift];
+  const roh = String(text || '').trim();
+  if (!roh) return [];
+  // Schreibschrift: ganze Wörter behalten
+  if (fein) {
+    const w = roh.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (m, a, c) => a + c.toUpperCase()).split(/\s+/);
+    const n = Math.max(1, Math.min(w.length, zeilen || (w.length > 2 ? 2 : w.length)));
+    const out = [];
+    for (let r = 0, i = 0; r < n; r++) {
+      const k = Math.ceil((w.length - i) / (n - r));
+      out.push(w.slice(i, i + k).join(' '));
+      i += k;
+    }
+    return out;
+  }
+  const t = [...roh.replace(/\s+/g, '').toUpperCase()];
+  const n = Math.max(1, Math.min(4, zeilen || Math.ceil(t.length / 3)));
   const out = [];
   let i = 0;
   for (let r = 0; r < n; r++) {
@@ -627,31 +656,63 @@ export function typoLines(text) {
     out.push(t.slice(i, i + k).join(''));
     i += k;
   }
-  return out;
+  return out.filter(Boolean);
+}
+/** Buchstaben als <text>-Elemente (für Füllung, Umriss und als Schnittmaske) */
+export function typoTexte(g) {
+  const S = app.S;
+  if (!S.title.on || !S.title.text) return null;
+  const O = typoOpt();
+  const lines = typoLines(S.title.text, O.zeilen, O.schrift);
+  if (!lines.length) return null;
+  const fein = !!FEIN[O.schrift];
+  // Breite je Zeile messen (Schriften sind verschieden breit)
+  const breit = lines.map(l => breite(l, O.schrift) + (fein ? 0 : 0.06 * [...l].length));
+  const wmax = Math.max(...breit);
+  const lf = fein ? 1.08 : 0.98;
+  const size = Math.min((MW * 0.86) / wmax, (g.MH * 0.8) / (lines.length * lf), g.MH * 0.62);
+  const lh = size * lf;
+  const ls = fein ? 0 : size * 0.06;
+  const cap = size * (CAP[O.schrift] || 0.72);
+  const blockH = cap + lh * (lines.length - 1);
+  const y0 = g.my + (g.MH - blockH) / 2 + cap - g.MH * 0.03;
+  const at = `font-family="${O.schrift}" font-size="${size.toFixed(1)}" letter-spacing="${ls.toFixed(1)}" text-anchor="middle"`;
+  const texte = lines.map((l, i) => `<text ${at} x="${(g.W / 2 + ls / 2).toFixed(1)}" y="${(y0 + i * lh).toFixed(1)}">${esc(l)}</text>`).join('');
+  return { texte, O, size };
+}
+/** Breite eines Textes relativ zur Schriftgröße 1 */
+function breite(t, font) {
+  if (typeof document === 'undefined') return [...t].length * 0.7;
+  if (!MESS) MESS = document.createElement('canvas').getContext('2d');
+  MESS.font = `100px ${font}`;
+  return MESS.measureText(t).width / 100;
 }
 function typoSVG(g) {
   const S = app.S;
-  if (!S.title.on || !S.title.text) return '';
-  const lines = typoLines(S.title.text);
-  const per = Math.max(...lines.map(l => [...l].length));
-  // Schriftgröße so, dass die Buchstaben die Karte füllen (Breite und Höhe)
-  const size = Math.min((MW * 0.84) / (per * 0.78), (g.MH * 0.78) / (lines.length * 0.98));
-  const lh = size * 0.98;
-  const ls = size * 0.06;
+  const T = typoTexte(g);
+  if (!T) return '';
+  const { O, size } = T;
   const paper = S.bg === 'none' ? '#ffffff' : S.bg;
   const light = lum(paper) < 0.45;
-  const col = light ? '#ffffff' : S.cls.haupt.s;
-  const op = light ? 0.86 : 0.8;
-  const cap = size * CAP.SgXB;
-  const blockH = cap + lh * (lines.length - 1);
-  const y0 = g.my + (g.MH - blockH) / 2 + cap - g.MH * 0.03;
-  let o = `<g id="titel" font-family="SgXB" font-size="${size.toFixed(1)}" letter-spacing="${ls.toFixed(1)}" fill="${col}" fill-opacity="${op}" text-anchor="middle">`;
-  lines.forEach((l, i) => (o += `<text x="${(g.W / 2 + ls / 2).toFixed(1)}" y="${(y0 + i * lh).toFixed(1)}">${esc(l)}</text>`));
-  o += '</g>';
+  const col = O.farbe || (light ? '#ffffff' : S.cls.haupt.s);
+  const op = O.deck >= 0 ? O.deck : light ? 0.86 : 0.8;
+  let o;
+  if (O.stil === 'umriss') o = `<g id="titel" fill="none" stroke="${col}" stroke-opacity="${op}" stroke-width="${Math.max(2, size * 0.022).toFixed(1)}" stroke-linejoin="round">${T.texte}</g>`;
+  else if (O.stil === 'schnitt') o = `<g id="titel" fill="none" stroke="${O.farbe || typoTinte()}" stroke-width="${Math.max(1.5, size * 0.008).toFixed(1)}" stroke-opacity=".9">${T.texte}</g>`;
+  else o = `<g id="titel" fill="${col}" fill-opacity="${op}">${T.texte}</g>`;
   // Untertitel / Koordinaten klein am unteren Kartenrand
   const bits = [S.sub.on && S.sub.text ? S.sub.text : '', g.L.coords ? coordText() : '', g.note || ''].filter(Boolean);
-  if (bits.length) o += `<text id="untertitel" x="${(g.W / 2 + 1.5).toFixed(1)}" y="${(g.my + g.MH - Math.max(26, g.MH * 0.035)).toFixed(1)}" text-anchor="middle" font-family="SgMD" font-size="${Math.round(Math.max(18, (S.sub.size || 30) * 0.8))}" letter-spacing="3" fill="${col}" fill-opacity="${op}">${esc(bits.join('  ·  '))}</text>`;
+  const bc = O.stil === 'schnitt' ? typoTinte() : col;
+  if (bits.length) o += `<text id="untertitel" x="${(g.W / 2 + 1.5).toFixed(1)}" y="${(g.my + g.MH - Math.max(26, g.MH * 0.035)).toFixed(1)}" text-anchor="middle" font-family="SgMD" font-size="${Math.round(Math.max(18, (S.sub.size || 30) * 0.8))}" letter-spacing="3" fill="${bc}" fill-opacity="${O.stil === 'schnitt' ? 0.9 : op}">${esc(bits.join('  ·  '))}</text>`;
   return o;
+}
+/** „Karte in Buchstaben“: Papier außerhalb der Buchstaben und Schriftfarbe darauf */
+export function typoPapier() {
+  const bg = app.S.bg === 'none' ? '#ffffff' : app.S.bg;
+  return lum(bg) > 0.7 ? '#1d2230' : '#ffffff';
+}
+function typoTinte() {
+  return lum(typoPapier()) > 0.5 ? (lum(app.S.bg === 'none' ? '#fff' : app.S.bg) < 0.5 ? app.S.bg : '#1b1f2a') : '#ffffff';
 }
 
 /* ---------- Effekte: Vignette und Papier-Struktur ---------- */
@@ -776,7 +837,8 @@ export function buildSVG(forExport) {
     if (t.on && t.text) fonts.add(t.font);
   });
   if (multiOn()) ['SgXB', 'SgMD', app.S.sub.font].forEach(f => fonts.add(f));
-  if (g.L.kind === 'typo') fonts.add('SgXB');
+  const schnitt = g.L.kind === 'typo' && typoOpt().stil === 'schnitt' && app.S.title.on && app.S.title.text;
+  if (g.L.kind === 'typo') fonts.add(typoOpt().schrift), fonts.add('SgMD');
   if (g.L.kind === 'steckbrief' || g.L.kind === 'kasten' || g.L.foot) ['SgXB', 'SgMD', 'SgSC'].forEach(f => fonts.add(f));
   if (g.L.kind === 'steckbrief' || g.L.absatz) fonts.add('SgMD');
   if (app.S.motif === 'koord') ['SgXB', 'SgMD'].forEach(f => fonts.add(f));
@@ -799,11 +861,17 @@ export function buildSVG(forExport) {
   const papierF = g.L.papier || app.S.bg;
   const verlauf = app.S.bg2 && /^#[0-9a-f]{3,8}$/i.test(app.S.bg2) && app.S.bg !== 'none';
   if (verlauf) o += `<defs><linearGradient id="gBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${app.S.bg}"/><stop offset="1" stop-color="${app.S.bg2}"/></linearGradient></defs>`;
-  if (papierF !== 'none') o += `<rect id="kartenhintergrund" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="${verlauf && !g.L.papier ? 'url(#gBg)' : papierF}"/>`;
+ if (schnitt) {
+    // Karte nur in den Buchstaben: Maske aus den Buchstaben, außen Papier
+    const T = typoTexte(g);
+    o += `<defs><clipPath id="cTypo">${T ? T.texte : ''}</clipPath></defs>`;
+    o += `<rect id="kartenhintergrund" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="${typoPapier()}"/>`;
+    if (app.S.bg !== 'none') o += `<g clip-path="url(#cTypo)"><rect id="kartenflaeche" width="${g.W.toFixed(1)}" height="${g.H.toFixed(1)}" fill="${verlauf ? 'url(#gBg)' : app.S.bg}"/></g>`;
+  } else if (papierF !== 'none') o += `<rect id="kartenhintergrund" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="${verlauf && !g.L.papier ? 'url(#gBg)' : papierF}"/>`;
   // Eigenes Papier außerhalb der Karte (z. B. weiß um einen dunklen Kartenkreis)
   if (g.L.papier && app.S.bg !== 'none') o += mapShape(g, 0, ` id="kartenflaeche" transform="translate(${g.mx},${g.my})" fill="${verlauf ? 'url(#gBg)' : app.S.bg}"`);
   o += fokusSVG(g);
-  o += `<g id="karte" clip-path="url(#cIn)"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><g id="kartenAnsicht" transform="${vT(g).replace(/^translate\([^)]*\) /, '')}">`;
+  o += `<g id="karte" clip-path="url(#${schnitt ? 'cTypo' : 'cIn'})"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><g id="kartenAnsicht" transform="${vT(g).replace(/^translate\([^)]*\) /, '')}">`;
   o += forExport ? mapContent(true, visRect()) : '<g id="kartenInhalt"/>';
   o += '</g></g></g></g>';
   const ink = app.S.title.color;

@@ -525,6 +525,19 @@ Object.assign(PRESETS, {
     bg: '#1c1c1f', haus: ['#303036', '#29292e'], haupt: '#6a6a72', neben: '#4a4a51', weg: '#37373d',
     wasser: ['#2c2c32', '#232328'], gruen: ['#222226', '#222226'], frame: '#d8322f', bar: '#d8322f', text: '#ffffff'
   }, { haus: 0.5, haupt: 6, neben: 2.6, weg: 1.2 }), { ink: '#d8322f' }),
+  // Für „Fokus“: Straßen in Papierfarbe zerschneiden den Farbfleck in Blöcke
+  washi: mit(TH('Washi', 'Warmes Papier mit hellen Straßen, Akzent in Zinnoberrot – ruhig und japanisch.', {
+    bg: '#eee6d8', haus: ['#e4dccd', 'none'], haupt: '#fbf8f2', neben: '#fbf8f2', weg: '#f6f1e8',
+    wasser: ['#dcd3c2', '#dcd3c2'], frame: '#b8322a', bar: '#b8322a', text: '#ffffff'
+  }, { haus: 0.6, haupt: 7, neben: 3.6, weg: 1.8 }), { ink: '#2a2622' }, (t) => (t.cls.haus.h = true)),
+  tinte: mit(TH('Tinte & Gold', 'Tiefes Tintenblau, Straßen kaum heller – der Fokus leuchtet golden.', {
+    bg: '#1f2430', haus: ['#272d3b', 'none'], haupt: '#2e3546', neben: '#2b3242', weg: '#262c3a',
+    wasser: ['#232a38', '#232a38'], frame: '#d8a93b', bar: '#d8a93b', text: '#1f2430'
+  }, { haus: 0.6, haupt: 7, neben: 3.6, weg: 1.8 }), { ink: '#ece4d2' }, (t) => (t.cls.haus.h = true)),
+  // Für „Typografie“: einfarbig, Straßen in hellen Tönen
+  schiefer: MONO('Schiefer', 'Kühles Schiefergrau mit hellen Linien – zeitlos für große Buchstaben.', '#4a5568', '#e3e7ee', '#66728a', '#3f4859'),
+  flamingo: MONO('Flamingo', 'Kräftiges Rosa mit hellen Straßen – fröhlich und modern.', '#e98aa0', '#fde6ec', '#f0a5b6', '#df7891'),
+  tanne: MONO('Tanne', 'Dunkles Tannengrün mit hellen Linien.', '#2f5a46', '#dcebe2', '#4a7560', '#284e3c'),
   wimmel: mit(POP('Wimmelbild', 'Illustrierter Stadtplan in Koralle, Türkis und Schieferblau.', '#ece2cc', ['#e8553e', '#e8553e', '#d9472f'], '#3d5a73', '#5cb4b6'), {}, (t) => {
     t.cls.haupt.s = '#3d5a73';
     t.cls.neben.s = '#3d5a73';

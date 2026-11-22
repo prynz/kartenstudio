@@ -59,10 +59,34 @@ function blob(cx, cy, r, welle) {
 	return d + 'Z';
 }
 /** Liegt zwischen Papier und Karte: Straßen in Papierfarbe schneiden sie in „Blöcke“ */
+/** Zahl aus den Zusatzangaben (leer = Vorgabe) */
+const zahl = (v, d) => (v === '' || v == null || Number.isNaN(+v) ? d : +v);
+/** Fokus-Einstellungen: eigene Wahl (S.info) vor Vorgabe des Designs */
+export function fokusOpt(g) {
+	const I = info();
+	return {
+		form: I.fokusForm || g.L.fokusForm || 'fleck',
+		gr: zahl(I.fokusGr, g.L.fokus || 0.33),
+		x: zahl(I.fokusX, 0.5),
+		y: zahl(I.fokusY, 0.42)
+	};
+}
 export function fokusSVG(g) {
 	if (!g.L.fokus || !karteMotiv()) return '';
-	const r = g.L.fokus * Math.min(MW, g.MH);
-	return `<path id="fokus" d="${blob(g.mx + MW / 2, g.my + g.MH * 0.42, r, 1)}" fill="${akzent(app.S)}" clip-path="url(#cIn)"/>`;
+	const F = fokusOpt(g);
+	const r = F.gr * Math.min(MW, g.MH),
+		cx = g.mx + MW * F.x,
+		cy = g.my + g.MH * F.y;
+	const farbe = akzent(app.S);
+	const a = `id="fokus" fill="${farbe}" clip-path="url(#cIn)"`;
+	if (F.form === 'kreis') return `<circle ${a} cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}"/>`;
+	if (F.form === 'raute') return `<path ${a} d="M${f1(cx)} ${f1(cy - r * 1.15)}L${f1(cx + r)} ${f1(cy)}L${f1(cx)} ${f1(cy + r * 1.15)}L${f1(cx - r)} ${f1(cy)}Z"/>`;
+	if (F.form === 'herz') {
+		const k = r / 17;
+		// Beschnitt an einer äußeren Gruppe – an der verschobenen Form selbst würde er mitskaliert
+		return `<g clip-path="url(#cIn)"><path id="fokus" fill="${farbe}" transform="translate(${f1(cx)},${f1(cy + r * 0.1)}) scale(${k.toFixed(4)})" d="M0 15C-9 8-17 1-17-8C-17-14-12-18-7-18C-3-18-1-16 0-13C1-16 3-18 7-18C12-18 17-14 17-8C17 1 9 8 0 15Z"/></g>`;
+	}
+	return `<path ${a} d="${blob(cx, cy, r, 1)}"/>`;
 }
 
 /* ---------- Lupe: Kreis hervorheben, außen dämpfen ---------- */

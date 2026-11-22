@@ -18,6 +18,7 @@
  *   fokus?: number,     // farbige Fläche unter den Straßen (Radius relativ zur Karte)
  *   lupe?: number,      // hervorgehobener Kreis, außen gedämpft (Radius relativ zur Karte)
  *   lupeStrich?: boolean, gitter?: boolean, kompass?: boolean|'unten',
+ *   fokusForm?: 'fleck'|'kreis'|'herz'|'raute', typoStil?: 'voll'|'umriss'|'schnitt', typoSchrift?: string, typoZeilen?: number,
  *   bezirk?: boolean, absatz?: boolean, ohneSub?: boolean, koordFarbe?: string
  * }} Lay
  * @typedef {{
@@ -249,6 +250,22 @@ export const DESIGNS = {
 		title: { size: 132, ls: 2, font: 'SgBR' },
 		sub: { size: 28, ls: 4 }
 	},
+	fokuskreis: {
+		name: 'Fokus Kreis',
+		desc: 'Ein runder Farbpunkt wie eine Sonne über dem Ort, Titel darunter.',
+		frame: { w: 0, r: 0, pad: 40 },
+		lay: { kind: 'below', textPad: 50, fokus: 0.3, fokusForm: 'kreis' },
+		title: { size: 62, ls: 24 },
+		sub: { size: 30, ls: 2 }
+	},
+	fokusherz: {
+		name: 'Fokus Herz',
+		desc: 'Ein Herz in deiner Lieblingsfarbe mitten im Ort, Titel in Schreibschrift.',
+		frame: { w: 0, r: 0, pad: 0 },
+		lay: { kind: 'over', fade: true, fokus: 0.3, fokusForm: 'herz' },
+		title: { size: 120, ls: 0, font: 'SgSC' },
+		sub: { size: 28, ls: 4 }
+	},
 	studie: {
 		name: 'Studie',
 		desc: 'Kartenkreis auf weißem Papier, kleiner Titel oben, unten eine Info-Leiste mit Koordinaten, Legende und Maßstab.',
@@ -317,6 +334,33 @@ export const DESIGNS = {
 		title: { size: 40, ls: 8 },
 		sub: { size: 22, ls: 2 }
 	},
+	typoumriss: {
+		name: 'Typo Umriss',
+		desc: 'Riesige Buchstaben nur als Umriss – die Karte bleibt überall sichtbar.',
+		frame: { w: 0, r: 0, pad: 34 },
+		lay: { kind: 'typo', coords: true, typoStil: 'umriss' },
+		title: { size: 72, ls: 0 },
+		sub: { size: 30, ls: 2 },
+		aspect: 1.33
+	},
+	typoschnitt: {
+		name: 'Typo Ausschnitt',
+		desc: 'Die Karte erscheint nur in den Buchstaben des Ortsnamens – außen schlichtes Papier.',
+		frame: { w: 0, r: 0, pad: 34 },
+		lay: { kind: 'typo', coords: true, typoStil: 'schnitt' },
+		title: { size: 72, ls: 0 },
+		sub: { size: 30, ls: 2 },
+		aspect: 1.33
+	},
+	typopinsel: {
+		name: 'Typo Pinsel',
+		desc: 'Der Ortsname in großer Pinselschrift quer über der Karte.',
+		frame: { w: 0, r: 0, pad: 34 },
+		lay: { kind: 'typo', coords: true, typoSchrift: 'SgBR', typoZeilen: 1 },
+		title: { size: 72, ls: 0 },
+		sub: { size: 30, ls: 2 },
+		aspect: 1.33
+	},
 	bogenlinie: {
 		name: 'Bogen elegant',
 		desc: 'Bogenfenster mit feiner Zierlinie zwischen Titel und Untertitel.',
@@ -377,15 +421,18 @@ export function applyDesign(S, key, preset, full) {
 		// Schrift, die ein Design mitbringt (z. B. Pinsel bei „Fokus“), beim Wechsel wieder zurücksetzen
 		if (S.title.fontDesign && !(D.title && D.title.font)) S.title.font = 'SgXB';
 		// Hatte ein Design den Titel in normale Schreibweise gesetzt (Pinsel), wieder in Großbuchstaben
-		if (S.title.klein && !(D.title && D.title.font === 'SgBR')) {
+		if (S.title.klein && !(D.title && (D.title.font === 'SgBR' || D.title.font === 'SgSC'))) {
 			S.title.text = (S.title.text || '').toUpperCase();
 			S.title.klein = false;
 		}
 		S.title.fontDesign = !!(D.title && D.title.font);
+		// Eigene Anpassungen von Fokus/Typografie gelten nur für das jeweilige Design
+		S.typo = {};
+		if (S.info) S.info = { ...S.info, fokusForm: '', fokusGr: '', fokusX: '', fokusY: '' };
 		if (D.title) Object.assign(S.title, D.title);
 		// Pinselschrift wirkt in normaler Schreibweise („Bamberg“ statt „BAMBERG“)
 		const t = S.title.text || '';
-		if (S.title.font === 'SgBR' && t === t.toUpperCase() && (S.title.klein = true)) S.title.text = t.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (/** @type {string} */ m, /** @type {string} */ a, /** @type {string} */ c) => a + c.toUpperCase());
+		if ((S.title.font === 'SgBR' || (S.title.font === 'SgSC' && S.title.fontDesign)) && t === t.toUpperCase() && (S.title.klein = true)) S.title.text = t.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (/** @type {string} */ m, /** @type {string} */ a, /** @type {string} */ c) => a + c.toUpperCase());
 		if (D.sub) Object.assign(S.sub, D.sub);
 		S.bar.auto = true;
 	}
