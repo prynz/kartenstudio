@@ -229,7 +229,7 @@ export const TCP = { p: 'tc' };
 const MC = { key: '', node: null, hits: null, rect: null, z: 0 };
 function mapKey() {
   const S = app.S;
-  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, S.hoehen, !!(app.DATA && app.DATA._contours), multiKey(), multiOn() ? [S.view.cx, S.view.cy, S.view.a, S.bg, S.title.color, S.sub.font] : 0, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.motif === 'wolke' ? [S.wolke, S.bg, S.cls.haupt.s, S.bar.color, S.frame.color, S.view.cx, S.view.cy, S.view.a] : 0, S.motif === 'koord' ? [S.koord, S.title.text, S.bg, S.view.cx, S.view.cy, S.view.a, S.cls.haupt.s, S.bar.color, S.frame.color] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0]);
+  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, S.hoehen, !!(app.DATA && app.DATA._contours), multiKey(), multiOn() ? [S.view.cx, S.view.cy, S.view.a, S.bg, S.title.color, S.sub.font] : 0, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.motif === 'wolke' || S.motif === 'koord' ? schriftenBereit() : 0, S.motif === 'wolke' ? [S.wolke, S.bg, S.cls.haupt.s, S.bar.color, S.frame.color, S.view.cx, S.view.cy, S.view.a] : 0, S.motif === 'koord' ? [S.koord, S.title.text, S.bg, S.view.cx, S.view.cy, S.view.a, S.cls.haupt.s, S.bar.color, S.frame.color] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0]);
 }
 /** Sichtbarer Bereich plus großzügiger Rand, damit Verschieben ohne Neuzeichnen geht */
 function cullRect() {
@@ -294,6 +294,24 @@ export function renderView() {
   clearTimeout(fullTimer);
   fullTimer = window.setTimeout(render, 140);
 }
+/** Schriftbreite messen (Schriften sind im Dokument geladen) */
+let MESS = null;
+function passendeGroesse(text, font, size, ls, maxW) {
+  if (typeof document === 'undefined') return size;
+  if (!MESS) MESS = document.createElement('canvas').getContext('2d');
+  MESS.font = `${size}px ${font}`;
+  const w = MESS.measureText(text).width + ls * [...text].length;
+  return w > maxW && w > 0 ? size * maxW / w : size;
+}
+/** Sind die Schriften geladen? (Textmotive messen damit – vorher gemessen = falsche Umbrüche) */
+export function schriftenBereit() {
+  try {
+    return ['SgXB', 'SgMD', 'SgSC'].map(f => document.fonts.check('30px ' + f)).join('');
+  } catch (e) {
+    return '';
+  }
+}
+
 /** Kontrastverhältnis zweier Farben (1 = gleich, 21 = schwarz/weiß) */
 function kontrast(a, b) {
   const x = lum(a), y = lum(b);
@@ -466,7 +484,9 @@ export function buildSVG(forExport) {
     if (typo) return;
     if (k === 'title' && app.S.motif === 'koord') return;
     if (!t.on || !t.text) return;
-    o += `<text id="${k === 'title' ? 'titel' : 'untertitel'}" x="${(g.W / 2 + t.ls / 2).toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" font-family="${t.font}" font-size="${t.size}" letter-spacing="${t.ls}" fill="${t.color}">${esc(t.text)}</text>`;
+    // Lange Namen (z. B. „Rothenburg ob der Tauber“) automatisch verkleinern, damit sie ins Poster passen
+    const fs = passendeGroesse(t.text, t.font, t.size, t.ls, g.W - 2 * (g.sw + Math.max(g.p, 24)));
+    o += `<text id="${k === 'title' ? 'titel' : 'untertitel'}" x="${(g.W / 2 + t.ls * fs / t.size / 2).toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" font-family="${t.font}" font-size="${+fs.toFixed(2)}" letter-spacing="${+(t.ls * fs / t.size).toFixed(2)}" fill="${t.color}">${esc(t.text)}</text>`;
   });
   if (!typo && g.L.rule && app.S.title.on && app.S.title.text && app.S.sub.on && app.S.sub.text) {
     const yr = (g.yT + (g.yS - app.S.sub.size * CAP[app.S.sub.font])) / 2;
@@ -661,5 +681,7 @@ export function drawSel() {
 /** Verbindet die Bedienelemente dieses Bausteins mit der Seite. */
 export function initEditorZeichnen() {
   app.poster = $('poster');
+  // Sobald alle Schriften geladen sind, einmal neu zeichnen (Textbreiten werden gemessen)
+  if (document.fonts) document.fonts.ready.then(() => app.DATA && render());
 }
 

@@ -87,7 +87,7 @@
 <button type="button" class="wz-link" id="wzWider">Größere Gegend laden (Inseln, Seen, Regionen bis 40 km) ›</button>
 </section>
 <section class="wz-pane" data-step="stil">
-<div class="wz-head"><h3>Stil</h3><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>
+<div class="wz-head"><h3>Stil</h3><button type="button" class="wz-dice wz-bsp" data-bsp-open><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="6" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="12.5" width="7" height="8" rx="1.5"/></svg>Beispiele</button><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>
 <div class="tabs2 wz-mode wz-mode3" id="wzMode"><button data-m="art">Gezeichnet</button><button data-m="std">Landkarte</button><button data-m="sterne">Sternenhimmel</button><button data-m="koord">Koordinaten</button><button data-m="wolke">Wortwolke</button></div>
 <div class="wz-cards" id="wzStyles"></div>
 <div class="wz-hoehe" id="wzHoehe"><label class="tog wz-tog"><input type="checkbox" id="hoehenOn"><span>Höhenlinien (Berge &amp; Täler)</span></label><p class="wz-hint" id="hoehenInfo"></p></div>
@@ -308,6 +308,8 @@
 <button class="demo" id="demoBtn"><span class="dpin">▶</span><span><b>Beispiel öffnen: Siegritz</b><small>Sofort ausprobieren – funktioniert auch ohne Internet</small></span></button>
 <div class="orsep">oder Beispiel-Ort suchen</div>
 <div class="examples" style="margin-top:8px"><button class="chip" data-q="Siegritz Heiligenstadt">Siegritz</button><button class="chip" data-q="Bamberg">Bamberg</button><button class="chip" data-q="Rothenburg ob der Tauber">Rothenburg</button><button class="chip" data-q="Nördlingen">Nördlingen</button></div>
+<div class="bsp-box"><div class="bsp-head"><b>Beispiele zum Ausprobieren</b><small>Antippen – das Poster öffnet sich fertig gestaltet</small></div>
+<div class="bsp-strip" id="bspStrip"></div></div>
 <a class="orte-link" href={resolve('/poster')} data-sveltekit-reload>Ortsposter aus Franken und Bayern ›</a>
 <div class="legal"><a href={resolve('/impressum')} data-sveltekit-reload>Impressum</a> · <a href={resolve('/datenschutz')} data-sveltekit-reload>Datenschutz</a> · <a href={resolve('/agb')} data-sveltekit-reload>AGB</a> · <a href={resolve('/lizenzen')} data-sveltekit-reload>Lizenzen</a></div>
 <div class="steps"><span><b>1</b> Ort suchen</span><span><b>2</b> Gestalten</span><span><b>3</b> Vorschau</span><span><b>4</b> Herunterladen</span></div>
@@ -315,6 +317,10 @@
 </div>
 </section>
 </div>
+
+<div class="bsp-ov" id="bspOverlay" hidden><div class="bsp-panel" role="dialog" aria-modal="true" aria-labelledby="bspTitel">
+<div class="bsp-ph"><div><b id="bspTitel">Beispiele zur Inspiration</b><small>Antippen übernimmt den Look für deinen Ort – Stil, Design und Motiv.</small></div><button class="ibtn" id="bspClose" aria-label="Schließen">✕</button></div>
+<div class="bsp-grid" id="bspGrid"></div></div></div>
 
 <div class="chat" id="chat" role="dialog" aria-label="Hilfe-Chat" aria-hidden="true">
 <div class="chat-h"><div><b>Kartenstudio-Hilfe</b><small id="chatMode">Antwortet sofort</small></div><button class="ibtn" id="chatX" aria-label="Chat schließen">✕</button></div>

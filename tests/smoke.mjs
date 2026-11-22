@@ -553,6 +553,28 @@ await run('Desktop – Wortwolke', { viewport: { width: 1440, height: 900 } }, a
 	ok((await page.getAttribute('#kartenhintergrund', 'fill')) === '#2b5d8c', 'Thema „Insel-Silhouette“');
 });
 
+await run('Beispiel-Galerie', { viewport: { width: 1440, height: 900 } }, async (page) => {
+	const n = await page.$$eval('#bspStrip [data-id]', (b) => b.length);
+	ok(n >= 12, `Startseite zeigt ${n} Beispiele`);
+	await page.waitForTimeout(800);
+	const bilder = await page.$$eval('#bspStrip img', (i) => i.filter((x) => x.complete && x.naturalWidth > 0).length);
+	ok(bilder >= 4, `Vorschaubilder geladen (${bilder} sichtbar)`);
+	// Offline-Beispiel aus der Galerie: Wortwolke Siegritz
+	await page.click('#bspStrip [data-id="siegritz-wolke"]');
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForTimeout(1200);
+	ok((await page.$$('#wortwolke text')).length > 40, 'Beispiel „Wortwolke im Herz“ öffnet fertig gestaltet');
+	// Im Editor: Look auf den eigenen Ort übernehmen
+	await page.click('#wzSteps button[data-step="stil"]');
+	await page.click('.wz-pane[data-step="stil"] [data-bsp-open]');
+	await page.waitForSelector('#bspOverlay:not([hidden])');
+	ok((await page.$$('#bspGrid [data-id]')).length >= 12, 'Galerie im Editor geöffnet');
+	await page.click('#bspGrid [data-id="nuernberg-nacht"]');
+	await page.waitForTimeout(900);
+	ok((await page.getAttribute('#kartenhintergrund', 'fill')) === '#272c39' && (await page.textContent('#poster')).includes('SIEGRITZ') && (await page.$$('#poster path[data-k]')).length > 100, 'Look „Nachtblau“ für den eigenen Ort übernommen (Siegritz bleibt)');
+	ok(await page.locator('#bspOverlay').isHidden(), 'Galerie schließt sich danach');
+});
+
 await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {
 	await page.tap('#demoBtn');
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
@@ -588,6 +610,14 @@ await run('Orts-Seiten für Google', { viewport: { width: 1280, height: 860 } },
 	const sm = await page.goto(base + '/sitemap.xml');
 	ok(sm.ok() && (await sm.text()).includes('/poster/bamberg'), 'Sitemap für Google');
 });
+
+if (ONLINE)
+	await run('Beispiel mit Ort (online): Sternenhimmel Bamberg', { viewport: { width: 1440, height: 900 } }, async (page) => {
+		await page.click('#bspStrip [data-id="bamberg-sterne"]');
+		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });
+		await page.waitForTimeout(2000);
+		ok((await page.textContent('#widmung')) === '21. Juni 2019 · 22:30 Uhr' && (await page.textContent('#poster')).includes('BAMBERG'), 'Beispiel öffnet Bamberg mit Sternenhimmel vom 21.06.2019');
+	});
 
 if (ONLINE)
 	await run('Desktop – Orts-Seite öffnet direkt das Poster', { viewport: { width: 1440, height: 900 } }, async (page) => {

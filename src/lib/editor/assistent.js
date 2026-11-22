@@ -23,6 +23,7 @@ import { PIN_SHAPES } from './zeichnen.js';
 import { shareLink } from './entwurf.js';
 import { ANLAESSE } from '../themen/anlaesse.js';
 import { initMulti, syncMulti } from './mehrere.js';
+import { beispielNachLaden } from '../beispiele/galerie.js';
 import { initRoute, syncRoute } from './route.js';
 import { preis, lieferung } from '../shop/preise.js';
 import { initGift } from '../shop/geschenk.js';
@@ -277,6 +278,8 @@ export function wizardAfterLoad() {
 		app.S.sky = { ...app.S.sky, lat: +lat.toFixed(4), lon: +lon.toFixed(4) };
 	}
 	setTool(advOpen ? 'sel' : 'move');
+	// Beispiel aus der Galerie geöffnet → dessen Look anwenden
+	if (beispielNachLaden()) return;
 	// Anlass vor der Suche gewählt → jetzt anwenden und direkt zum Text (Datum eintragen)
 	if (app.occasionPending) {
 		const k = app.occasionPending;

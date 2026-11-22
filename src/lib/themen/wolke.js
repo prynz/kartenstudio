@@ -55,7 +55,12 @@ const CACHE = new Map();
  * @param {number} W @param {number} H
  */
 export function wolkeSVG(o, W, H) {
-	const key = JSON.stringify([o, W.toFixed(0), H.toFixed(0)]);
+	// Schrift-Ladezustand gehört zum Schlüssel: vor dem Laden gemessen = falsche Breiten
+	let bereit = '';
+	try {
+		bereit = ['SgXB', 'SgMD', 'SgSC'].map((f) => document.fonts.check('30px ' + f)).join('');
+	} catch (e) {}
+	const key = JSON.stringify([o, W.toFixed(0), H.toFixed(0), bereit]);
 	if (CACHE.has(key)) return CACHE.get(key);
 	const liste = woerter(o.text);
 	const innen = /** @type {Record<string, (x:number,y:number)=>boolean>} */ (FORMEN)[o.form] || FORMEN.herz;

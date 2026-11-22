@@ -20,7 +20,11 @@ export function regionOf(p) {
  * Schlauer Startausschnitt: Ortskern im gewünschten Seitenverhältnis.
  * Dörfer ≈ 1,1 km breit, Städte nach ihrer Ausdehnung (gedeckelt, damit die Karte nicht zu dicht wird).
  */
-export function placeBounds(p, lon, lat, a) {
+/**
+ * @param {any} p @param {number} lon @param {number} lat @param {number} a
+ * @param {number} [breite] feste Breite in Metern (z. B. für Beispiele)
+ */
+export function placeBounds(p, lon, lat, a, breite) {
   const small = /^(village|hamlet|suburb|neighbourhood|quarter|locality|isolated_dwelling|farm|house|street)$/.test(p.osm_value || p.type || '');
   const tiny = /^(hamlet|isolated_dwelling|farm|house|street|neighbourhood)$/.test(p.osm_value || p.type || '');
   let wm = tiny ? 750 : 1100;
@@ -31,6 +35,7 @@ export function placeBounds(p, lon, lat, a) {
     // Ortskern: etwas enger als die Gemeindegrenze
     wm = Math.max(900, Math.min(2000, Math.max(ew, eh / a) * 0.6));
   }
+  if (breite > 0) wm = breite;
   const [mx, my] = merc(lon, lat);
   const dx = wm / (40075016.7 * cos), dy = dx * a;
   const [w, n] = mercInv(mx - dx / 2, my - dy / 2), [e2, s] = mercInv(mx + dx / 2, my + dy / 2);
