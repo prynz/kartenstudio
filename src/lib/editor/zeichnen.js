@@ -16,7 +16,7 @@ import { loadSky, skyReady, skySVG } from '../themen/himmel.js';
 import { koordSVG } from '../themen/koordinaten.js';
 import { wolkeSVG } from '../themen/wolke.js';
 import { inkColor } from '../themen/designs.js';
-import { fokusSVG, lupeSVG, gitterSVG, kompassSVG, tabelleSVG, steckbriefSVG, kastenSVG, leuchtenSVG } from '../themen/layouts.js';
+import { einsatzSVG, absatzSVG, fokusSVG, lupeSVG, gitterSVG, kompassSVG, tabelleSVG, steckbriefSVG, kastenSVG, leuchtenSVG } from '../themen/layouts.js';
 import { multiKey, multiOn, multiSVG } from './mehrere.js';
 import { routeSVG } from './route.js';
 import { contours, reliefBild } from '../karte/hoehen.js';
@@ -40,7 +40,7 @@ export function geo() {
   // Tabelle/Steckbrief/Kasten zeichnen Untertitel, Koordinaten und Widmung selbst
   const eigen = L.foot === 'tabelle' || L.kind === 'steckbrief' || L.kind === 'kasten';
   const capT = t.on && t.text && !koord ? t.size * CAP[t.font] : 0,
-    capS = u.on && u.text && !eigen ? u.size * CAP[u.font] : 0;
+    capS = u.on && u.text && !eigen && !L.ohneSub ? u.size * CAP[u.font] : 0;
   const cSize = Math.round(Math.max(16, (u.size || 34) * 0.62));
   const capC = L.coords && app.DATA && !koord && !eigen ? cSize * CAP.SgMD : 0;
   const nt = S.note && S.note.on !== false && S.note.text && !eigen ? S.note.text : '';
@@ -84,7 +84,7 @@ export function geo() {
     my = sw + p;
     barTop = my + MH;
     H = my + MH + p + sw;
-    top = my + MH - Math.max(56, MH * 0.07) - block;
+    top = my + MH - Math.max(56, MH * 0.07) - block - (L.kompass === 'unten' ? 70 : 0);
   } else {
     // 'bar' – Text im Farbbalken unter der Karte (Ursprungsdesign)
     my = sw + p;
@@ -582,6 +582,8 @@ export function renderView() {
   inner.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
   const pa = app.poster.querySelector('#pinsAnsicht');
   if (pa) pa.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
+  const ea = app.poster.querySelector('#einsatzAnsicht');
+  if (ea) ea.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
   if (MC.hits) MC.hits.setAttribute('transform', t);
   drawSel();
   syncTools();
@@ -776,7 +778,7 @@ export function buildSVG(forExport) {
   if (multiOn()) ['SgXB', 'SgMD', app.S.sub.font].forEach(f => fonts.add(f));
   if (g.L.kind === 'typo') fonts.add('SgXB');
   if (g.L.kind === 'steckbrief' || g.L.kind === 'kasten' || g.L.foot) ['SgXB', 'SgMD', 'SgSC'].forEach(f => fonts.add(f));
-  if (g.L.kind === 'steckbrief') fonts.add('SgMD');
+  if (g.L.kind === 'steckbrief' || g.L.absatz) fonts.add('SgMD');
   if (app.S.motif === 'koord') ['SgXB', 'SgMD'].forEach(f => fonts.add(f));
   if (app.S.motif === 'wolke') ['SgXB', 'SgMD', 'SgSC'].forEach(f => fonts.add(f));
   if (app.S.attr.on || g.L.coords || g.note || (app.S.motif === 'sterne' && app.S.sky && (app.S.sky.names || app.S.sky.grid))) fonts.add('SgMD');
@@ -808,7 +810,9 @@ export function buildSVG(forExport) {
   o += fxSVG(g);
   o += leuchtenSVG(g);
   o += lupeSVG(g);
+  o += einsatzSVG(g, vT(g).replace(/^translate\([^)]*\) /, ''));
   o += gitterSVG(g);
+  o += absatzSVG(g);
   o += pinsSVG(g, forExport);
   if (g.L.inner > 0) o += mapShape(g, g.L.innerGap + g.L.inner / 2, ` id="innenlinie" transform="translate(${g.mx},${g.my})" fill="none" stroke="${f.w > 0 ? f.color : ink}" stroke-width="${g.L.inner}"`);
   if (g.L.kind === 'over' && g.L.fade && g.block > 0) {
@@ -827,7 +831,7 @@ export function buildSVG(forExport) {
     const t = app.S[k];
     if (typo) return;
     if (k === 'title' && app.S.motif === 'koord') return;
-    if (k === 'sub' && g.L.foot === 'tabelle') return;
+    if (k === 'sub' && (g.L.foot === 'tabelle' || g.L.ohneSub)) return;
     if (!t.on || !t.text) return;
     // Lange Namen (z. B. „Rothenburg ob der Tauber“) automatisch verkleinern, damit sie ins Poster passen
     const fs = passendeGroesse(t.text, t.font, t.size, t.ls, g.W - 2 * (g.sw + Math.max(g.p, 24)));
@@ -837,7 +841,7 @@ export function buildSVG(forExport) {
     const yr = (g.yT + (g.yS - app.S.sub.size * CAP[app.S.sub.font])) / 2;
     o += `<line id="zierlinie" x1="${(g.W / 2 - 70).toFixed(1)}" x2="${(g.W / 2 + 70).toFixed(1)}" y1="${yr.toFixed(1)}" y2="${yr.toFixed(1)}" stroke="${app.S.title.color}" stroke-width="2.5" stroke-linecap="round"/>`;
   }
-  if (!typo && g.L.coords && app.DATA) o += `<text id="koordinaten" x="${(g.W / 2 + 1.5).toFixed(2)}" y="${g.yC.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.cSize}" letter-spacing="3" fill="${app.S.sub.color}" fill-opacity="0.85">${esc(coordText())}</text>`;
+  if (!typo && g.L.coords && app.DATA) o += `<text id="koordinaten" x="${(g.W / 2 + 1.5).toFixed(2)}" y="${g.yC.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.cSize}" letter-spacing="${g.L.koordFarbe ? 4 : 3}" fill="${g.L.koordFarbe || app.S.sub.color}" fill-opacity="0.85">${esc(coordText())}</text>`;
   if (!typo && g.note) o += `<text id="widmung" x="${(g.W / 2 + 1).toFixed(2)}" y="${g.yN.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.nSize}" letter-spacing="2" fill="${app.S.sub.color}">${esc(g.note)}</text>`;
   if (app.S.attr.on && app.S.motif !== 'sterne' && app.S.motif !== 'koord' && app.S.motif !== 'wolke') {
     const inBar = g.L.kind === 'bar' && app.S.bar.on && g.barH > 0;

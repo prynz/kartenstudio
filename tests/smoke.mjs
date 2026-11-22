@@ -754,6 +754,11 @@ await run('Designs nach Vorbildern: Fokus, Studie, Steckbrief, Kasten, Lupe, Dos
 	ok(!!(await page.$('#poster #kasten')), 'Kasten: Textraster in der Mitte');
 	await design('dossier');
 	ok((await page.$('#poster #lupe')) && (await page.$('#poster #gitter')) && (await page.$('#poster #kompass')), 'Dossier: Lupe, Gitter, Kompass');
+	await design('einsatz');
+	ok((await page.$('#poster #einsatz')) && (await page.$('#poster #absatz')) && !(await page.$('#poster #untertitel')), 'Einsatzkarte: rotes Viertel, Text oben, ohne Untertitel');
+	await page.fill('#wzInfoAbsatz', 'Hier fing alles an.');
+	await page.waitForTimeout(300);
+	ok((await page.textContent('#absatz')).includes('Hier fing alles an.'), 'Einsatzkarte: eigener Text oben');
 	await page.click('#wzSteps button[data-step="stil"]');
 	await page.evaluate(() => document.querySelector('#wzStyles button[data-p="puls"]').click());
 	await page.waitForTimeout(400);

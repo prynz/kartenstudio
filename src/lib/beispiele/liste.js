@@ -9,7 +9,7 @@
  *   sub?: string, note?: string, pin?: string, pinColor?: string,
  *   fx?: {paper?: boolean, vig?: boolean, glow?: boolean}, hoehen?: boolean,
  *   sky?: Record<string, any>, koord?: {text?: string, align?: string}, wolke?: {text?: string, form?: string, schrift?: boolean},
- *   titelSchrift?: 'SgSC', info?: {kopf?: string, nr?: string, kicker?: string, fakten?: string}
+ *   titelSchrift?: 'SgSC', info?: {kopf?: string, nr?: string, kicker?: string, fakten?: string, absatz?: string}
  * }} Beispiel
  */
 
@@ -37,6 +37,7 @@ export const BEISPIELE = [
 	{ id: 'regensburg-gold', titel: 'Gold & Nacht', text: 'Goldene Straßen, gesperrter Titel', ort: 'regensburg', breite: 2600, preset: 'goldnacht', design: 'nachtstadt' },
 	{ id: 'augsburg-lichter', titel: 'Stadtlichter', text: 'Leuchtende Straßen auf Schwarz', ort: 'augsburg', breite: 3200, preset: 'lichter', design: 'leise', fx: { glow: true } },
 	{ id: 'ansbach-dossier', titel: 'Dossier', text: 'Gestrichelter Kreis, Gitter und rote Häuser', ort: 'ansbach', breite: 1800, preset: 'dossier', design: 'dossier' },
+	{ id: 'nuernberg-einsatz', titel: 'Einsatzkarte', text: 'Rot markiertes Viertel mit Route, Gitter und Kompass', ort: 'nuernberg', breite: 2400, preset: 'einsatz', design: 'einsatz' },
 	{ id: 'passau-lupe', titel: 'Lupe', text: 'Die Altstadt im Kreis hervorgehoben', ort: 'passau', breite: 2400, preset: 'schwarzweiss', design: 'lupe' },
 	{ id: 'nuernberg-koenigsblau', titel: 'Königsblau', text: 'Zarte Straßen, Wasser und Parks in Blau', ort: 'nuernberg', breite: 3000, preset: 'koenigsblau', design: 'galerie' },
 	{ id: 'wuerzburg-wimmel', titel: 'Wimmelbild', text: 'Illustrierter Stadtplan in Koralle und Türkis', ort: 'wuerzburg', breite: 1300, preset: 'wimmel', design: 'polaroid' },

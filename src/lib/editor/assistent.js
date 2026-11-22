@@ -336,10 +336,11 @@ export function syncWizard() {
 	$('wzFree').classList.toggle('hidden', !!pr);
 	// Zusatztexte nur bei Designs, die sie zeigen
 	const kind = (S.lay && S.lay.kind) || '';
-	const zeigInfo = { kopf: kind === 'steckbrief', nr: kind === 'steckbrief', kicker: kind === 'steckbrief' || kind === 'kasten', fakten: kind === 'steckbrief' };
-	$('wzInfo').classList.toggle('hidden', kind !== 'steckbrief' && kind !== 'kasten');
+	const absatz = !!(S.lay && S.lay.absatz);
+	const zeigInfo = { kopf: kind === 'steckbrief', nr: kind === 'steckbrief', kicker: kind === 'steckbrief' || kind === 'kasten', fakten: kind === 'steckbrief', absatz };
+	$('wzInfo').classList.toggle('hidden', kind !== 'steckbrief' && kind !== 'kasten' && !absatz);
 	all('#wzInfo [data-info]').forEach((l) => l.classList.toggle('hidden', !(/** @type {any} */ (zeigInfo)[/** @type {string} */ (l.dataset.info)])));
-	[['wzInfoKopf', 'kopf'], ['wzInfoNr', 'nr'], ['wzInfoKicker', 'kicker'], ['wzInfoFakten', 'fakten']].forEach(([id, k]) => {
+	[['wzInfoKopf', 'kopf'], ['wzInfoNr', 'nr'], ['wzInfoKicker', 'kicker'], ['wzInfoFakten', 'fakten'], ['wzInfoAbsatz', 'absatz']].forEach(([id, k]) => {
 		const e = /** @type {HTMLInputElement} */ ($(id));
 		if (document.activeElement !== e) e.value = (S.info && S.info[k]) || '';
 	});
@@ -906,7 +907,7 @@ export function initWizard() {
 	textInput('wzTitle', (v) => (app.S.title.text = v));
 	textInput('wzSub', (v) => (app.S.sub.text = v));
 	// Zusatztexte für Steckbrief/Kasten
-	/** @type {[string, string][]} */ ([['wzInfoKopf', 'kopf'], ['wzInfoNr', 'nr'], ['wzInfoKicker', 'kicker'], ['wzInfoFakten', 'fakten']]).forEach(([id, k]) =>
+	/** @type {[string, string][]} */ ([['wzInfoKopf', 'kopf'], ['wzInfoNr', 'nr'], ['wzInfoKicker', 'kicker'], ['wzInfoFakten', 'fakten'], ['wzInfoAbsatz', 'absatz']]).forEach(([id, k]) =>
 		textInput(id, (v) => (app.S.info = { ...(app.S.info || {}), [k]: v }))
 	);
 	all('#wzFokusFarben button').forEach((b) => (b.onclick = () => change(() => (app.S.info = { ...(app.S.info || {}), fokus: b.dataset.c || '' }))));

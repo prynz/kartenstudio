@@ -17,7 +17,8 @@
  *   foot?: 'tabelle',   // Info-Leiste mit 4 Feldern unter der Karte
  *   fokus?: number,     // farbige Fläche unter den Straßen (Radius relativ zur Karte)
  *   lupe?: number,      // hervorgehobener Kreis, außen gedämpft (Radius relativ zur Karte)
- *   lupeStrich?: boolean, gitter?: boolean, kompass?: boolean
+ *   lupeStrich?: boolean, gitter?: boolean, kompass?: boolean|'unten',
+ *   bezirk?: boolean, absatz?: boolean, ohneSub?: boolean, koordFarbe?: string
  * }} Lay
  * @typedef {{
  *   name: string, desc: string,
@@ -298,6 +299,15 @@ export const DESIGNS = {
 		lay: { kind: 'over', fade: true, lupe: 0.4, lupeStrich: true, gitter: true, coords: true, kompass: true },
 		title: { size: 74, ls: 42 },
 		sub: { size: 28, ls: 2 }
+	},
+	einsatz: {
+		name: 'Einsatzkarte',
+		desc: 'Originalgetreu nach dem Dharavi-Plakat: gestrichelter Kreis, ein rot markiertes Viertel mit Route und Nadel, Gitter, Text oben, Kompass unten.',
+		frame: { w: 0, r: 0, pad: 0 },
+		lay: { kind: 'over', fade: true, lupe: 0.42, lupeStrich: true, gitter: true, coords: true, kompass: 'unten', bezirk: true, absatz: true, ohneSub: true, koordFarbe: '#a4a4aa' },
+		title: { size: 72, ls: 46 },
+		sub: { size: 28, ls: 2 },
+		aspect: 1.38
 	},
 	leise: {
 		name: 'Leise',

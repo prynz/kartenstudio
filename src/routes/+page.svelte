@@ -200,6 +200,7 @@
 <label class="wz-field" data-info="kopf"><span>Kopfzeile <i>leer = Untertitel</i></span><input id="wzInfoKopf" class="inp" type="text" autocomplete="off" placeholder="z. B. Orte in Franken"></label>
 <label class="wz-field" data-info="nr"><span>Nummer <i>optional</i></span><input id="wzInfoNr" class="inp" type="text" autocomplete="off" placeholder="z. B. 03/10"></label>
 <label class="wz-field" data-info="kicker"><span>Kleine Zeile über dem Titel</span><input id="wzInfoKicker" class="inp" type="text" autocomplete="off" placeholder="z. B. Stadtplan · Am"></label>
+<label class="wz-field" data-info="absatz"><span>Text oben <i>leer = Vorschlag</i></span><textarea id="wzInfoAbsatz" class="inp" rows="3" placeholder="Wofür ist dein Ort bekannt? Ein paar Sätze …"></textarea></label>
 <label class="wz-field" data-info="fakten"><span>Fakten <i>eine pro Zeile, leer = automatisch</i></span><textarea id="wzInfoFakten" class="inp" rows="4" placeholder="Einwohner: 1.240&#10;Höhe: 420 m&#10;Erstmals erwähnt: 1124"></textarea></label>
 </div>
 </section>

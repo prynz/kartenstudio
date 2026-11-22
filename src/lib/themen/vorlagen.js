@@ -521,6 +521,10 @@ Object.assign(PRESETS, {
     bg: '#141416', haus: ['#d43a3a', '#8f1f22'], haupt: '#5c5c63', neben: '#404046', weg: '#2e2e33',
     wasser: ['#2a2a30', '#1d1d22'], frame: '#d43a3a', bar: '#d43a3a', text: '#ffffff'
   }, { haus: 0.6, haupt: 4, neben: 1.8, weg: 1 }), { ink: '#e0403f' }),
+  einsatz: mit(TH('Einsatzkarte', 'Dunkelgraue Karte mit grauen Straßen – passt zum Design „Einsatzkarte“.', {
+    bg: '#1c1c1f', haus: ['#303036', '#29292e'], haupt: '#6a6a72', neben: '#4a4a51', weg: '#37373d',
+    wasser: ['#2c2c32', '#232328'], gruen: ['#222226', '#222226'], frame: '#d8322f', bar: '#d8322f', text: '#ffffff'
+  }, { haus: 0.5, haupt: 6, neben: 2.6, weg: 1.2 }), { ink: '#d8322f' }),
   wimmel: mit(POP('Wimmelbild', 'Illustrierter Stadtplan in Koralle, Türkis und Schieferblau.', '#ece2cc', ['#e8553e', '#e8553e', '#d9472f'], '#3d5a73', '#5cb4b6'), {}, (t) => {
     t.cls.haupt.s = '#3d5a73';
     t.cls.neben.s = '#3d5a73';

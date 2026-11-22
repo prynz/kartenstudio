@@ -55,7 +55,7 @@ export function savedDraft() {
    Ein geteilter Link kommt von außen. Werte, die ungeprüft ins Poster-SVG geschrieben
    werden (Farben, Schriftnamen …), dürfen deshalb nur harmlose Zeichen enthalten.
    Freie Texte (Titel, Untertitel, Widmung, Pin-Namen) werden beim Zeichnen maskiert. */
-const FREE = new Set(['title.text', 'sub.text', 'note.text', 'label', 'label0', 'name', 'koord.text', 'wolke.text', 'info.kopf', 'info.nr', 'info.kicker', 'info.fakten']);
+const FREE = new Set(['title.text', 'sub.text', 'note.text', 'label', 'label0', 'name', 'koord.text', 'wolke.text', 'info.kopf', 'info.nr', 'info.kicker', 'info.fakten', 'info.absatz']);
 const SAFE = /^[\w#.,%()\- ]*$/;
 /** @param {any} v @param {string} path @returns {boolean} */
 function safeVal(v, path) {
