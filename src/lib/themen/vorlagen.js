@@ -444,3 +444,26 @@ Object.assign(PRESETS, {
   popart: POP('Pop-Art', 'Illustrierter Stadtplan: Symbole in Rot, Gelb und Blau folgen den Straßen, der Ort zeichnet sich als bunte Fläche ab.', '#fbf8f1', ['#e23b2e', '#f4b400', '#1d5fa8'], '#1d5fa8', '#1d5fa8'),
   konfetti: POP('Konfetti-Nacht', 'Pastellfarbene Symbole auf Nachtblau – verspielt und edel.', '#262c3a', ['#f6a6b2', '#ffd58a', '#9fd8cb', '#b9a7f0', '#ffffff'], '#ffd58a', '#7fb7d9')
 });
+
+/* ---------- Einfarbige Themen (passend zum Typografie-Design) ----------
+   Eine Grundfarbe, alles andere sind hellere Töne davon – wie die bekannten Typo-Stadtposter. */
+const MONO = (name, desc, bg, light, mid, deep) =>
+  TH(name, desc, {
+    bg,
+    haus: [mid, mid],
+    haupt: light,
+    neben: light,
+    weg: mid,
+    wasser: [light, light],
+    gruen: [deep, deep],
+    frame: '#ffffff',
+    bar: deep,
+    text: '#ffffff'
+  }, { haus: 0.6, haupt: 4.2, neben: 1.6, weg: 0.9, frame: 26 });
+Object.assign(PRESETS, {
+  lavendel: MONO('Lavendel', 'Ein Ton Flieder, Straßen hell – modern und weich.', '#9b8fd8', '#ebe7fb', '#b4abe3', '#8a7dcf'),
+  koralle: MONO('Koralle', 'Kräftiges Korallenrot mit hellen Straßen.', '#e2645a', '#ffe1dc', '#ea8880', '#d4554b'),
+  petrol: MONO('Petrol', 'Tiefes Petrol, Wasser und Straßen hell.', '#2f6f8a', '#d6ebf2', '#4f8aa2', '#2a6278'),
+  salbei: MONO('Salbei', 'Ruhiges Salbeigrün, natürlich und hell.', '#7f9c84', '#e6efe6', '#98b19c', '#728f77'),
+  senf: MONO('Senf', 'Warmes Senfgelb mit hellen Linien.', '#d2a23b', '#fbefd2', '#ddb662', '#c4942e')
+});

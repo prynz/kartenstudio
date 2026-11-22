@@ -465,6 +465,48 @@ await run('Desktop – Hilfe-Chat', { viewport: { width: 1440, height: 900 } }, 
 	ok(await page.locator('#wzSky').isVisible(), 'Knopf im Chat öffnet direkt den Sternenhimmel');
 });
 
+await run('Desktop – Marktcheck-Runde 1', { viewport: { width: 1440, height: 900 } }, async (page) => {
+	await page.click('#demoBtn');
+	await page.waitForTimeout(900);
+	// Einfarbige Themen + Typografie
+	await page.click('#wzStyles button[data-p="koralle"]');
+	await page.click('#wzSteps button[data-step="design"]');
+	await page.click('#wzDesigns button[data-d="typo"]');
+	await page.waitForTimeout(600);
+	ok((await page.getAttribute('#kartenhintergrund', 'fill')) === '#e2645a', 'Einfarbiges Thema „Koralle“');
+	await page.screenshot({ path: `${OUT}/29-koralle-typo.png` });
+	// Koordinaten-Poster
+	await page.click('#wzSteps button[data-step="stil"]');
+	await page.click('#wzMode button[data-m="koord"]');
+	await page.waitForTimeout(900);
+	const kt = await page.textContent('#kartenInhalt');
+	ok(/49° \d\d′/.test(kt) && kt.includes('SIEGRITZ') && kt.includes('kennengelernt'), 'Koordinaten-Poster mit Ortsname und Text');
+	ok((await page.$('#titel')) === null && (await page.$('#quelle')) === null, 'Kein doppelter Titel, keine Kartenquelle beim Textposter');
+	await page.fill('#koordText', 'Unser erstes eigenes Zuhause.');
+	await page.waitForTimeout(400);
+	ok((await page.textContent('#kartenInhalt')).includes('Unser erstes eigenes Zuhause.'), 'Eigener Text erscheint');
+	await page.click('#koordAlign button[data-a="mitte"]');
+	await page.waitForTimeout(400);
+	await page.screenshot({ path: `${OUT}/30-koordinaten.png` });
+	await page.click('#wzMode button[data-m="art"]');
+	await page.waitForTimeout(500);
+	ok((await page.$$('#poster path[data-k]')).length > 100, 'Zurück zur Karte');
+	// Neue Produkte
+	await page.click('#wzSteps button[data-step="produkt"]');
+	for (const t of ['alu', 'aufsteller', 'download']) {
+		await page.click(`#wzProd button[data-t="${t}"]`);
+		await page.waitForTimeout(500);
+		await page.screenshot({ path: `${OUT}/31-produkt-${t}.png` });
+	}
+	ok((await page.textContent('#priceVal')).includes('€') && (await page.textContent('#priceShip')).includes('Sofort'), 'Download-Preis und „Sofort“');
+	await page.click('#wzProd button[data-t="aufsteller"]');
+	await page.waitForTimeout(300);
+	ok((await page.textContent('#priceVal')) === '24,90 €' && /Lieferung voraussichtlich \w\w, \d\d\.\d\d\./.test(await page.textContent('#priceShip')), 'A5-Aufsteller 24,90 € mit Lieferdatum');
+	ok((await page.textContent('.mk-size')).includes('A5'), 'Aufsteller in A5 im Raum');
+	const res = await page.goto(URL.replace(/\/$/, '') + '/lizenzen');
+	ok(res.ok() && (await page.textContent('body')).includes('Copernicus'), 'Lizenzseite mit Copernicus-Hinweis');
+});
+
 await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {
 	await page.tap('#demoBtn');
 	await page.waitForTimeout(900);

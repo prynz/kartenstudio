@@ -22,7 +22,11 @@
 		Kartenposter und Shirts werden nach deinen persönlichen Vorgaben (Ort, Ausschnitt, Text) angefertigt. Für solche Waren besteht gemäß § 312g Abs. 2 Nr. 1 BGB <b>kein Widerrufsrecht</b>. Deine Gewährleistungsrechte (z. B. bei Druckfehlern oder Transportschäden) bleiben unberührt.
 	</p>
 
-	<h2>6. Gewährleistung</h2>
+	<h2>5a. Stornierung</h2>
+	<p>Bis <span class="ph">[2 Stunden]</span> nach der Bestellung kannst du sie kostenlos per E-Mail stornieren, danach geht sie in den Druck.</p>
+
+	<h2>6. Gewährleistung und Ersatz</h2>
+	<p>Kommt dein Produkt beschädigt an, schick uns ein Foto von Verpackung und Produkt – du bekommst kostenlos Ersatz, eine Rücksendung ist in der Regel nicht nötig.</p>
 	<p>Es gelten die gesetzlichen Gewährleistungsrechte. Geringe Farbabweichungen zwischen Bildschirm und Druck sind technisch bedingt und kein Mangel (siehe „Druckfarben simulieren“ in der App).</p>
 
 	<h2>7. Inhalte</h2>

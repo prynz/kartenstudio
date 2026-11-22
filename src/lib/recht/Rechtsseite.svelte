@@ -16,7 +16,7 @@
 	<h1>{title}</h1>
 	{@render children()}
 	<nav>
-		<a href={resolve('/impressum')}>Impressum</a> · <a href={resolve('/datenschutz')}>Datenschutz</a> · <a href={resolve('/agb')}>AGB</a>
+		<a href={resolve('/impressum')}>Impressum</a> · <a href={resolve('/datenschutz')}>Datenschutz</a> · <a href={resolve('/agb')}>AGB</a> · <a href={resolve('/lizenzen')}>Lizenzen</a>
 	</nav>
 </div>
 

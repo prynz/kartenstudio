@@ -87,10 +87,16 @@
 </section>
 <section class="wz-pane" data-step="stil">
 <div class="wz-head"><h3>Stil</h3><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>
-<div class="tabs2 wz-mode wz-mode3" id="wzMode"><button data-m="art">Gezeichnet</button><button data-m="std">Landkarte</button><button data-m="sterne">Sternenhimmel</button></div>
+<div class="tabs2 wz-mode wz-mode3" id="wzMode"><button data-m="art">Gezeichnet</button><button data-m="std">Landkarte</button><button data-m="sterne">Sternenhimmel</button><button data-m="koord">Koordinaten</button></div>
 <div class="wz-cards" id="wzStyles"></div>
 <div class="wz-hoehe" id="wzHoehe"><label class="tog wz-tog"><input type="checkbox" id="hoehenOn"><span>Höhenlinien (Berge &amp; Täler)</span></label><p class="wz-hint" id="hoehenInfo"></p></div>
 <div class="wz-cards wz-bases hidden" id="wzBases"></div>
+<div class="wz-koord hidden" id="wzKoord">
+<p class="wz-hint">Große Koordinaten, der Ortsname und dein eigener Text – ganz ohne Karte. Den Ortsnamen änderst du im Schritt „Text“.</p>
+<label class="wz-field"><span>Dein Text <i>optional</i></span><textarea id="koordText" class="inp" rows="5" maxlength="600" placeholder="Eine kleine Geschichte zu diesem Ort …"></textarea></label>
+<div class="lab">Ausrichtung</div>
+<div class="wz-chips" id="koordAlign"><button type="button" data-a="links">Linksbündig</button><button type="button" data-a="mitte">Zentriert</button></div>
+</div>
 <div class="wz-sky hidden" id="wzSky">
 <p class="wz-hint">So stand der Himmel über <b id="skyPlace">deinem Ort</b> – aus echten Sterndaten berechnet.</p>
 <div class="wz-row2"><label class="wz-field"><span>Datum</span><input id="skyDate" class="inp" type="date"></label>
@@ -130,15 +136,16 @@
 <h3>Produkt &amp; Vorschau</h3>
 <p class="wz-hint">So sieht dein Motiv als fertiges Produkt aus.</p>
 <div class="wz-prod" id="wzProd"></div>
-<div class="price" id="wzPrice"><b id="priceVal">–</b><span>inkl. MwSt., zzgl. Versand · <i>Beispielpreis</i></span><small id="priceDet"></small></div>
-<div class="mk-opt" data-for="poster gerahmt leinwand"><div class="lab">Größe</div><div class="wz-chips wz-sizes" data-sizes></div>
+<div class="price" id="wzPrice"><b id="priceVal">–</b><span>inkl. MwSt. · <i>Beispielpreis</i></span><small id="priceDet"></small><small class="ship" id="priceShip"></small></div>
+<ul class="trust"><li>Kostenloser Ersatz bei Transportschaden</li><li>Druckdatei zu jeder Bestellung gratis</li><li>Personalisiert – jedes Stück ein Unikat</li></ul>
+<div class="mk-opt" data-for="poster gerahmt leinwand alu download"><div class="lab">Größe</div><div class="wz-chips wz-sizes" data-sizes></div>
 <label class="tog wz-tog wz-quer"><input type="checkbox" data-quer><span>Querformat</span></label></div>
-<div class="mk-opt" data-for="poster gerahmt leinwand"><div class="lab">Raum</div><div class="mk-sw mk-rooms" id="mkRoomSw"></div></div>
-<div class="mk-opt" data-for="gerahmt"><div class="lab">Rahmen</div><div class="mk-sw" id="mkFrameSw"></div>
+<div class="mk-opt" data-for="poster gerahmt leinwand alu aufsteller"><div class="lab">Raum</div><div class="mk-sw mk-rooms" id="mkRoomSw"></div></div>
+<div class="mk-opt" data-for="gerahmt aufsteller"><div class="lab">Rahmen</div><div class="mk-sw" id="mkFrameSw"></div>
 <label class="tog wz-tog"><input type="checkbox" id="mkMat"><span>Passepartout (heller Rand)</span></label></div>
 <div class="mk-opt" data-for="shirt"><div class="lab">Shirtfarbe</div><div class="mk-sw" id="mkShirtSw"></div>
 <label class="tog wz-tog"><input type="checkbox" id="mkModel"><span>Am Model zeigen</span></label></div>
-<div class="mk-opt" data-for="poster gerahmt leinwand"><div class="lab">Wandfarbe</div><div class="mk-sw" id="mkWallSw"></div></div>
+<div class="mk-opt" data-for="poster gerahmt leinwand alu aufsteller"><div class="lab">Wandfarbe</div><div class="mk-sw" id="mkWallSw"></div></div>
 <p class="wz-hint mk-note">Bestellen kommt bald. Die Druckdatei kannst du im nächsten Schritt schon herunterladen.</p>
 </section>
 <section class="wz-pane" data-step="fertig">
@@ -162,7 +169,7 @@
 <p class="wz-hint">Der Link öffnet das Poster mit deiner Botschaft – der Beschenkte kann es dann selbst anpassen oder herunterladen.</p>
 <div class="lab">Teilen</div>
 <button type="button" class="btn wz-share" id="wzShare"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4L12 5.6"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/></svg>Link zum Entwurf kopieren</button>
-<p class="wz-legal"><a href={resolve('/impressum')} data-sveltekit-reload>Impressum</a> · <a href={resolve('/datenschutz')} data-sveltekit-reload>Datenschutz</a> · <a href={resolve('/agb')} data-sveltekit-reload>AGB</a></p>
+<p class="wz-legal"><a href={resolve('/impressum')} data-sveltekit-reload>Impressum</a> · <a href={resolve('/datenschutz')} data-sveltekit-reload>Datenschutz</a> · <a href={resolve('/agb')} data-sveltekit-reload>AGB</a> · <a href={resolve('/lizenzen')} data-sveltekit-reload>Lizenzen</a></p>
 <p class="wz-hint">Dein Entwurf wird automatisch in diesem Browser gemerkt. Mit dem Link kannst du ihn auf einem anderen Gerät öffnen oder jemandem zeigen.</p>
 </section>
 </div>
@@ -292,7 +299,7 @@
 <button class="demo" id="demoBtn"><span class="dpin">▶</span><span><b>Beispiel öffnen: Siegritz</b><small>Sofort ausprobieren – funktioniert auch ohne Internet</small></span></button>
 <div class="orsep">oder Beispiel-Ort suchen</div>
 <div class="examples" style="margin-top:8px"><button class="chip" data-q="Siegritz Heiligenstadt">Siegritz</button><button class="chip" data-q="Bamberg">Bamberg</button><button class="chip" data-q="Rothenburg ob der Tauber">Rothenburg</button><button class="chip" data-q="Nördlingen">Nördlingen</button></div>
-<div class="legal"><a href={resolve('/impressum')} data-sveltekit-reload>Impressum</a> · <a href={resolve('/datenschutz')} data-sveltekit-reload>Datenschutz</a> · <a href={resolve('/agb')} data-sveltekit-reload>AGB</a></div>
+<div class="legal"><a href={resolve('/impressum')} data-sveltekit-reload>Impressum</a> · <a href={resolve('/datenschutz')} data-sveltekit-reload>Datenschutz</a> · <a href={resolve('/agb')} data-sveltekit-reload>AGB</a> · <a href={resolve('/lizenzen')} data-sveltekit-reload>Lizenzen</a></div>
 <div class="steps"><span><b>1</b> Ort suchen</span><span><b>2</b> Gestalten</span><span><b>3</b> Vorschau</span><span><b>4</b> Herunterladen</span></div>
 </div>
 </div>

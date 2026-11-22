@@ -24,9 +24,10 @@ import { shareLink } from './entwurf.js';
 import { ANLAESSE } from '../themen/anlaesse.js';
 import { initMulti, syncMulti } from './mehrere.js';
 import { initRoute, syncRoute } from './route.js';
-import { preis } from '../shop/preise.js';
+import { preis, lieferung } from '../shop/preise.js';
 import { initGift } from '../shop/geschenk.js';
 import { SKY_THEMES, defaultSky, loadSky, skyLabel } from '../themen/himmel.js';
+import { STORY_BEISPIEL } from '../themen/koordinaten.js';
 import { viewCenterLL } from './seitenleiste.js';
 import { esc } from './basis.js';
 import { saveDraftSoon } from './entwurf.js';
@@ -116,10 +117,12 @@ function syncProduct() {
 	all('.mk-opt').forEach((o) => o.classList.toggle('hidden', !(o.dataset.for || '').split(' ').includes(P.type)));
 	/** @type {HTMLInputElement} */ ($('mkMat')).checked = !!P.mat;
 	/** @type {HTMLInputElement} */ ($('mkModel')).checked = !!P.model;
+	/** @type {HTMLElement} */ ($('mkMat').closest('label')).classList.toggle('hidden', P.type !== 'gerahmt');
 	const pr = preis(P, app.S.print);
 	$('priceVal').textContent = pr.text;
 	$('priceDet').textContent = pr.details.join(' · ');
 	$('orderLabel').textContent = `Bestellen · ${pr.text}`;
+	$('priceShip').textContent = P.type === 'download' ? 'Kein Versand nötig · ' + lieferung('download') : `Versand in Deutschland kostenlos · ${lieferung(P.type)}`;
 }
 
 /** Assistent ↔ erweiterte Einstellungen umschalten. @param {boolean} on */
@@ -186,12 +189,20 @@ export function syncWizard() {
 	const S = app.S;
 	if (!S) return;
 	const sky = S.motif === 'sterne';
-	const std = S.mode === 'std' && !sky;
-	all('#wzMode button').forEach((b) => b.classList.toggle('on', sky ? b.dataset.m === 'sterne' : b.dataset.m === S.mode));
+	const koord = S.motif === 'koord';
+	const std = S.mode === 'std' && !sky && !koord;
+	all('#wzMode button').forEach((b) => b.classList.toggle('on', sky ? b.dataset.m === 'sterne' : koord ? b.dataset.m === 'koord' : b.dataset.m === S.mode));
+	// Beim Koordinaten-Poster bleiben die Farbthemen sichtbar (sie bestimmen Hintergrund und Schrift)
 	$('wzStyles').classList.toggle('hidden', std || sky);
+	$('wzKoord').classList.toggle('hidden', !koord);
+	if (koord && S.koord) {
+		const ta = /** @type {HTMLTextAreaElement} */ ($('koordText'));
+		if (document.activeElement !== ta) ta.value = S.koord.text || '';
+		all('#koordAlign button').forEach((b) => b.classList.toggle('on', b.dataset.a === (S.koord.align || 'links')));
+	}
 	$('wzBases').classList.toggle('hidden', !std);
 	$('wzSky').classList.toggle('hidden', !sky);
-	$('wzHoehe').classList.toggle('hidden', std || sky);
+	$('wzHoehe').classList.toggle('hidden', std || sky || koord);
 	const ho = !!(S.hoehen && S.hoehen.on);
 	/** @type {HTMLInputElement} */ ($('hoehenOn')).checked = ho;
 	const C = app.DATA && app.DATA._contours;
@@ -287,6 +298,24 @@ export function applyOccasion(k, anim = true) {
 	syncOccasion();
 	if (A.pin) msg(`Vorlage „${A.name}“ – Markierung im Poster an die richtige Stelle ziehen`, 'ok');
 	else msg(`Vorlage „${A.name}“ angewendet`, 'ok');
+}
+
+/* ---------- Koordinaten-Poster ---------- */
+export function enableKoord() {
+	smooth(() =>
+		change(() => {
+			const S = app.S;
+			S.motif = 'koord';
+			S.mode = 'art';
+			const [lon, lat] = viewCenterLL();
+			if (!S.koord) S.koord = { lat: +lat.toFixed(5), lon: +lon.toFixed(5), text: STORY_BEISPIEL, align: 'links' };
+			// Formen wie Kreis/Herz/Typografie passen nicht zu einem Textposter
+			const D = /** @type {any} */ (DESIGNS)[S.design || 'siegritz'];
+			if (!D || D.aspect || (D.lay && D.lay.kind === 'typo')) pickDesign(S, 'minimal');
+		})
+	);
+	// Zeilenumbruch misst die Schrift – nach dem Laden der Schriften einmal neu zeichnen
+	document.fonts.load('40px SgXB').then(() => document.fonts.load('20px SgMD')).then(() => render());
 }
 
 /* ---------- Sternenhimmel ---------- */
@@ -506,6 +535,7 @@ export function initWizard() {
 			(b.onclick = () => {
 				const m = /** @type {string} */ (b.dataset.m);
 				if (m === 'sterne') return enableSky();
+				if (m === 'koord') return enableKoord();
 				smooth(() =>
 					change(() => {
 						app.S.motif = 'karte';
@@ -516,6 +546,17 @@ export function initWizard() {
 			})
 	);
 
+	// Koordinaten-Poster
+	{
+		const ta = /** @type {HTMLTextAreaElement} */ ($('koordText'));
+		ta.addEventListener('input', () => {
+			begin();
+			app.S.koord = { ...app.S.koord, text: ta.value.slice(0, 600) };
+			render();
+		});
+		ta.addEventListener('change', () => commit());
+		all('#koordAlign button').forEach((b) => (b.onclick = () => change(() => (app.S.koord = { ...app.S.koord, align: b.dataset.a }))));
+	}
 	$('hoehenOn').addEventListener('change', (e) => change(() => (app.S.hoehen = { ...(app.S.hoehen || {}), on: /** @type {HTMLInputElement} */ (e.target).checked })));
 
 	// Sternenhimmel
@@ -581,7 +622,10 @@ export function initWizard() {
 		gerahmt: '<rect x="7" y="3" width="26" height="34" rx="2" stroke-width="3.2"/><rect x="12" y="9" width="16" height="22"/>',
 		leinwand: '<path d="M8 6h22v28H8z"/><path d="M30 6l3 3v28l-3-3M8 34l3 3h22"/>',
 		shirt: '<path d="M14 5c2 3 10 3 12 0l8 4 4 9-6 3-1-2v17H9V19l-1 2-6-3 4-9z"/>',
-		tasse: '<path d="M7 8h20v22c0 3-3 5-10 5S7 33 7 30z"/><path d="M27 13c7-1 7 11 0 10"/>'
+		tasse: '<path d="M7 8h20v22c0 3-3 5-10 5S7 33 7 30z"/><path d="M27 13c7-1 7 11 0 10"/>',
+		alu: '<rect x="8" y="5" width="24" height="30" rx="1"/><path d="M11 8h18v24" stroke-opacity=".45"/>',
+		aufsteller: '<rect x="11" y="6" width="18" height="24" rx="1.5" stroke-width="2.6"/><path d="M20 30l-5 7M20 30l5 7"/>',
+		download: '<path d="M20 6v18M13 17l7 7 7-7"/><path d="M8 28v6h24v-6"/>'
 	};
 	Object.entries(PRODUCTS).forEach(([k, P]) => {
 		const b = card(document.createElement('button'), `<svg viewBox="0 0 40 40" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">${PICON[/** @type {keyof typeof PICON} */ (k)]}</svg><span class="nm">${P.name}</span>`);

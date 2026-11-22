@@ -14,7 +14,10 @@ export const PRODUCTS = {
 	gerahmt: { name: 'Mit Rahmen', desc: 'Fertig gerahmt zum Aufhängen' },
 	leinwand: { name: 'Leinwand', desc: 'Auf Keilrahmen gespannt' },
 	shirt: { name: 'T-Shirt', desc: 'Bio-Baumwolle, Motiv auf der Brust' },
-	tasse: { name: 'Tasse', desc: 'Keramik, spülmaschinenfest' }
+	tasse: { name: 'Tasse', desc: 'Keramik, spülmaschinenfest' },
+	alu: { name: 'Alu-Dibond', desc: '3 mm Aluverbund, matt, mit Aufhängung' },
+	aufsteller: { name: 'A5 Aufsteller', desc: 'Kleines Bild im Rahmen zum Hinstellen' },
+	download: { name: 'Download', desc: 'Druckdatei sofort, ohne Versand' }
 };
 
 /** Bilderrahmen: Name und Farbverlauf (Holz/Metall) */
@@ -51,10 +54,10 @@ export const WALLS = {
  * `top` = Höhe der Möbel, `gap` = Abstand bis zur Posterunterkante, `w` = Möbelbreite.
  */
 export const ROOMS = {
-	wohnen: { name: 'Sideboard', c: '#b88f63', w: 160, top: 75, gap: 28 },
+	wohnen: { name: 'Sideboard', c: '#b88f63', w: 160, top: 75, gap: 28, surf: 67 },
 	sofa: { name: 'Sofa', c: '#a9a196', w: 210, top: 85, gap: 26 },
-	flur: { name: 'Flur', c: '#3c3a37', w: 100, top: 80, gap: 30 },
-	buero: { name: 'Büro', c: '#d9cdb8', w: 140, top: 75, gap: 48 }
+	flur: { name: 'Flur', c: '#3c3a37', w: 100, top: 80, gap: 30, surf: 80 },
+	buero: { name: 'Büro', c: '#d9cdb8', w: 140, top: 75, gap: 48, surf: 75 }
 };
 
 /** @param {any} S */
@@ -81,6 +84,7 @@ export function renderMockup() {
 	let html = '';
 	if (P.type === 'shirt') html = shirtScene(P);
 	else if (P.type === 'tasse') html = mugScene();
+	else if (P.type === 'download') html = downloadScene();
 	else html = wallScene(P);
 	box.innerHTML = html;
 	const img = box.querySelector('.mk-img');
@@ -119,19 +123,23 @@ const FURN = {
 function wallScene(P) {
 	const wall = (WALLS[/** @type {keyof typeof WALLS} */ (P.wall)] || WALLS.hell).c;
 	const frame = FRAMES[/** @type {keyof typeof FRAMES} */ (P.frame)] || FRAMES.schwarz;
-	const roomKey = /** @type {keyof typeof ROOMS} */ (ROOMS[/** @type {keyof typeof ROOMS} */ (P.room)] ? P.room : 'wohnen');
+	const auf = P.type === 'aufsteller';
+	// Der Aufsteller steht auf einem Möbel – auf dem Sofa geht das nicht, dann Sideboard
+	let roomKey = /** @type {keyof typeof ROOMS} */ (ROOMS[/** @type {keyof typeof ROOMS} */ (P.room)] ? P.room : 'wohnen');
+	if (auf && roomKey === 'sofa') roomKey = 'wohnen';
 	const R = ROOMS[roomKey];
-	const framed = P.type === 'gerahmt';
-	const Z = paperOrFree(app.S);
-	const fixed = !!paper(app.S);
-	const extra = framed ? 2 * 2.4 + (P.mat ? 2 * 5 : 0) : 0; // Rahmen + Passepartout in cm
+	const framed = P.type === 'gerahmt' || auf;
+	const Z = auf ? { w: 14.8, h: 21, name: 'A5' } : paperOrFree(app.S);
+	const fixed = auf || !!paper(app.S);
+	const extra = auf ? 2 * 1.4 : framed ? 2 * 2.4 + (P.mat ? 2 * 5 : 0) : 0; // Rahmen + Passepartout in cm
 	const wcm = Z.w + extra,
 		hcm = Z.h + extra;
-	const B = R.top + R.gap; // Posterunterkante über dem Boden (cm)
+	// surf = Höhe der Abstellfläche (Oberkante Möbel ohne Deko)
+	const B = auf ? /** @type {any} */ (R).surf ?? R.top : R.top + R.gap; // Unterkante über dem Boden (cm); der Aufsteller steht direkt auf dem Möbel
 	// Maßstab: alles passt hinein – kleine Poster werden etwas näher „fotografiert“ (Möbel ragen dann unten heraus)
 	const uh = Math.max(80 / (B + hcm + 10), Math.min(44 / hcm, 1.6));
 	const uw = 72 / wcm;
-	const cls = `mk-art mk-${P.type}${framed && P.mat ? ' mk-matted' : ''}`;
+	const cls = `mk-art mk-${auf ? 'gerahmt mk-auf' : P.type}${framed && P.mat && !auf ? ' mk-matted' : ''}`;
 	const paperBg = app.S.bg && app.S.bg !== 'none' ? app.S.bg : '#ffffff';
 	const dims = `${String(Z.w).replace('.', ',')} × ${String(Z.h).replace('.', ',')} cm`;
 	const label = !fixed ? 'ca. ' + dims : /^\d/.test(Z.name) ? dims : `${Z.name.replace(' quer', '')} · ${dims}`;
@@ -142,6 +150,11 @@ function wallScene(P) {
 <div class="${cls}" style="${framed ? `--frame:${frame.css};` : ''}--paper:${paperBg}"><div class="mk-paper"><img class="mk-img" alt="Vorschau deines Motivs"></div></div>
 <div class="mk-size">${label}</div>
 </div>`;
+}
+
+/** Download: Motiv als Datei, mit den Formaten darunter */
+function downloadScene() {
+	return `<div class="mk-studio mk-dl"><div class="mk-dl-card"><img class="mk-img" alt="Vorschau deines Motivs"><div class="mk-dl-files"><span>PDF</span><span>PNG</span><span>SVG</span></div><p>Sofort nach dem Kauf · zum Selbstdrucken</p></div></div>`;
 }
 
 /** @param {any} P */

@@ -42,6 +42,7 @@ export async function restoreDraft(d) {
 	renderThumbs();
 	if (d.step && d.step !== 'ort') goStep(d.step, false);
 	if (S.mode === 'std') ensureRaster();
+	if (S.motif === 'koord') document.fonts.load('40px SgXB').then(() => render());
 	return true;
 }
 

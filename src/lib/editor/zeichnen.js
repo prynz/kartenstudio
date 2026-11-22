@@ -13,6 +13,8 @@ import { LAY_DEFAULT, lum } from '../themen/designs.js';
 import { syncWizard } from './assistent.js';
 import { popDefs, popSymbols, popColor, popK } from '../themen/pop.js';
 import { loadSky, skyReady, skySVG } from '../themen/himmel.js';
+import { koordSVG } from '../themen/koordinaten.js';
+import { inkColor } from '../themen/designs.js';
 import { multiKey, multiOn, multiSVG } from './mehrere.js';
 import { routeSVG } from './route.js';
 import { contours } from '../karte/hoehen.js';
@@ -31,10 +33,12 @@ export function geo() {
     mx = sw + p;
   const t = S.title,
     u = S.sub;
-  const capT = t.on && t.text ? t.size * CAP[t.font] : 0,
+  // Koordinaten-Poster: der Ortsname steht groß im Motiv, nicht noch einmal darunter
+  const koord = S.motif === 'koord';
+  const capT = t.on && t.text && !koord ? t.size * CAP[t.font] : 0,
     capS = u.on && u.text ? u.size * CAP[u.font] : 0;
   const cSize = Math.round(Math.max(16, (u.size || 34) * 0.62));
-  const capC = L.coords && app.DATA ? cSize * CAP.SgMD : 0;
+  const capC = L.coords && app.DATA && !koord ? cSize * CAP.SgMD : 0;
   const nt = S.note && S.note.on !== false && S.note.text ? S.note.text : '';
   const nSize = Math.round(Math.max(18, (u.size || 34) * 0.72));
   const capN = nt ? nSize * CAP.SgMD : 0;
@@ -133,6 +137,13 @@ export function mapContent(forExport, vr) {
   let o = '';
   // Mehrere Orte: Kreise nebeneinander (TCP.p ≠ 'tc' heißt: wir zeichnen gerade einen der Orte)
   if (multiOn() && TCP.p === 'tc') return multiSVG(forExport);
+  // Koordinaten-Poster statt Karte (fest im Poster, unabhängig vom Kartenausschnitt)
+  if (app.S.motif === 'koord' && app.S.koord) {
+    const v = app.S.view,
+      MH = MW * v.a,
+      K = app.S.koord;
+    return `<g transform="translate(${(v.cx - MW / 2 / v.z).toFixed(3)},${(v.cy - MH / 2 / v.z).toFixed(3)}) scale(${(1 / v.z).toFixed(6)})">` + koordSVG({ lat: K.lat, lon: K.lon, name: app.S.title.text || '', text: K.text || '', ink: inkColor(app.S), bg: app.S.bg, align: K.align }, MW, MH) + '</g>';
+  }
   // Sternenhimmel statt Karte: Kreis füllt die Kartenfläche, unabhängig vom Kartenausschnitt
   if (app.S.motif === 'sterne' && app.S.sky) {
     const v = app.S.view,
@@ -207,7 +218,7 @@ export const TCP = { p: 'tc' };
 const MC = { key: '', node: null, hits: null, rect: null, z: 0 };
 function mapKey() {
   const S = app.S;
-  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, S.hoehen, !!(app.DATA && app.DATA._contours), multiKey(), multiOn() ? [S.view.cx, S.view.cy, S.view.a, S.bg, S.title.color, S.sub.font] : 0, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0]);
+  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, S.hoehen, !!(app.DATA && app.DATA._contours), multiKey(), multiOn() ? [S.view.cx, S.view.cy, S.view.a, S.bg, S.title.color, S.sub.font] : 0, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.motif === 'koord' ? [S.koord, S.title.text, S.bg, S.view.cx, S.view.cy, S.view.a, S.cls.haupt.s, S.bar.color, S.frame.color] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0]);
 }
 /** Sichtbarer Bereich plus großzügiger Rand, damit Verschieben ohne Neuzeichnen geht */
 function cullRect() {
@@ -369,7 +380,7 @@ export const PIN_SHAPES = {
 function pinsSVG(g, forExport) {
   const pins = app.S.pins || [];
   const route = app.S.route ? routeSVG() : '';
-  if ((!pins.length && !route) || app.S.motif === 'sterne' || multiOn()) return '';
+  if ((!pins.length && !route) || app.S.motif === 'sterne' || app.S.motif === 'koord' || multiOn()) return '';
   const v = app.S.view,
     k = 1 / v.z,
     sz = (app.S.pinSize || 1) * 1.25;
@@ -397,6 +408,7 @@ export function buildSVG(forExport) {
   });
   if (multiOn()) ['SgXB', 'SgMD', app.S.sub.font].forEach(f => fonts.add(f));
   if (g.L.kind === 'typo') fonts.add('SgXB');
+  if (app.S.motif === 'koord') ['SgXB', 'SgMD'].forEach(f => fonts.add(f));
   if (app.S.attr.on || g.L.coords || g.note || (app.S.motif === 'sterne' && app.S.sky && (app.S.sky.names || app.S.sky.grid))) fonts.add('SgMD');
   o += '<defs>';
   if (forExport && fonts.size) {
@@ -434,6 +446,7 @@ export function buildSVG(forExport) {
   [['title', g.yT], ['sub', g.yS]].forEach(([k, y]) => {
     const t = app.S[k];
     if (typo) return;
+    if (k === 'title' && app.S.motif === 'koord') return;
     if (!t.on || !t.text) return;
     o += `<text id="${k === 'title' ? 'titel' : 'untertitel'}" x="${(g.W / 2 + t.ls / 2).toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" font-family="${t.font}" font-size="${t.size}" letter-spacing="${t.ls}" fill="${t.color}">${esc(t.text)}</text>`;
   });
@@ -443,7 +456,7 @@ export function buildSVG(forExport) {
   }
   if (!typo && g.L.coords && app.DATA) o += `<text id="koordinaten" x="${(g.W / 2 + 1.5).toFixed(2)}" y="${g.yC.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.cSize}" letter-spacing="3" fill="${app.S.sub.color}" fill-opacity="0.85">${esc(coordText())}</text>`;
   if (!typo && g.note) o += `<text id="widmung" x="${(g.W / 2 + 1).toFixed(2)}" y="${g.yN.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.nSize}" letter-spacing="2" fill="${app.S.sub.color}">${esc(g.note)}</text>`;
-  if (app.S.attr.on && app.S.motif !== 'sterne') {
+  if (app.S.attr.on && app.S.motif !== 'sterne' && app.S.motif !== 'koord') {
     const inBar = g.L.kind === 'bar' && app.S.bar.on && g.barH > 0;
     const onPaper = !inBar && g.L.kind !== 'top' && g.L.kind !== 'bartop';
     const col = inBar || onPaper ? app.S.title.color : app.S.mode === 'std' ? BASES[app.S.base].sat || app.S.base === 'dark' || app.S.base === 'fiord' ? '#ffffff' : '#333333' : app.S.cls.haupt.s;
