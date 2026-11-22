@@ -15,8 +15,9 @@ import { popDefs, popSymbols, popColor, popK } from '../themen/pop.js';
 import { loadSky, skyReady, skySVG } from '../themen/himmel.js';
 import { multiKey, multiOn, multiSVG } from './mehrere.js';
 import { routeSVG } from './route.js';
+import { contours } from '../karte/hoehen.js';
 import { syncTools } from './bedienung.js';
-import { zoom } from './ansicht.js';
+import { msg, zoom } from './ansicht.js';
 
 /* ---------- Poster-Geometrie & SVG ---------- */
 // Berechnet, wo Karte, Balken und Text im Poster liegen – je nach Design (app.S.lay).
@@ -154,6 +155,23 @@ export function mapContent(forExport, vr) {
   if (pop) o += `<defs>${popDefs()}</defs>` + popSymbols(app.DATA, app.S, vr, pop);
   // Pop-Art: Straßen/Wasser im selben Maßstab wie die Symbole
   const pk = pop ? popK(app.DATA, app.S) : 1;
+  // Höhenlinien als unterste Ebene (Hauptlinien jede 5. Linie kräftiger)
+  const HO = app.S.hoehen;
+  if (HO && HO.on) {
+    const C = app.DATA._contours;
+    if (C) {
+      const col = HO.c || app.S.cls.haupt.s;
+      const w = (HO.w || 1) * app.S.scale / app.S.view.z;
+      o += `<g id="hoehenlinien" fill="none" stroke="${col}" stroke-linejoin="round" stroke-linecap="round"><path d="${C.minor}" stroke-width="${(0.55 * w).toFixed(3)}" stroke-opacity=".42"/><path d="${C.major}" stroke-width="${(1.15 * w).toFixed(3)}" stroke-opacity=".62"/></g>`;
+    } else if (!app.DATA._contoursErr) {
+      const D = app.DATA;
+      contours(D).then(() => render()).catch(e => {
+        D._contoursErr = true;
+        console.warn('Höhenlinien', e);
+        msg('Höhendaten konnten nicht geladen werden', 'err');
+      });
+    }
+  }
   ORDER.forEach(k => {
     const groups = new Map();
     app.DATA.feats.forEach(ft => {
@@ -188,7 +206,7 @@ export const TCP = { p: 'tc' };
 const MC = { key: '', node: null, hits: null, rect: null, z: 0 };
 function mapKey() {
   const S = app.S;
-  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, multiKey(), multiOn() ? [S.view.cx, S.view.cy, S.view.a, S.bg, S.title.color, S.sub.font] : 0, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0]);
+  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, S.hoehen, !!(app.DATA && app.DATA._contours), multiKey(), multiOn() ? [S.view.cx, S.view.cy, S.view.a, S.bg, S.title.color, S.sub.font] : 0, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0]);
 }
 /** Sichtbarer Bereich plus großzügiger Rand, damit Verschieben ohne Neuzeichnen geht */
 function cullRect() {
@@ -386,7 +404,8 @@ export function buildSVG(forExport) {
     const col = inBar || onPaper ? app.S.title.color : app.S.mode === 'std' ? BASES[app.S.base].sat || app.S.base === 'dark' || app.S.base === 'fiord' ? '#ffffff' : '#333333' : app.S.cls.haupt.s;
     const x = g.W - g.sw - g.p - 4;
     const y = inBar ? g.H - g.sw - 8 : g.L.kind === 'below' ? g.H - g.sw - Math.min(14, g.p / 2 + 4) : g.my + g.MH - 6;
-    const at = app.S.mode === 'std' ? BASES[app.S.base].sat ? '© Esri, Maxar, Earthstar Geographics · © OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenStreetMap-Mitwirkende';
+    let at = app.S.mode === 'std' ? BASES[app.S.base].sat ? '© Esri, Maxar, Earthstar Geographics · © OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenStreetMap-Mitwirkende';
+    if (app.S.hoehen && app.S.hoehen.on && app.S.mode !== 'std') at += ' · Höhen © EU-DEM';
     o += `<text id="quelle" x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" font-family="SgMD" font-size="11" fill="${col}" fill-opacity="0.75">${at}</text>`;
   }
   return o + '</svg>';

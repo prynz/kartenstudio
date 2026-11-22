@@ -90,6 +90,7 @@ export function newState(presetKey, keep) {
     if (keep.sky) st.sky = { ...keep.sky };
     if (keep.motif) st.motif = keep.motif;
     if (keep.route) st.route = JSON.parse(JSON.stringify(keep.route));
+    if (keep.hoehen) st.hoehen = { ...keep.hoehen };
     if (keep.multi) st.multi = JSON.parse(JSON.stringify(keep.multi));
   }
   // Design (Aufbau/Rahmen) bleibt beim Wechsel des Farbthemas erhalten

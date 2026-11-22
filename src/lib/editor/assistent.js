@@ -185,6 +185,11 @@ export function syncWizard() {
 	$('wzStyles').classList.toggle('hidden', std || sky);
 	$('wzBases').classList.toggle('hidden', !std);
 	$('wzSky').classList.toggle('hidden', !sky);
+	$('wzHoehe').classList.toggle('hidden', std || sky);
+	const ho = !!(S.hoehen && S.hoehen.on);
+	/** @type {HTMLInputElement} */ ($('hoehenOn')).checked = ho;
+	const C = app.DATA && app.DATA._contours;
+	$('hoehenInfo').textContent = !ho ? 'Zeigt das Gelände als feine Linien – besonders schön in hügeligen Orten.' : C ? (C.max - C.min < 12 ? `Hier ist es recht flach (${C.min}–${C.max} m) – kaum Linien.` : `Höhe ${C.min}–${C.max} m, eine Linie alle ${C.interval} m.`) : 'Höhendaten werden geladen …';
 	if (sky && S.sky) syncSky(S.sky);
 	all('#wzStyles button').forEach((b) => b.classList.toggle('on', !std && b.dataset.p === S.preset));
 	all('#wzBases button').forEach((b) => b.classList.toggle('on', std && b.dataset.b === S.base));
@@ -494,6 +499,8 @@ export function initWizard() {
 				if (app.S.mode === 'std') ensureRaster();
 			})
 	);
+
+	$('hoehenOn').addEventListener('change', (e) => change(() => (app.S.hoehen = { ...(app.S.hoehen || {}), on: /** @type {HTMLInputElement} */ (e.target).checked })));
 
 	// Sternenhimmel
 	Object.entries(SKY_THEMES).forEach(([k, T]) => {

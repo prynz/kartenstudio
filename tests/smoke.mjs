@@ -397,6 +397,21 @@ await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (pag
 });
 
 if (ONLINE)
+	await run('Desktop – Höhenlinien', { viewport: { width: 1440, height: 900 } }, async (page) => {
+		await page.click('#demoBtn');
+		await page.waitForTimeout(900);
+		await page.click('#wzStyles button[data-p="vintage"]');
+		await page.check('#hoehenOn');
+		await page.waitForSelector('#hoehenlinien', { timeout: 60000 }).catch(() => {});
+		await page.waitForTimeout(600);
+		const len = await page.evaluate(() => [...document.querySelectorAll('#hoehenlinien path')].reduce((s, p) => s + (p.getAttribute('d') || '').length, 0));
+		ok(len > 2000, `Höhenlinien gezeichnet (${Math.round(len / 1024)} KB Linien)`);
+		ok(/Höhe \d+–\d+ m/.test(await page.textContent('#hoehenInfo')), 'Info: ' + (await page.textContent('#hoehenInfo')));
+		ok((await page.textContent('#quelle')).includes('EU-DEM'), 'Quellenangabe für Höhendaten');
+		await page.screenshot({ path: `${OUT}/23-hoehenlinien.png` });
+	});
+
+if (ONLINE)
 	await run('Desktop – Route aus GPS-Datei', { viewport: { width: 1440, height: 900 } }, async (page) => {
 		await page.click('#demoBtn');
 		await page.waitForTimeout(900);
