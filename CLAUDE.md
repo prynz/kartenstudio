@@ -76,6 +76,20 @@ Aufbau (`src/lib`), aus `prototyp/src/script.js` maschinell (Babel) zerlegt – 
   - **Standard-Stile scharf beim Zoomen:** `raster.js` zeichnet 450 ms nach dem Zoomen ein Detailbild nur für den sichtbaren Bereich (`DETAIL`, `detailRaster()`), das über das Grundbild gelegt wird.
   - **Mockups maßstäblich:** `ROOMS` (Sideboard, Sofa, Flur, Büro) in echten cm; CSS-Einheit `--u` (cm → Bildschirm), kleine Poster werden „näher fotografiert“ (Möbel ragen unten heraus), Größenetikett `.mk-size`. Shirt optional am Model (`product.model`).
   - **PWA:** `static/manifest.webmanifest`, Icons, `src/service-worker.js` (SvelteKit 3: `$app/manifest` + `$app/env`, nicht mehr `$service-worker`). App-Dateien aus dem Speicher (`ignoreVary`!), Seitenaufruf Netz zuerst, Vektorkacheln werden gemerkt (max. 600). App startet offline, Beispiel funktioniert offline.
+- **Ideen-Runde (nach Cartida-Vergleich):**
+  - `themen/anlaesse.js` – Anlass-Vorlagen (Hochzeit, Geburt, Zuhause, Heimat, Urlaub, Verein); vor der Suche gewählt → `app.occasionPending`, nach dem Laden angewendet (`applyOccasion`). Effekte `S.fx` (Papier-Struktur nur auf farbigem Grund, Vignette). „Druckfarben simulieren“ + Neon-Farbhinweis (`neonColors` in `druck.js`).
+  - `themen/himmel.js` + `himmel-daten.js` (d3-celestial, BSD-3, lazy) – **Sternenhimmel** `S.motif='sterne'`, `S.sky` (date, min = Minuten, theme, lines/names/mw/grid/real, lat/lon). Stereografisch, Zenit Mitte, Norden oben, Osten links; Zeitzone Europe/Berlin per Intl. Ziehen/Zoomen/Pins im Himmel aus.
+  - `editor/mehrere.js` – **bis 3 Orte** (`S.multi`), Zusatzorte über `tileData()` im Hintergrund; Zeichnen durch Tausch von `app.DATA`/`S.view` und eigene Kachel-Clip-IDs (`TCP.p`).
+  - `editor/route.js` – **GPX/GeoJSON-Route** (`S.route`, Douglas-Peucker ≤ 1200 Punkte), `loadBounds(b,{maxW:40000})`; `fetchTiles` wählt bei großen Gebieten eine gröbere Zoomstufe (≤ 100 Kacheln).
+  - `karte/hoehen.js` – **Höhenlinien** aus Terrarium-Kacheln (Marching Squares, Hauptlinie jede 5.), `S.hoehen`, Ergebnis an `DATA._contours`.
+  - Designs **Typografie** (`lay.kind='typo'`, `typoLines`) und **Haus** (`shape:'house'`); Schrift **Great Vibes** `SgSC` (OFL), Schrift-Paare im Text-Schritt.
+  - Luftbild **Bayern** (DOP 40, CC BY 4.0) statt Esri; `inBayern()` sperrt den Knopf außerhalb.
+  - `shop/preise.js` (Beispielpreise, hier anpassen), `shop/geschenk.js` (Geschenk-Link mit `gift` im Teilen-Link + Geschenkkarte-PNG), Rechtsseiten `/impressum`, `/datenschutz`, `/agb` (Vorlagen, `ssr=true`).
+  - **Vektor-PDF** `buildVectorPDF()` (jsPDF 4 + svg2pdf, lazy): Inter als TrueType-Fassung `inter-*-tt.ttf` (CFF kann jsPDF nicht), Laufweite → Einzelbuchstaben-tspans, TrimBox/BleedBox.
+  - MapLibre **6** (Worker-URL per `setWorkerUrl`, `canvasContextAttributes`). `src/lib/konfig.js` = alle Dienst-Adressen (per `VITE_*` überschreibbar). GitHub Action testet vor dem Veröffentlichen (`OFFLINE=1`).
+  - **Hilfe-Chat** `hilfe/chat.js` + Wissen `hilfe/wissen.js` (Stichwort-Bot, Knöpfe springen zu Schritten); optional KI über `server/chat-worker` (Cloudflare Worker, Claude Opus 5.5, effort low, `fallbacks:"default"`, CORS + Rate-Limit), aktiv wenn `VITE_CHAT_API` gesetzt. Doku `docs/chatbot.md`.
+  - Docs: `docs/shop-plan.md`, `docs/eigene-infrastruktur.md`, `docs/LIZENZEN.md`. Marktcheck/Recht/Kosten-Übersicht als Artifact: https://claude.ai/artifact/BJoqb3u3av2Vy4KB2Zjfva
+  - **Wichtig rechtlich:** GitHub Pages erlaubt keinen Shop → vor dem Verkauf umziehen; Photon/Overpass nur zum Testen.
 - `docs/vergleich-cartida.md` – Wettbewerbsvergleich und Ideenliste (Pins, Datum, Sternenhimmel, Raumszenen, Shop).
 - `karte/` – `ortswahl`, `ortswahl-start`, `suche` (Photon), `kacheln` (MVT-Decoder), `overpass`, `daten` (buildData/buildDataTiles), `raster` (Standard-Stile via MapLibre)
 - `themen/` – `vorlagen` (PRESETS), `standard` (BASES)
