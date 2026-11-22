@@ -13,10 +13,16 @@ import { DESIGNS, applyDesign } from '../themen/designs.js';
 import { ensureRaster } from '../karte/raster.js';
 import { attachSearch } from '../karte/suche.js';
 import { pickPlace } from '../karte/ortswahl-start.js';
+import { openPicker } from '../karte/ortswahl.js';
 import { EASE, reducedMotion } from './animation.js';
 import { revealSection } from './sheet.js';
-import { FRAMES, PRODUCTS, SHIRTS, WALLS, product, renderMockup, scheduleMockup } from './mockup.js';
-import { zoom } from './ansicht.js';
+import { FRAMES, PRODUCTS, ROOMS, SHIRTS, WALLS, product, renderMockup, scheduleMockup } from './mockup.js';
+import { msg, zoom } from './ansicht.js';
+import { SIZES, fitPrint, paperOrFree, quality, exportDpi } from './druck.js';
+import { PIN_SHAPES } from './zeichnen.js';
+import { shareLink } from './entwurf.js';
+import { esc } from './basis.js';
+import { saveDraftSoon } from './entwurf.js';
 
 // Der übernommene Zustand ist noch untypisiert (siehe @ts-nocheck in den Prototyp-Modulen).
 /** @type {any} */
@@ -49,6 +55,8 @@ export function goStep(next, animate = true) {
 	if (!STEPS.includes(next)) return;
 	const dir = STEPS.indexOf(next) - STEPS.indexOf(step);
 	step = next;
+	app.wizStep = next;
+	saveDraftSoon();
 	all('.wz-pane').forEach((p) => p.classList.toggle('on', p.dataset.step === next));
 	const idx = STEPS.indexOf(next);
 	all('#wzSteps button').forEach((b, i) => {
@@ -100,6 +108,7 @@ function syncProduct() {
 	all('.mk-swatch').forEach((b) => b.classList.toggle('on', P[/** @type {string} */ (b.dataset.key)] === b.dataset.k));
 	all('.mk-opt').forEach((o) => o.classList.toggle('hidden', !(o.dataset.for || '').split(' ').includes(P.type)));
 	/** @type {HTMLInputElement} */ ($('mkMat')).checked = !!P.mat;
+	/** @type {HTMLInputElement} */ ($('mkModel')).checked = !!P.model;
 }
 
 /** Assistent ↔ erweiterte Einstellungen umschalten. @param {boolean} on */
@@ -147,6 +156,7 @@ function renderDesignThumbs() {
 			if (D.aspect) c.view.a = D.aspect;
 			else if (keep.design && DESIGNS[keep.design] && DESIGNS[keep.design].aspect && keep.aPrev) c.view.a = keep.aPrev;
 			app.S = c;
+			fitPrint(c);
 			clampView(c.view);
 			const url = URL.createObjectURL(new Blob([buildSVG(true)], { type: 'image/svg+xml' }));
 			urls.push(url);
@@ -181,7 +191,20 @@ export function syncWizard() {
 		$('wzPlace').textContent = app.DATA.place || 'Mein Ort';
 		$('wzPlaceInfo').textContent = app.DATA.region || '';
 	}
+	const pr = S.print;
+	all('[data-sizes] button').forEach((b) => b.classList.toggle('on', pr ? b.dataset.k === pr.k : b.dataset.k === 'frei'));
+	all('[data-quer]').forEach((q) => {
+		const i = /** @type {HTMLInputElement} */ (q);
+		i.checked = !!(pr && pr.q);
+		i.disabled = !pr || /** @type {any} */ (SIZES)[pr.k].w === /** @type {any} */ (SIZES)[pr.k].h;
+		/** @type {HTMLElement} */ (i.closest('label')).classList.toggle('dis', i.disabled);
+	});
+	$('wzFree').classList.toggle('hidden', !!pr);
+	const n = /** @type {HTMLInputElement} */ ($('wzNote'));
+	if (document.activeElement !== n) n.value = (S.note && S.note.text) || '';
+	syncPins();
 	if (step === 'design') scheduleDesignThumbs();
+	if (step === 'fertig') syncFinish();
 	syncProduct();
 	if (step === 'produkt') scheduleMockup();
 }
@@ -208,6 +231,92 @@ export function wizardOpenSec(name) {
 	return false;
 }
 
+/**
+ * Design auf den Zustand anwenden. Formen wie Kreis/Herz brauchen ein festes
+ * Seitenverhältnis; beim Verlassen wird das vorige wiederhergestellt.
+ * @param {any} S @param {string} k
+ */
+export function pickDesign(S, k) {
+	const D = /** @type {any} */ (DESIGNS)[k];
+	const wasFixed = !!(S.design && /** @type {any} */ (DESIGNS)[S.design] && /** @type {any} */ (DESIGNS)[S.design].aspect);
+	applyDesign(S, k, PRESETS[S.preset], true);
+	if (D.aspect) {
+		if (!wasFixed) S.aPrev = S.view.a;
+		S.view.a = D.aspect;
+	} else if (wasFixed && S.aPrev) S.view.a = S.aPrev;
+	fitPrint(S);
+	clampView(S.view);
+}
+
+/**
+ * Weicher Überblendeffekt für große Änderungen (Stil, Design, Zufall).
+ * Nutzt die View-Transition-Technik des Browsers, sonst einfaches Einblenden.
+ * @param {() => void} fn
+ */
+export function smooth(fn) {
+	const d = /** @type {any} */ (document);
+	if (reducedMotion()) return fn();
+	if (d.startViewTransition) {
+		d.startViewTransition(fn);
+		return;
+	}
+	fn();
+	app.poster.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: 260, easing: EASE });
+}
+
+/** Zufällige, aber stimmige Kombination aus Stil und Design */
+export function surprise() {
+	const S = app.S;
+	if (!S) return;
+	const pick = (/** @type {string[]} */ arr, /** @type {string} */ not) => {
+		const a = arr.filter((x) => x !== not);
+		return a[Math.floor(Math.random() * a.length)];
+	};
+	const pk = pick(Object.keys(PRESETS), S.preset);
+	const dk = pick(Object.keys(DESIGNS), S.design || 'siegritz');
+	smooth(() =>
+		change(() => {
+			app.S = newState(pk, S);
+			app.S.mode = 'art';
+			pickDesign(app.S, dk);
+		})
+	);
+	msg(`Überraschung: ${PRESETS[pk].name} · ${/** @type {any} */ (DESIGNS)[dk].name}`, 'ok');
+}
+
+/** Pins-Liste und Farbwahl abgleichen */
+function syncPins() {
+	const S = app.S;
+	const pins = S.pins || [];
+	const box = $('wzPins');
+	const html = pins
+		.map((/** @type {any} */ p, /** @type {number} */ i) => `<span class="wz-pin"><svg viewBox="-20 -34 40 50" width="16" height="16"><path d="${(/** @type {any} */ (PIN_SHAPES)[p.i] || PIN_SHAPES.herz).d}" fill="${esc(S.pinColor || '#d64545')}" fill-rule="evenodd"/></svg>${i + 1}<button type="button" data-rm="${i}" aria-label="Markierung ${i + 1} entfernen">✕</button></span>`)
+		.join('');
+	if (box.dataset.h !== html) {
+		box.innerHTML = html;
+		box.dataset.h = html;
+		all('#wzPins [data-rm]').forEach((b) => (b.onclick = () => change(() => app.S.pins.splice(+(b.dataset.rm || 0), 1))));
+	}
+	$('wzPins').classList.toggle('hidden', !pins.length);
+	$('wzPinCol').classList.toggle('hidden', !pins.length);
+	all('.wz-pc').forEach((b) => b.classList.toggle('on', b.dataset.c === (S.pinColor || '#d64545')));
+}
+
+/** Schritt „Fertig“: Qualitäts-Ampel und PDF-Infos */
+let qaKey = '';
+function syncFinish() {
+	const S = app.S;
+	const key = JSON.stringify([S.print, S.cls, S.scale, S.mode, S.base, S.view, S.frame, S.lay, S.title.size, S.attr]);
+	if (key === qaKey) return;
+	qaKey = key;
+	const q = quality();
+	const P = paperOrFree(S);
+	const head = { ok: 'Druckqualität: sehr gut', warn: 'Druckqualität: mit Hinweisen', bad: 'Druckqualität: bitte prüfen' }[q.level];
+	$('wzQa').className = 'qa qa-' + q.level;
+	$('wzQa').innerHTML = `<b><i></i>${head}</b><span class="qa-size">${S.print ? P.name : 'Freies Format'} · ${String(P.w).replace('.', ',')} × ${String(P.h).replace('.', ',')} cm</span><ul>${q.items.map((i) => `<li class="qa-${i.level}">${esc(i.text)}</li>`).join('')}</ul>`;
+	$('wzPdfInfo').textContent = `${P.name === 'frei' ? 'freies Format' : P.name} · ${exportDpi(P)} dpi · mit 3 mm Beschnitt`;
+}
+
 /** @param {HTMLButtonElement} b @param {string} html */
 function card(b, html) {
 	b.type = 'button';
@@ -223,6 +332,8 @@ export function initWizard() {
 	$('wzNext').onclick = () => goStep(STEPS[Math.min(STEPS.length - 1, STEPS.indexOf(step) + 1)]);
 	$('wzAdv').onclick = () => showAdvanced(true);
 	$('advBack').onclick = () => showAdvanced(false);
+	all('[data-dice]').forEach((b) => (b.onclick = surprise));
+	$('wzPick').onclick = () => openPicker(false);
 
 	// 1 Ort
 	attachSearch('wq', 'wgo', 'wresults', pickPlace);
@@ -246,11 +357,13 @@ export function initWizard() {
 		b.dataset.p = k;
 		b.title = p.desc || '';
 		b.onclick = () =>
-			change(() => {
-				const keep = app.S;
-				app.S = newState(k, keep);
-				app.S.mode = 'art';
-			});
+			smooth(() =>
+				change(() => {
+					const keep = app.S;
+					app.S = newState(k, keep);
+					app.S.mode = 'art';
+				})
+			);
 		$('wzStyles').appendChild(b);
 	});
 	Object.entries(BASES).forEach(([k, p]) => {
@@ -278,18 +391,7 @@ export function initWizard() {
 		const b = card(document.createElement('button'), `<div class="dth"><img alt="" decoding="async"></div><span class="nm">${D.name}</span>`);
 		b.dataset.d = k;
 		b.title = D.desc;
-		b.onclick = () =>
-			change(() => {
-				const S = app.S;
-				// Formen wie Kreis/Herz brauchen ein festes Seitenverhältnis; beim Verlassen das vorige wiederherstellen
-				const wasCircle = !!(S.design && DESIGNS[S.design] && DESIGNS[S.design].aspect);
-				applyDesign(S, k, PRESETS[S.preset], true);
-				if (DESIGNS[k].aspect) {
-					if (!wasCircle) S.aPrev = S.view.a;
-					S.view.a = /** @type {number} */ (DESIGNS[k].aspect);
-				} else if (wasCircle && S.aPrev) S.view.a = S.aPrev;
-				clampView(S.view);
-			});
+		b.onclick = () => smooth(() => change(() => pickDesign(app.S, k)));
 		$('wzDesigns').appendChild(b);
 	});
 
@@ -347,6 +449,99 @@ export function initWizard() {
 	swatches('mkShirtSw', SHIRTS, 'shirt');
 	swatches('mkWallSw', WALLS, 'wall');
 	$('mkMat').addEventListener('change', (e) => setProduct({ mat: /** @type {HTMLInputElement} */ (e.target).checked }));
+
+	// Druckgrößen (Ausschnitt- und Produkt-Schritt)
+	all('[data-sizes]').forEach((box) => {
+		[...Object.entries(SIZES), ['frei', { name: 'Frei' }]].forEach(([k, z]) => {
+			const b = document.createElement('button');
+			b.type = 'button';
+			b.dataset.k = /** @type {string} */ (k);
+			b.textContent = /** @type {any} */ (z).name;
+			b.onclick = () =>
+				smooth(() =>
+					change(() => {
+						const S = app.S;
+						if (k === 'frei') S.print = null;
+						else S.print = { k, q: !!(S.print && S.print.q) };
+						fitPrint(S);
+						clampView(S.view);
+					})
+				);
+			box.appendChild(b);
+		});
+	});
+	all('[data-quer]').forEach((q) =>
+		q.addEventListener('change', (e) =>
+			smooth(() =>
+				change(() => {
+					if (app.S.print) app.S.print.q = /** @type {HTMLInputElement} */ (e.target).checked;
+					fitPrint(app.S);
+					clampView(app.S.view);
+				})
+			)
+		)
+	);
+
+	// Widmung / Datum
+	textInput('wzNote', (v) => (app.S.note = { ...(app.S.note || {}), on: true, text: v }));
+
+	// Markierungen
+	Object.entries(PIN_SHAPES).forEach(([k, P]) => {
+		const b = document.createElement('button');
+		b.type = 'button';
+		b.className = 'btn sm';
+		b.innerHTML = `<svg viewBox="-20 -34 40 50" width="16" height="16"><path d="${P.d}" fill="currentColor" fill-rule="evenodd"/></svg>+ ${P.name}`;
+		b.onclick = () =>
+			change(() => {
+				const S = app.S;
+				S.pins = S.pins || [];
+				if (S.pins.length >= 20) return;
+				// Neue Markierung in die Mitte, leicht versetzt, damit sie nicht übereinander liegen
+				const off = (S.pins.length % 5) * 14 / S.view.z;
+				S.pins.push({ i: k, x: +(S.view.cx + off).toFixed(2), y: +(S.view.cy + off).toFixed(2) });
+				msg('Markierung gesetzt – im Poster an die richtige Stelle ziehen', 'ok');
+			});
+		$('wzPinAdd').appendChild(b);
+	});
+	[
+		['#d64545', 'Rot'],
+		['#262c3a', 'Navy'],
+		['#c9a227', 'Gold'],
+		['#2f6fe4', 'Blau'],
+		['#1f6f43', 'Grün'],
+		['#ffffff', 'Weiß'],
+		['#1c1c1e', 'Schwarz']
+	].forEach(([c, name]) => {
+		const s = document.createElement('button');
+		s.type = 'button';
+		s.className = 'mk-swatch wz-pc';
+		s.dataset.c = c;
+		s.title = name;
+		s.setAttribute('aria-label', 'Farbe der Markierungen: ' + name);
+		s.innerHTML = `<i style="background:${c}"></i><span>${name}</span>`;
+		s.onclick = () => change(() => (app.S.pinColor = c));
+		$('wzPinCol').appendChild(s);
+	});
+
+	// Raum und Model (Produkt)
+	swatches('mkRoomSw', ROOMS, 'room');
+	$('mkModel').addEventListener('change', (e) => setProduct({ model: /** @type {HTMLInputElement} */ (e.target).checked }));
+
+	// Teilen
+	$('wzShare').onclick = async () => {
+		try {
+			const url = await shareLink();
+			const nav = /** @type {any} */ (navigator);
+			if (nav.share && matchMedia('(pointer: coarse)').matches) {
+				await nav.share({ title: 'Mein Kartenstudio-Entwurf', url }).catch(() => {});
+				return;
+			}
+			await navigator.clipboard.writeText(url);
+			msg('Link kopiert – einfach einfügen und teilen', 'ok');
+		} catch (e) {
+			window.prompt('Link zum Entwurf:', await shareLink());
+		}
+	};
 
 	// 7 Fertig
 	all('.wz-dl button').forEach(

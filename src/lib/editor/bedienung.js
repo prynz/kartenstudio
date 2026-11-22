@@ -46,6 +46,10 @@ export function endDrag(ev) {
   app.drag = null;
   app.cv.classList.remove('dragging');
   $('marq').style.display = 'none';
+  if (d.pin != null) {
+    commit();
+    return;
+  }
   if (app.tool === 'move') {
     commit();
     return;
@@ -124,10 +128,76 @@ export const zStep = f => change(() => {
 });
 
 /** Verbindet die Bedienelemente dieses Bausteins mit der Seite. */
+/* ---------- Zwei-Finger-Zoom (Handy/Tablet) ---------- */
+const PTS = new Map();
+let pinch = null;
+function pinchInfo() {
+  const [a, b] = [...PTS.values()];
+  return { d: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+function startPinch() {
+  const i = pinchInfo();
+  if (app.drag && app.tool !== 'move') $('marq').style.display = 'none';
+  app.drag = null;
+  begin();
+  // Kartenpunkt unter der Fingermitte merken – er soll unter den Fingern bleiben
+  pinch = { d0: Math.max(10, i.d), v0: { ...app.S.view }, p0: svgToMap(toSvg(i.x, i.y)) };
+}
+function movePinch() {
+  const i = pinchInfo(),
+    v0 = pinch.v0,
+    L = vLimits(v0);
+  const z = Math.min(L.zmax, Math.max(L.zmin, v0.z * i.d / pinch.d0));
+  const s = toSvg(i.x, i.y),
+    g = geo();
+  app.S.view = { ...v0, z, cx: pinch.p0.x - (s.x - g.mx - MW / 2) / z, cy: pinch.p0.y - (s.y - g.my - g.MH / 2) / z };
+  clampView(app.S.view);
+  renderView();
+}
+
 export function initEditorBedienung() {
   app.cv = $('canvas');
+  const up = ev => {
+    PTS.delete(ev.pointerId);
+    if (pinch) {
+      if (PTS.size < 2) {
+        pinch = null;
+        app.drag = null;
+        app.cv.classList.remove('dragging');
+        commit();
+      }
+      return;
+    }
+    endDrag(ev);
+  };
   app.cv.addEventListener('pointerdown', ev => {
-    if (!app.DATA || ev.button !== 0) return;
+    if (!app.DATA) return;
+    if (ev.pointerType === 'touch') {
+      PTS.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      if (PTS.size === 2) {
+        try {
+          app.cv.setPointerCapture(ev.pointerId);
+        } catch (e) {}
+        startPinch();
+        ev.preventDefault();
+        return;
+      }
+      if (PTS.size > 2) return;
+    }
+    if (ev.button !== 0) return;
+    // Markierung (Pin) anfassen und verschieben
+    const pe = ev.target.closest && ev.target.closest('[data-pin]');
+    if (pe && app.S.pins && app.S.pins[+pe.dataset.pin]) {
+      const i = +pe.dataset.pin,
+        m = svgToMap(toSvg(ev.clientX, ev.clientY));
+      app.drag = { pin: i, dx: app.S.pins[i].x - m.x, dy: app.S.pins[i].y - m.y, x: ev.clientX, y: ev.clientY, moved: false };
+      begin();
+      try {
+        app.cv.setPointerCapture(ev.pointerId);
+      } catch (e) {}
+      ev.preventDefault();
+      return;
+    }
     app.drag = {
       x: ev.clientX,
       y: ev.clientY,
@@ -148,11 +218,25 @@ export function initEditorBedienung() {
     ev.preventDefault();
   });
   app.cv.addEventListener('pointermove', ev => {
+    if (PTS.has(ev.pointerId)) PTS.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    if (pinch) {
+      if (PTS.size >= 2) movePinch();
+      return;
+    }
     if (!app.drag) return;
     const dx = ev.clientX - app.drag.x,
       dy = ev.clientY - app.drag.y;
     if (!app.drag.moved && Math.hypot(dx, dy) > 4) app.drag.moved = true;
     if (!app.drag.moved) return;
+    if (app.drag.pin != null) {
+      const m = svgToMap(toSvg(ev.clientX, ev.clientY)),
+        P = app.S.pins[app.drag.pin],
+        vr = visRect();
+      P.x = Math.min(vr[2], Math.max(vr[0], m.x + app.drag.dx));
+      P.y = Math.min(vr[3], Math.max(vr[1], m.y + app.drag.dy));
+      render();
+      return;
+    }
     if (app.tool === 'move') {
       const a = toSvg(app.drag.x, app.drag.y),
         b = toSvg(ev.clientX, ev.clientY);
@@ -172,8 +256,8 @@ export function initEditorBedienung() {
     m.style.width = Math.abs(dx) + 'px';
     m.style.height = Math.abs(dy) + 'px';
   });
-  app.cv.addEventListener('pointerup', endDrag);
-  app.cv.addEventListener('pointercancel', endDrag);
+  app.cv.addEventListener('pointerup', up);
+  app.cv.addEventListener('pointercancel', up);
   app.cv.addEventListener('wheel', ev => {
     if (!app.DATA || app.tool !== 'move' && !ev.ctrlKey) return;
     ev.preventDefault();

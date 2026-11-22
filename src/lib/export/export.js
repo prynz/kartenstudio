@@ -5,6 +5,7 @@ import { app } from '../editor/app.js';
 import { $ } from '../editor/basis.js';
 import { buildSVG, geo } from '../editor/zeichnen.js';
 import { msg } from '../editor/ansicht.js';
+import { buildPDF } from '../editor/druck.js';
 
 export /* ---------- Export ---------- */
 function fileBase() {
@@ -74,6 +75,20 @@ export function initExportExport() {
     }
     $('dlGo').disabled = true;
     $('dlGo').textContent = 'Wird erstellt …';
+    if (app.dlF === 'pdf') {
+      msg('PDF wird erstellt …', 'busy');
+      try {
+        const r = await buildPDF();
+        if (await download(fileBase() + '_' + r.paper.name.replace(/\s+/g, '') + '.pdf', r.blob)) msg(`PDF heruntergeladen – ${r.paper.name}, ${r.dpi} dpi, mit 3 mm Beschnitt`, 'ok');
+        $('dlPop').classList.add('hidden');
+      } catch (e) {
+        console.warn(e);
+        msg('PDF konnte nicht erstellt werden', 'err');
+      }
+      $('dlGo').disabled = false;
+      $('dlGo').textContent = 'Datei erstellen';
+      return;
+    }
     try {
       const cv = await renderPNG(+$('pngW').value);
       const blob = await new Promise(r => cv.toBlob(r, 'image/png'));

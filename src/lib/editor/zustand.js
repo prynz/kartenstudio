@@ -7,6 +7,7 @@ import { PRESETS } from '../themen/vorlagen.js';
 import { applyDesign } from '../themen/designs.js';
 import { RASTER, ensureRaster, rasterKey } from '../karte/raster.js';
 import { render } from './zeichnen.js';
+import { saveDraftSoon } from './entwurf.js';
 
 export function newState(presetKey, keep) {
   const p = PRESETS[presetKey];
@@ -49,7 +50,11 @@ export function newState(presetKey, keep) {
     mode: 'art',
     base: 'liberty',
     labels: true,
-    pop: p.pop ? JSON.parse(JSON.stringify(p.pop)) : null
+    pop: p.pop ? JSON.parse(JSON.stringify(p.pop)) : null,
+    note: { text: '', on: true },
+    pins: [],
+    pinColor: '#d64545',
+    print: null
   };
   Object.keys(CLS).forEach(k => {
     if (st.cls[k].h === undefined) st.cls[k].h = false;
@@ -75,6 +80,11 @@ export function newState(presetKey, keep) {
     st.mode = keep.mode;
     st.base = keep.base;
     st.labels = keep.labels;
+    st.note = { ...(keep.note || st.note) };
+    st.pins = JSON.parse(JSON.stringify(keep.pins || []));
+    st.pinColor = keep.pinColor || st.pinColor;
+    st.print = keep.print ? { ...keep.print } : null;
+    if (keep.product) st.product = { ...keep.product };
   }
   // Design (Aufbau/Rahmen) bleibt beim Wechsel des Farbthemas erhalten
   applyDesign(st, keep && keep.design || 'siegritz', p, !keep);
@@ -147,6 +157,7 @@ export function updUndo() {
   if (app.S && app.S.mode === 'std' && app.DATA && !RASTER.has(rasterKey())) setTimeout(ensureRaster, 0);
   $('undo').disabled = !app.undoS.length;
   $('redo').disabled = !app.redoS.length;
+  saveDraftSoon();
 }
 export function eff(f) {
   const c = app.S.cls[f.k],

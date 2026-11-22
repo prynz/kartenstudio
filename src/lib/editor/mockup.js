@@ -3,6 +3,7 @@
 // es werden keine fremden Bilder oder Dienste gebraucht.
 import { app as appUntyped } from './app.js';
 import { buildSVG, geo } from './zeichnen.js';
+import { paper, paperOrFree } from './druck.js';
 
 /** @type {any} */
 const app = appUntyped;
@@ -45,9 +46,20 @@ export const WALLS = {
 	dunkel: { name: 'Dunkel', c: '#3b3f48' }
 };
 
+/**
+ * Räume: Möbel in echten Maßen (cm), damit die Postergröße realistisch wirkt.
+ * `top` = Höhe der Möbel, `gap` = Abstand bis zur Posterunterkante, `w` = Möbelbreite.
+ */
+export const ROOMS = {
+	wohnen: { name: 'Sideboard', c: '#b88f63', w: 160, top: 75, gap: 28 },
+	sofa: { name: 'Sofa', c: '#a9a196', w: 210, top: 85, gap: 26 },
+	flur: { name: 'Flur', c: '#3c3a37', w: 100, top: 80, gap: 30 },
+	buero: { name: 'Büro', c: '#d9cdb8', w: 140, top: 75, gap: 48 }
+};
+
 /** @param {any} S */
 export function product(S) {
-	return { type: 'gerahmt', frame: 'schwarz', mat: true, shirt: 'weiss', wall: 'hell', ...(S && S.product) };
+	return { type: 'gerahmt', frame: 'schwarz', mat: true, shirt: 'weiss', wall: 'hell', room: 'wohnen', model: false, ...(S && S.product) };
 }
 
 let url = '';
@@ -66,36 +78,83 @@ export function renderMockup() {
 	const g = geo();
 	const old = url;
 	url = URL.createObjectURL(new Blob([buildSVG(true)], { type: 'image/svg+xml' }));
-	const r = (g.H / g.W).toFixed(4); // Seitenverhältnis des Motivs
 	let html = '';
 	if (P.type === 'shirt') html = shirtScene(P);
 	else if (P.type === 'tasse') html = mugScene();
-	else html = wallScene(P, r);
+	else html = wallScene(P);
 	box.innerHTML = html;
 	const img = box.querySelector('.mk-img');
 	if (img) /** @type {HTMLImageElement|SVGImageElement} */ (img).setAttribute(img.tagName === 'image' ? 'href' : 'src', url);
 	if (old) setTimeout(() => URL.revokeObjectURL(old), 1000);
 }
 
-/** @param {any} P @param {string} r */
-function wallScene(P, r) {
+/** Möbel als SVG in cm (1 Einheit = 1 cm), unten bündig auf dem Boden */
+const FURN = {
+	wohnen: `<svg viewBox="0 -62 160 137" style="width:calc(var(--u)*160)"><defs><linearGradient id="fw1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#cfaa7f"/><stop offset="1" stop-color="#b08559"/></linearGradient></defs>
+<rect x="0" y="8" width="160" height="56" rx="2.5" fill="url(#fw1)"/><rect x="0" y="8" width="160" height="2.2" rx="1" fill="#ddbf98"/>
+<rect x="5" y="15" width="73" height="42" rx="1.5" fill="none" stroke="#000" stroke-opacity=".13"/><rect x="82" y="15" width="73" height="42" rx="1.5" fill="none" stroke="#000" stroke-opacity=".13"/>
+<rect x="70" y="34" width="5" height="1.6" rx=".8" fill="#000" opacity=".25"/><rect x="85" y="34" width="5" height="1.6" rx=".8" fill="#000" opacity=".25"/>
+<path d="M10 64l-2 11h3l3-11zM150 64l2 11h-3l-3-11z" fill="#8a6644"/>
+<path d="M131 8c-6 0-8-5-7-11 1-5 4-8 7-8s6 3 7 8c1 6-1 11-7 11z" fill="#ece8e0"/><path d="M131-10c-2-14-9-26-16-34M131-10c1-17 4-30 9-42M131-10c4-12 11-20 17-24" fill="none" stroke="#6f7d5c" stroke-width=".9" stroke-linecap="round"/>
+<g fill="#7f8f68"><ellipse cx="115" cy="-44" rx="3.2" ry="1.8" transform="rotate(-40 115 -44)"/><ellipse cx="140" cy="-52" rx="3.2" ry="1.8" transform="rotate(-70 140 -52)"/><ellipse cx="148" cy="-34" rx="3.2" ry="1.8" transform="rotate(-20 148 -34)"/><ellipse cx="121" cy="-31" rx="2.6" ry="1.5" transform="rotate(-50 121 -31)"/><ellipse cx="137" cy="-32" rx="2.6" ry="1.5" transform="rotate(-80 137 -32)"/></g>
+<rect x="28" y="1" width="26" height="7" rx="1" fill="#4b5161"/><rect x="30" y="-4" width="22" height="5" rx="1" fill="#c6b9a4"/></svg>`,
+	sofa: `<svg viewBox="0 0 210 85" style="width:calc(var(--u)*210)"><defs><linearGradient id="fs1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#b3ab9f"/><stop offset="1" stop-color="#9a9286"/></linearGradient></defs>
+<rect x="14" y="10" width="182" height="46" rx="9" fill="url(#fs1)"/><rect x="0" y="34" width="26" height="42" rx="9" fill="#a39b8f"/><rect x="184" y="34" width="26" height="42" rx="9" fill="#a39b8f"/>
+<rect x="22" y="48" width="83" height="26" rx="6" fill="#b8b0a4"/><rect x="105" y="48" width="83" height="26" rx="6" fill="#b4aca0"/>
+<rect x="30" y="22" width="40" height="30" rx="7" fill="#d8cfbf" transform="rotate(-6 50 37)"/><rect x="142" y="22" width="38" height="29" rx="7" fill="#7b8b7a" transform="rotate(5 161 36)"/>
+<path d="M12 76h6l-1 9h-4zM192 76h6l-1 9h-4z" fill="#5a4a3a"/></svg>`,
+	flur: `<svg viewBox="-40 -50 175 130" style="width:calc(var(--u)*175);margin-left:calc(var(--u)*-15)"><rect x="0" y="0" width="100" height="4" rx="1" fill="#3c3a37"/><rect x="4" y="4" width="92" height="12" fill="#4a4743"/>
+<path d="M6 16l2 64h2.5l1-64zM94 16l-2 64h-2.5l-1-64z" fill="#2e2c2a"/><rect x="10" y="56" width="80" height="2" fill="#2e2c2a"/>
+<ellipse cx="72" cy="-3" rx="11" ry="3" fill="#cdbfa8"/><rect x="18" y="-26" width="16" height="26" rx="2" fill="#e9e4da"/><rect x="21" y="-23" width="10" height="20" fill="#cfc6b6"/>
+<path d="M-30 80l4-34h24l4 34z" fill="#c9b7a0"/><path d="M-14 46c-2-20-14-30-22-36M-14 46c0-22 6-38 12-46M-14 46c4-16 14-24 22-28" fill="none" stroke="#5c7052" stroke-width="1.4" stroke-linecap="round"/>
+<g fill="#6d8463"><ellipse cx="-34" cy="12" rx="5" ry="2.4" transform="rotate(-35 -34 12)"/><ellipse cx="-3" cy="2" rx="5" ry="2.4" transform="rotate(-75 -3 2)"/><ellipse cx="7" cy="19" rx="5" ry="2.4" transform="rotate(-15 7 19)"/><ellipse cx="-24" cy="26" rx="4" ry="2" transform="rotate(-50 -24 26)"/><ellipse cx="-8" cy="22" rx="4" ry="2" transform="rotate(-85 -8 22)"/></g></svg>`,
+	buero: `<svg viewBox="0 -48 140 123" style="width:calc(var(--u)*140)"><rect x="0" y="0" width="140" height="4" rx="1" fill="#d9cdb8"/><path d="M6 4h4v71H6zM130 4h4v71h-4z" fill="#3b3f48"/>
+<path d="M112 0l2-3h12l2 3z" fill="#3b3f48"/><path d="M120-3L108-34l-14 8" fill="none" stroke="#3b3f48" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M96-34l-9 9 6 2 8-7z" fill="#3b3f48"/><ellipse cx="90" cy="-23" rx="6" ry="1.6" fill="#fff6d6" opacity=".9"/>
+<path d="M30 0h44l-3-2H33z" fill="#9aa0aa"/><path d="M34-2l-3-26h42l-3 26z" fill="#c7ccd3"/><path d="M36-4l-2.4-21h37l-2.4 21z" fill="#262c3a"/>
+<rect x="84" y="-9" width="14" height="9" rx="1" fill="#b0784f"/><path d="M98-7c3 0 3 5 0 5" fill="none" stroke="#b0784f" stroke-width="1.2"/>
+<path d="M40 30c0-8 5-12 12-12h36c7 0 12 4 12 12v45H40z" fill="#4b5161" opacity=".9"/></svg>`
+};
+
+/** @param {any} P */
+function wallScene(P) {
 	const wall = (WALLS[/** @type {keyof typeof WALLS} */ (P.wall)] || WALLS.hell).c;
 	const frame = FRAMES[/** @type {keyof typeof FRAMES} */ (P.frame)] || FRAMES.schwarz;
+	const roomKey = /** @type {keyof typeof ROOMS} */ (ROOMS[/** @type {keyof typeof ROOMS} */ (P.room)] ? P.room : 'wohnen');
+	const R = ROOMS[roomKey];
 	const framed = P.type === 'gerahmt';
+	const Z = paperOrFree(app.S);
+	const fixed = !!paper(app.S);
+	const extra = framed ? 2 * 2.4 + (P.mat ? 2 * 5 : 0) : 0; // Rahmen + Passepartout in cm
+	const wcm = Z.w + extra,
+		hcm = Z.h + extra;
+	const B = R.top + R.gap; // Posterunterkante über dem Boden (cm)
+	// Maßstab: alles passt hinein – kleine Poster werden etwas näher „fotografiert“ (Möbel ragen dann unten heraus)
+	const uh = Math.max(80 / (B + hcm + 10), Math.min(44 / hcm, 1.6));
+	const uw = 72 / wcm;
 	const cls = `mk-art mk-${P.type}${framed && P.mat ? ' mk-matted' : ''}`;
-	return `<div class="mk-room" style="--wall:${wall};--r:${r}">
+	const paperBg = app.S.bg && app.S.bg !== 'none' ? app.S.bg : '#ffffff';
+	const dims = `${String(Z.w).replace('.', ',')} × ${String(Z.h).replace('.', ',')} cm`;
+	const label = !fixed ? 'ca. ' + dims : /^\d/.test(Z.name) ? dims : `${Z.name.replace(' quer', '')} · ${dims}`;
+	return `<div class="mk-room mk-r-${roomKey}" style="--wall:${wall};--u:min(${uh.toFixed(3)}cqh,${uw.toFixed(3)}cqw);--ft:min(12cqh,calc(90cqh - var(--u) * ${(B + hcm).toFixed(1)}));--wcm:${Z.w};--hcm:${Z.h};--b:${B}">
 <div class="mk-light"></div>
 <div class="mk-floor"></div>
-<div class="mk-side"><i></i><i></i></div>
-<div class="mk-vase"><b></b><span></span><span></span><span></span></div>
-<div class="${cls}" style="${framed ? `--frame:${frame.css}` : ''}"><div class="mk-paper"><img class="mk-img" alt="Vorschau deines Motivs"></div></div>
+<div class="mk-furn">${FURN[roomKey]}</div>
+<div class="${cls}" style="${framed ? `--frame:${frame.css};` : ''}--paper:${paperBg}"><div class="mk-paper"><img class="mk-img" alt="Vorschau deines Motivs"></div></div>
+<div class="mk-size">${label}</div>
 </div>`;
 }
 
 /** @param {any} P */
 function shirtScene(P) {
 	const c = (SHIRTS[/** @type {keyof typeof SHIRTS} */ (P.shirt)] || SHIRTS.weiss).c;
-	return `<div class="mk-studio"><svg class="mk-shirt" viewBox="0 0 500 560" role="img" aria-label="T-Shirt-Vorschau">
+	const m = !!P.model;
+	// Am Model: schlichte, flache Figur (Kopf, Hals, Arme) hinter dem Shirt
+	const model = m
+		? `<path d="M36 184L92 236L104 330Q108 372 96 398Q84 410 70 404Q58 396 60 372L56 300Z" fill="#e2b896"/><path d="M464 184L408 236L396 330Q392 372 404 398Q416 410 430 404Q442 396 440 372L444 300Z" fill="#e2b896"/>
+<path d="M222 -8h56v62h-56z" fill="#d9ab87"/><ellipse cx="250" cy="-70" rx="62" ry="76" fill="#e8c09f"/>
+<path d="M186 -78c-6-60 30-92 70-90 44 2 70 34 62 92-8-22-26-40-58-44-32 4-60 18-74 42z" fill="#3b2f2a"/>`
+		: '';
+	return `<div class="mk-studio"><svg class="mk-shirt${m ? ' mk-model' : ''}" viewBox="${m ? '0 -170 500 730' : '0 0 500 560'}" role="img" aria-label="T-Shirt-Vorschau">${model}
 <defs>
 <linearGradient id="mkFold" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".16"/><stop offset=".18" stop-color="#000" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".07"/><stop offset=".82" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".18"/></linearGradient>
 <clipPath id="mkBody"><path d="M190 40C210 70 290 70 310 40L385 68L470 180L408 238L392 222L392 540L108 540L108 222L92 238L30 180L115 68Z"/></clipPath>

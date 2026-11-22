@@ -65,6 +65,17 @@ Aufbau (`src/lib`), aus `prototyp/src/script.js` maschinell (Babel) zerlegt – 
 - `editor/mockup.js` – **Produkt-Mockups** (Schritt „Produkt“ im Assistenten, `body.mk-on` blendet `#mockup` über die Vorschau): Poster, gerahmt (7 Rahmen inkl. Holz/Gold/Alu, Passepartout), Leinwand, T-Shirt (7 Farben), Tasse; Wandfarben. Szenen selbst gezeichnet (HTML/CSS mit Container-Query-Einheiten `cqw/cqh`, Shirt/Tasse als SVG), Motiv = `buildSVG(true)` als Blob-URL. Auswahl in `S.product` (`product()` liefert Standardwerte).
 - `themen/pop.js` – **Pop-Art** (Themen `popart`, `konfetti` in `vorlagen.js`, nach dem Vorbild illustrierter Wimmelbild-Stadtpläne): Symbole stehen in Reihen ENTLANG der Straßen (in Straßenrichtung gedreht), Straßen/Gewässer bleiben als saubere Kanäle frei, gefüllt wird nur der bebaute Ort (Nähe zu Gebäuden → Ortsform sichtbar), Lücken per versetztem Raster. Häuser/Fußwege nicht als Grundriss. `popK()` skaliert Symbole/Straßen mit dem Maßstab (Städte → kleiner, Untergrenze 0,5 für Tempo). Symbole sind Vielecke und werden **je Farbe zu einem einzigen `<path>`** zusammengefasst – tausende Einzelelemente machten das Handy zäh. Zustand `S.pop`.
 - **Tempo (wichtig!):** `render()` baut die Karte nur neu, wenn sich Kartenrelevantes ändert (`mapKey()`, Zwischenspeicher `MC`, Zeichenbereich mit 60 % Rand `cullRect()`); sonst bleibt der Kartenknoten im DOM und nur Rahmen/Text werden ersetzt (Knoten nie aus- und wieder einhängen – das erzwingt teures Neu-Layout). Beim Ziehen/Mausrad nur `renderView()` (Transform ändern), volles Neuzeichnen 140 ms nach der letzten Bewegung. Poster-Schatten per `box-shadow` (+ `border-radius` in `zoom()`), nicht `filter: drop-shadow`. Messen mit Longtask-Observer (siehe Verlauf), Handy mit 4× CPU-Drosselung.
+- **Optimierungsrunde (Bedienung, Druck, PWA):**
+  - **Suche → fertiges Poster direkt:** `pickPlace` (`karte/ortswahl-start.js`) berechnet mit `placeBounds()` einen Ausschnitt um den Ortskern (Dorf ≈ 1,1 km, Stadt nach Ausdehnung, max. 2 km) und ruft `loadBounds(b)` (`editor/laden.js`) auf – ohne Kartenfenster. Das Kartenfenster (Feinwahl) gibt es weiter über „Ausschnitt auf der Landkarte neu wählen“ (`#wzPick`). Untertitel-Vorschlag `regionOf()` (Landkreis ohne „Landkreis“). Ladeanzeige wird dorthin verschoben, wo man gerade ist.
+  - **MapLibre lädt erst bei Bedarf** (`loadMaplibre()` in `ortswahl.js`, auch für `raster.js`), Beispiel-JSON ebenfalls dynamisch → schlanker Start.
+  - **Zwei-Finger-Zoom** in `bedienung.js` (Zeiger-Map `PTS`, Kartenpunkt unter der Fingermitte bleibt stehen, `renderView()` während der Geste).
+  - **Entwurf merken & teilen** (`editor/entwurf.js`, `editor/wiederherstellen.js`): localStorage-Schlüssel `kartenstudio.entwurf.v1` (Ausschnitt `lastB`, Ort, Demo-Flag, Schritt, `S`), gespeichert 0,7 s nach jeder Änderung (`updUndo` → `saveDraftSoon`). Startseite zeigt „Weiter mit …“ (`#resumeBtn`). Link `#e=z…` = JSON, deflate-raw, base64url. **Sicherheitsprüfung `validDraft()`**: fremde Links dürfen nur harmlose Zeichen in Farben/Schlüsseln haben (Werte landen ungefiltert im SVG); freie Texte werden mit `esc()` gezeichnet.
+  - **Überrasch mich** (`surprise()` in `assistent.js`), Stil-/Design-/Größenwechsel mit weicher Überblendung `smooth()` (View Transitions, `#poster{view-transition-name:poster}`, im Mockup ausgeschaltet).
+  - **Pins & Widmung:** `S.pins` [{i: herz|pin|stern|punkt, x, y in Kartenkoordinaten}], `S.pinColor`, eigene Ebene `#pins/#pinsAnsicht` (Größe zoomunabhängig, in `renderView` mitverschoben), im Poster ziehbar (`data-pin`). `S.note.text` = zusätzliche Zeile `#widmung` (in `geo()` als `yN`).
+  - **Druck** (`editor/druck.js`): `SIZES` (A4 … 70×100, Quadrate), `S.print = {k, q}` (q = quer) oder `null` (frei). `fitPrint()` setzt das Kartenverhältnis so, dass das **ganze Poster** exakt aufs Papier passt (läuft in `render()`); Formen mit festem Verhältnis (Kreis …) bekommen im PDF Rand. **PDF mit 3 mm Beschnitt** komplett im Browser (eigener kleiner PDF-Schreiber, JPEG, TrimBox/BleedBox, bis 300 dpi; Handy max. 16 MP). **Qualitäts-Ampel** `quality()`: dünnste Linie in mm, Bild-dpi bei Standard-Stilen, Export-dpi.
+  - **Standard-Stile scharf beim Zoomen:** `raster.js` zeichnet 450 ms nach dem Zoomen ein Detailbild nur für den sichtbaren Bereich (`DETAIL`, `detailRaster()`), das über das Grundbild gelegt wird.
+  - **Mockups maßstäblich:** `ROOMS` (Sideboard, Sofa, Flur, Büro) in echten cm; CSS-Einheit `--u` (cm → Bildschirm), kleine Poster werden „näher fotografiert“ (Möbel ragen unten heraus), Größenetikett `.mk-size`. Shirt optional am Model (`product.model`).
+  - **PWA:** `static/manifest.webmanifest`, Icons, `src/service-worker.js` (SvelteKit 3: `$app/manifest` + `$app/env`, nicht mehr `$service-worker`). App-Dateien aus dem Speicher (`ignoreVary`!), Seitenaufruf Netz zuerst, Vektorkacheln werden gemerkt (max. 600). App startet offline, Beispiel funktioniert offline.
 - `docs/vergleich-cartida.md` – Wettbewerbsvergleich und Ideenliste (Pins, Datum, Sternenhimmel, Raumszenen, Shop).
 - `karte/` – `ortswahl`, `ortswahl-start`, `suche` (Photon), `kacheln` (MVT-Decoder), `overpass`, `daten` (buildData/buildDataTiles), `raster` (Standard-Stile via MapLibre)
 - `themen/` – `vorlagen` (PRESETS), `standard` (BASES)
@@ -94,14 +105,14 @@ Die übernommenen Module tragen `// @ts-nocheck` – beim Überarbeiten jeweils 
 ## 5. Geplante Schritte (Roadmap)
 
 1. ✅ **Grundgerüst** (erledigt): Repo anlegen, Framework aufsetzen, Prototyp-Editor übernehmen und modularisieren, Live-Vorschau per URL (Handy-tauglich).
-2. **UX-Überarbeitung:**
+2. **UX-Überarbeitung** (großteils erledigt: Suche direkt ins Poster, schlaue Startwerte, Touch-Zoom, Entwurf merken/teilen, scharfe Standard-Stile):
    - Ortswahl direkt im Poster-Rahmen (kein separates Fenster) – Suche → fertiges Poster in einem Schritt
    - Schlaue Vorschläge: Ausschnitt automatisch auf Ortskern, Titel/Untertitel aus Ortsdaten, Stilvorschläge
    - Mobile: Bottom-Sheet für Einstellungen, Touch-Gesten
    - Kartenformen (Kreis, Herz, Sechseck), Effekte (Vignette)
    - Standard-Stile beim Zoomen neu rendern
 3. ✅ **Mockups live** (erste Version): Poster/Rahmen/Leinwand an der Wand, Shirt, Tasse. Ideen: mehr Raumszenen, Größe maßstäblich, Pins/Datum (siehe `docs/vergleich-cartida.md`).
-4. **Speichern & Teilen:** Entwürfe speichern, per Link teilen.
+4. ✅ **Speichern & Teilen** (im Browser + Link). Später: Konto/Server-Speicher.
 5. **Shop:** Größe/Material/Preis, Bezahlung, automatische Übergabe an Druckdienst.
 6. **Eigene Karteninfrastruktur** (PMTiles, Geocoder) statt öffentlicher Dienste.
 

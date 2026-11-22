@@ -196,30 +196,177 @@ await run('iPhone – Offline-Beispiel', { ...devices['iPhone 14'] }, async (pag
 	await page.screenshot({ path: `${OUT}/5d-gross-iphone.png` });
 });
 
+await run('Desktop – Druck, Pins, Teilen, Merken', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, acceptDownloads: true }, async (page) => {
+	await page.click('#demoBtn');
+	await page.waitForTimeout(900);
+	// Überrasch mich
+	const pre0 = await page.evaluate(() => document.querySelector('#wzStyles .on')?.dataset.p);
+	await page.click('.wz-pane[data-step="stil"] [data-dice]');
+	await page.waitForTimeout(600);
+	const pre1 = await page.evaluate(() => document.querySelector('#wzStyles .on')?.dataset.p);
+	ok(pre1 && pre1 !== pre0, `„Überrasch mich“ wählt neuen Stil (${pre0} → ${pre1})`);
+	await page.click('#wzStyles button[data-p="umriss"]');
+	await page.click('#wzSteps button[data-step="design"]');
+	await page.click('#wzDesigns button[data-d="siegritz"]');
+	await page.waitForTimeout(300);
+	// Druckgröße: Poster bekommt genau das Seitenverhältnis von A3
+	await page.click('#wzSteps button[data-step="ausschnitt"]');
+	await page.click('.wz-pane[data-step="ausschnitt"] [data-sizes] button[data-k="a3"]');
+	await page.waitForTimeout(500);
+	const vb = await page.evaluate(() => document.getElementById('poster').getAttribute('viewBox').split(' ').map(Number));
+	ok(Math.abs(vb[3] / vb[2] - 42 / 29.7) < 0.005, `A3 gewählt: Poster im Verhältnis 1 : ${(vb[3] / vb[2]).toFixed(3)} (Soll 1,414)`);
+	await page.check('.wz-pane[data-step="ausschnitt"] [data-quer]');
+	await page.waitForTimeout(500);
+	const vq = await page.evaluate(() => document.getElementById('poster').getAttribute('viewBox').split(' ').map(Number));
+	ok(Math.abs(vq[3] / vq[2] - 29.7 / 42) < 0.005, 'Querformat dreht das Poster');
+	await page.uncheck('.wz-pane[data-step="ausschnitt"] [data-quer]');
+	await page.waitForTimeout(400);
+	// Text: Widmung + Pins
+	await page.click('#wzSteps button[data-step="text"]');
+	await page.fill('#wzNote', '12.06.2021');
+	await page.waitForTimeout(300);
+	ok((await page.textContent('#widmung')) === '12.06.2021', 'Widmungszeile im Poster');
+	const vb2 = await page.evaluate(() => document.getElementById('poster').getAttribute('viewBox').split(' ').map(Number));
+	ok(Math.abs(vb2[3] / vb2[2] - 42 / 29.7) < 0.005, 'Format bleibt A3 auch mit zusätzlicher Zeile');
+	await page.click('#wzPinAdd button:first-child');
+	await page.waitForTimeout(300);
+	ok((await page.$$('#poster [data-pin]')).length === 1, 'Herz-Markierung gesetzt');
+	const pb = await page.locator('#poster [data-pin="0"] path').boundingBox();
+	const x0 = await page.evaluate(() => JSON.parse(localStorage.getItem('kartenstudio.entwurf.v1') || '{}').S?.pins?.length || 0);
+	await page.mouse.move(pb.x + pb.width / 2, pb.y + pb.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(pb.x + pb.width / 2 + 90, pb.y + pb.height / 2 + 60, { steps: 6 });
+	await page.mouse.up();
+	await page.waitForTimeout(300);
+	const pb2 = await page.locator('#poster [data-pin="0"] path').boundingBox();
+	ok(pb2.x - pb.x > 60 && pb2.y - pb.y > 40, 'Markierung lässt sich im Poster verschieben');
+	await page.screenshot({ path: `${OUT}/9-pins-widmung.png` });
+	// Produkt: Raum + maßstäbliche Größe
+	await page.click('#wzSteps button[data-step="produkt"]');
+	await page.waitForTimeout(500);
+	await page.click('#mkRoomSw button[data-k="sofa"]');
+	await page.waitForTimeout(500);
+	ok((await page.textContent('.mk-size')).includes('A3'), 'Mockup zeigt Größe „A3“');
+	const wA3 = (await page.locator('.mk-paper img').boundingBox()).width;
+	await page.click('.wz-pane[data-step="produkt"] [data-sizes] button[data-k="70x100"]');
+	await page.waitForTimeout(500);
+	const w70 = (await page.locator('.mk-paper img').boundingBox()).width;
+	const sofa3 = (await page.locator('.mk-furn svg').boundingBox()).width;
+	ok(w70 / sofa3 > 0.3 && w70 / sofa3 < 0.4, `70×100 im richtigen Verhältnis zum 210-cm-Sofa (${(w70 / sofa3).toFixed(2)}, Soll 0,33 + Rahmen)`);
+	await page.screenshot({ path: `${OUT}/10-mockup-sofa.png` });
+	for (const r of ['wohnen', 'flur', 'buero']) {
+		await page.click(`#mkRoomSw button[data-k="${r}"]`);
+		await page.waitForTimeout(250);
+		await page.screenshot({ path: `${OUT}/10-mockup-${r}.png` });
+	}
+	ok((await page.$$('#mkRoomSw button')).length === 4, '4 Räume zur Auswahl');
+	await page.click('#wzProd button[data-t="shirt"]');
+	await page.check('#mkModel');
+	await page.waitForTimeout(400);
+	ok((await page.$('.mk-shirt.mk-model')) !== null, 'Shirt am Model');
+	await page.screenshot({ path: `${OUT}/11-shirt-model.png` });
+	await page.click('#wzProd button[data-t="gerahmt"]');
+	await page.click('.wz-pane[data-step="produkt"] [data-sizes] button[data-k="a3"]');
+	// Fertig: Ampel + PDF
+	await page.click('#wzSteps button[data-step="fertig"]');
+	await page.waitForTimeout(400);
+	ok(await page.locator('#wzQa').isVisible(), 'Qualitäts-Ampel: ' + (await page.textContent('#wzQa b')));
+	await page.screenshot({ path: `${OUT}/12-fertig.png` });
+	const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 90000 }), page.click('.wz-dl button[data-f="pdf"]')]);
+	const pdf = `${OUT}/${dl.suggestedFilename()}`;
+	await dl.saveAs(pdf);
+	const head = fs.readFileSync(pdf).subarray(0, 4000).toString('latin1');
+	const mb = head.match(/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/);
+	const mm = mb ? [(+mb[1] * 25.4) / 72, (+mb[2] * 25.4) / 72] : [0, 0];
+	ok(head.startsWith('%PDF') && /TrimBox/.test(head) && Math.abs(mm[0] - 303) < 0.5 && Math.abs(mm[1] - 426) < 0.5, `PDF A3 mit Beschnitt (${mm.map((v) => v.toFixed(1)).join(' × ')} mm, ${Math.round(fs.statSync(pdf).size / 1024)} KB)`);
+	// Teilen-Link
+	await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+	await page.click('#wzShare');
+	await page.waitForTimeout(500);
+	const link = await page.evaluate(() => navigator.clipboard.readText());
+	ok(/#e=z[\w-]+$/.test(link), `Teilen-Link erzeugt (${link.length} Zeichen)`);
+	// Entwurf gemerkt → nach Neuladen „Weiter mit …“
+	await page.waitForTimeout(900);
+	await page.reload();
+	await page.waitForTimeout(800);
+	ok(await page.locator('#resumeBtn').isVisible(), 'Nach Neuladen: „' + (await page.textContent('#resumeBtn b')) + '“');
+	await page.screenshot({ path: `${OUT}/13-weiter.png` });
+	await page.click('#resumeBtn');
+	await page.waitForTimeout(1200);
+	ok((await page.textContent('#widmung')) === '12.06.2021' && (await page.$$('#poster [data-pin]')).length === 1, 'Entwurf vollständig wiederhergestellt (Widmung, Pin)');
+	// Geteilter Link in frischem Browser
+	const ctx2 = await browser.newContext({ viewport: { width: 1200, height: 800 } });
+	const p2 = await ctx2.newPage();
+	await p2.goto(link);
+	await p2.waitForTimeout(1500);
+	ok((await p2.textContent('#widmung').catch(() => '')) === '12.06.2021', 'Geteilter Link öffnet den Entwurf auf einem anderen Gerät');
+	ok(!(await p2.evaluate(() => location.hash)), 'Link-Anhang wird danach aus der Adresszeile entfernt');
+	// Manipulierter Link wird abgelehnt
+	const bad = { v: 1, demo: true, S: { view: { a: 1, cx: 1, cy: 1, z: 1 }, cls: {}, bg: '"/><img src=x onerror=alert(1)>' } };
+	const code = 'j' + Buffer.from(JSON.stringify(bad)).toString('base64url');
+	const p3 = await ctx2.newPage();
+	await p3.goto(URL + '#e=' + code);
+	await p3.waitForTimeout(800);
+	ok(await p3.locator('#landing').isVisible(), 'Manipulierter Link wird abgelehnt (Startseite bleibt)');
+	await ctx2.close();
+});
+
+await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {
+	await page.tap('#demoBtn');
+	await page.waitForTimeout(900);
+	const z0 = await page.evaluate(() => document.querySelector('#kartenAnsicht').getAttribute('transform'));
+	const b = await page.locator('#poster').boundingBox();
+	const cdp = await page.context().newCDPSession(page);
+	const cx = b.x + b.width / 2,
+		cy = b.y + b.height * 0.4;
+	const tp = (d) => [
+		{ x: cx - d, y: cy, id: 1 },
+		{ x: cx + d, y: cy, id: 2 }
+	];
+	await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: tp(30) });
+	for (let d = 35; d <= 110; d += 5) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: tp(d) });
+	await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+	await page.waitForTimeout(500);
+	const sc = (t) => parseFloat((t.match(/scale\(([\d.]+)\)/) || [])[1] || '0');
+	const z1 = await page.evaluate(() => document.querySelector('#kartenAnsicht').getAttribute('transform'));
+	ok(sc(z1) > sc(z0) * 2.5, `Zwei-Finger-Zoom vergrößert die Karte (${sc(z0).toFixed(2)} → ${sc(z1).toFixed(2)})`);
+	await page.screenshot({ path: `${OUT}/14-pinch-iphone.png` });
+});
+
 if (ONLINE)
-	await run('Desktop – echte Suche „Siegritz“ mit Vektorkacheln', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }, async (page) => {
-		await page.fill('#lq', 'Siegritz');
+	await run('Desktop – echte Suche „Bamberg“ direkt ins Poster', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }, async (page) => {
+		await page.fill('#lq', 'Bamberg');
 		await page.click('#lgo');
 		await page.waitForSelector('#lresults button', { timeout: 20000 });
 		await page.click('#lresults button');
-		await page.waitForTimeout(3500);
-		await page.screenshot({ path: `${OUT}/6-ortswahl.png` });
-		ok(await page.locator('#picker').isVisible(), 'Ortswahl-Fenster mit Karte offen');
+		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });
+		await page.waitForTimeout(1500);
+		ok(await page.locator('#picker').isHidden(), 'Kein Umweg über das Kartenfenster');
+		const n = parseInt((await page.textContent('#placeInfo')).match(/(\d+) Kartenelemente/)?.[1] || '0');
+		ok(n > 100 && (await page.$$eval('#karte path', (p) => p.length)) > 5, `Poster direkt aus der Suche (${n} Kartenelemente)`);
+		ok((await page.textContent('#poster')).includes('BAMBERG'), 'Titel automatisch „BAMBERG“');
+		ok(((await page.textContent('#untertitel').catch(() => '')) || '').length > 2, 'Untertitel automatisch: „' + (await page.textContent('#untertitel').catch(() => '')) + '“');
+		await page.screenshot({ path: `${OUT}/7-direkt-bamberg.png` });
+		// Kartenfenster weiterhin erreichbar
+		await page.click('#wzSteps button[data-step="ausschnitt"]');
+		await page.click('#wzPick');
+		await page.waitForSelector('#picker:not(.hidden)');
+		await page.waitForTimeout(3000);
+		ok(await page.locator('#map canvas').isVisible(), 'Landkarte zum Feinwählen lädt bei Bedarf');
 		await page.click('#gen');
 		await page.waitForSelector('#picker.hidden', { state: 'attached', timeout: 60000 });
-		await page.waitForTimeout(1200);
-		// Vektorkacheln fassen viele Häuser zu einem Pfad zusammen – daher die angezeigte Elementzahl prüfen
-		const n = parseInt((await page.textContent('#placeInfo')).match(/(\d+) Kartenelemente/)?.[1] || '0');
-		ok(n > 100 && (await page.$$eval('#karte path', (p) => p.length)) > 5, `Poster aus Vektorkacheln gezeichnet (${n} Kartenelemente)`);
-		await page.screenshot({ path: `${OUT}/7-editor-kacheln.png` });
-		// Standard-Stil (MapLibre rendert ein Bild)
+		await page.waitForTimeout(800);
+		// Standard-Stil (MapLibre rendert ein Bild), beim Hineinzoomen scharf nachzeichnen
 		await page.click('#wzSteps button[data-step="stil"]');
 		await page.waitForTimeout(400);
 		await page.click('#wzMode button[data-m="std"]');
 		await page.waitForSelector('#poster image', { timeout: 60000 }).catch(() => {});
 		ok((await page.$('#poster image')) !== null, 'Standard-Stil „Klassisch“ gerendert');
-		await page.waitForTimeout(500);
-		await page.screenshot({ path: `${OUT}/8-standardstil.png` });
+		await page.click('#wzSteps button[data-step="ausschnitt"]');
+		for (let i = 0; i < 6; i++) await page.click('#wzZIn');
+		await page.waitForFunction(() => document.querySelectorAll('#poster #kartenInhalt image').length >= 2, null, { timeout: 60000 }).catch(() => {});
+		ok((await page.$$('#poster #kartenInhalt image')).length >= 2, 'Beim Hineinzoomen wird ein scharfes Detailbild nachgezeichnet');
+		await page.screenshot({ path: `${OUT}/8-standardstil-zoom.png` });
 	});
 
 await browser.close();

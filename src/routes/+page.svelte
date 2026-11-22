@@ -1,7 +1,6 @@
 <script lang="ts">
 	// Kartenstudio – Editor-Seite.
 	// Das HTML-Gerüst stammt aus dem Prototyp; die Logik liegt in #lib/editor, #lib/karte, #lib/themen, #lib/export.
-	import 'maplibre-gl/dist/maplibre-gl.css';
 	import '#lib/editor/editor.css';
 	import { onMount } from 'svelte';
 
@@ -28,7 +27,7 @@
 <div class="pop hidden" id="dlPop">
 <h4>Design herunterladen</h4>
 <div class="lab" style="margin-top:0">Format</div>
-<div class="seg" id="dlFmt"><button data-f="png" class="on">PNG transparent</button><button data-f="svg">SVG Vektor</button></div>
+<div class="seg" id="dlFmt"><button data-f="png" class="on">PNG</button><button data-f="svg">SVG</button><button data-f="pdf">PDF Druck</button></div>
 <div id="dlSizeRow"><div class="lab">Breite</div>
 <select class="inp" id="pngW" style="width:100%"><option value="2400">2400 px · Web & kleine Drucke</option><option value="3600" selected>3600 px · 30 cm bei 300 dpi</option><option value="4800">4800 px · 40 cm bei 300 dpi</option></select></div>
 <button class="btn accent" id="dlGo" style="width:100%;margin-top:14px;justify-content:center">Datei erstellen</button>
@@ -58,20 +57,24 @@
 </section>
 <section class="wz-pane" data-step="ausschnitt">
 <h3>Ausschnitt</h3>
-<p class="wz-hint"><b>Karte im Poster ziehen</b>, um sie zu verschieben. Zoomen mit <b>+ / −</b> – am PC auch mit dem Mausrad.</p>
-<div class="lab">Format</div>
-<div class="wz-chips" id="wzFmt"><button data-a="0.8805">8 : 7</button><button data-a="1">1 : 1</button><button data-a="1.25">4 : 5</button><button data-a="1.3333">3 : 4</button><button data-a="0.6667">3 : 2</button></div>
+<p class="wz-hint"><b>Karte im Poster ziehen</b>, um sie zu verschieben. Zoomen mit <b>zwei Fingern</b>, <b>+ / −</b> oder am PC mit dem Mausrad.</p>
+<div class="lab">Druckgröße</div>
+<div class="wz-chips wz-sizes" data-sizes></div>
+<label class="tog wz-tog wz-quer"><input type="checkbox" data-quer><span>Querformat</span></label>
+<div class="wz-free" id="wzFree"><div class="lab">Seitenverhältnis der Karte</div>
+<div class="wz-chips" id="wzFmt"><button data-a="0.8805">8 : 7</button><button data-a="1">1 : 1</button><button data-a="1.25">4 : 5</button><button data-a="1.3333">3 : 4</button><button data-a="0.6667">3 : 2</button></div></div>
 <div class="lab">Zoom</div>
 <div class="wz-zoom"><button class="btn" id="wzZOut" aria-label="Herauszoomen">−</button><button class="btn" id="wzZIn" aria-label="Hineinzoomen">+</button><button class="btn ghost" id="wzReset">Zurücksetzen</button></div>
+<button type="button" class="wz-link" id="wzPick">Ausschnitt auf der Landkarte neu wählen ›</button>
 </section>
 <section class="wz-pane" data-step="stil">
-<h3>Stil</h3>
+<div class="wz-head"><h3>Stil</h3><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>
 <div class="tabs2 wz-mode" id="wzMode"><button data-m="art">Gezeichnet</button><button data-m="std">Landkarte</button></div>
 <div class="wz-cards" id="wzStyles"></div>
 <div class="wz-cards wz-bases hidden" id="wzBases"></div>
 </section>
 <section class="wz-pane" data-step="design">
-<h3>Design</h3>
+<div class="wz-head"><h3>Design</h3><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>
 <p class="wz-hint">Wie Rahmen, Karte und Text angeordnet sind. Die Farben kommen vom Stil.</p>
 <div class="wz-cards wz-designs" id="wzDesigns"></div>
 </section>
@@ -79,26 +82,40 @@
 <h3>Text</h3>
 <label class="wz-field"><span>Titel</span><input id="wzTitle" class="inp" type="text" autocomplete="off"></label>
 <label class="wz-field"><span>Untertitel</span><input id="wzSub" class="inp" type="text" autocomplete="off"></label>
+<label class="wz-field"><span>Datum oder Widmung <i>optional</i></span><input id="wzNote" class="inp" type="text" autocomplete="off" placeholder="z. B. 12.06.2021 · Hier hat alles begonnen"></label>
 <label class="tog wz-tog"><input type="checkbox" id="wzCoords"><span>Koordinaten anzeigen</span></label>
+<div class="lab">Orte markieren</div>
+<div class="wz-pinadd" id="wzPinAdd"></div>
+<div class="wz-pins" id="wzPins"></div>
+<div class="mk-sw wz-pincol" id="wzPinCol"></div>
 </section>
 <section class="wz-pane" data-step="produkt">
 <h3>Produkt &amp; Vorschau</h3>
 <p class="wz-hint">So sieht dein Motiv als fertiges Produkt aus.</p>
 <div class="wz-prod" id="wzProd"></div>
+<div class="mk-opt" data-for="poster gerahmt leinwand"><div class="lab">Größe</div><div class="wz-chips wz-sizes" data-sizes></div>
+<label class="tog wz-tog wz-quer"><input type="checkbox" data-quer><span>Querformat</span></label></div>
+<div class="mk-opt" data-for="poster gerahmt leinwand"><div class="lab">Raum</div><div class="mk-sw mk-rooms" id="mkRoomSw"></div></div>
 <div class="mk-opt" data-for="gerahmt"><div class="lab">Rahmen</div><div class="mk-sw" id="mkFrameSw"></div>
 <label class="tog wz-tog"><input type="checkbox" id="mkMat"><span>Passepartout (heller Rand)</span></label></div>
-<div class="mk-opt" data-for="shirt"><div class="lab">Shirtfarbe</div><div class="mk-sw" id="mkShirtSw"></div></div>
+<div class="mk-opt" data-for="shirt"><div class="lab">Shirtfarbe</div><div class="mk-sw" id="mkShirtSw"></div>
+<label class="tog wz-tog"><input type="checkbox" id="mkModel"><span>Am Model zeigen</span></label></div>
 <div class="mk-opt" data-for="poster gerahmt leinwand"><div class="lab">Wandfarbe</div><div class="mk-sw" id="mkWallSw"></div></div>
 <p class="wz-hint mk-note">Bestellen kommt in einem der nächsten Schritte. Die Druckdatei kannst du im nächsten Schritt schon herunterladen.</p>
 </section>
 <section class="wz-pane" data-step="fertig">
 <h3>Fertig – herunterladen</h3>
-<p class="wz-hint">Die Datei hat einen transparenten Hintergrund und eignet sich für Druck und T-Shirts.</p>
+<div class="qa" id="wzQa"></div>
 <div class="wz-dl">
+<button data-f="pdf"><b>PDF für die Druckerei</b><span id="wzPdfInfo">Endformat + 3 mm Beschnitt</span></button>
 <button data-f="png" data-w="3600"><b>PNG für den Druck</b><span>3600 px · ca. 30 cm bei 300 dpi</span></button>
 <button data-f="png" data-w="4800"><b>PNG groß</b><span>4800 px · ca. 40 cm bei 300 dpi</span></button>
 <button data-f="svg"><b>SVG (Vektor)</b><span>beliebig skalierbar · für Druckereien</span></button>
 </div>
+<p class="wz-hint">PNG und SVG haben einen transparenten Hintergrund – ideal für T-Shirts.</p>
+<div class="lab">Teilen</div>
+<button type="button" class="btn wz-share" id="wzShare"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4L12 5.6"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/></svg>Link zum Entwurf kopieren</button>
+<p class="wz-hint">Dein Entwurf wird automatisch in diesem Browser gemerkt. Mit dem Link kannst du ihn auf einem anderen Gerät öffnen oder jemandem zeigen.</p>
 </section>
 </div>
 <div class="wz-foot">
@@ -220,12 +237,13 @@
 <div class="hero">
 <span class="eyebrow">Karten als Poster- & Shirt-Motiv</span>
 <h2>Welchen Ort willst du verewigen?</h2>
-<p>Ort suchen, Ausschnitt wählen, gestalten – und als Druckdatei herunterladen.</p>
+<p>Ort eintippen – dein Poster steht sofort. Dann nach Lust gestalten und herunterladen.</p>
 <div class="search"><input id="lq" placeholder="Dorf, Stadt oder Adresse, z. B. Siegritz" autocomplete="off"><button class="btn primary" id="lgo">Suchen</button><div class="results hidden" id="lresults"></div></div>
+<button class="demo resume hidden" id="resumeBtn"><span class="dpin">↺</span><span><b>Weiter mit deinem Entwurf</b><small></small></span></button>
 <button class="demo" id="demoBtn"><span class="dpin">▶</span><span><b>Beispiel öffnen: Siegritz</b><small>Sofort ausprobieren – funktioniert auch ohne Internet</small></span></button>
 <div class="orsep">oder Beispiel-Ort suchen</div>
 <div class="examples" style="margin-top:8px"><button class="chip" data-q="Siegritz Heiligenstadt">Siegritz</button><button class="chip" data-q="Bamberg">Bamberg</button><button class="chip" data-q="Rothenburg ob der Tauber">Rothenburg</button><button class="chip" data-q="Nördlingen">Nördlingen</button></div>
-<div class="steps"><span><b>1</b> Ort suchen</span><span><b>2</b> Ausschnitt wählen</span><span><b>3</b> Gestalten</span><span><b>4</b> Herunterladen</span></div>
+<div class="steps"><span><b>1</b> Ort suchen</span><span><b>2</b> Gestalten</span><span><b>3</b> Vorschau</span><span><b>4</b> Herunterladen</span></div>
 </div>
 </div>
 </section>

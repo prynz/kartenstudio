@@ -13,6 +13,7 @@ import { initExportExport } from '../export/export.js';
 import { initEditorBeispiel } from './beispiel.js';
 import { initSheet } from './sheet.js';
 import { initWizard } from './assistent.js';
+import { initRestore } from './wiederherstellen.js';
 
 let started = false;
 export function start() {
@@ -30,4 +31,5 @@ export function start() {
   initEditorBeispiel();
   initSheet();
   initWizard();
+  initRestore();
 }

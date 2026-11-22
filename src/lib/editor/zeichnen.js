@@ -4,7 +4,9 @@
 import { app } from './app.js';
 import { $, CAP, CLS, CLS1, FONTDATA, MW, NS, ORDER, esc } from './basis.js';
 import { BASES } from '../themen/standard.js';
-import { RASTER, rasterKey } from '../karte/raster.js';
+import { RASTER, rasterKey, detailRaster, scheduleDetail } from '../karte/raster.js';
+import { fitPrint } from './druck.js';
+import { clampView } from './zustand.js';
 import { eff, vT, visRect } from './zustand.js';
 import { dms, panel, viewCenterLL } from './seitenleiste.js';
 import { LAY_DEFAULT } from '../themen/designs.js';
@@ -29,9 +31,13 @@ export function geo() {
     capS = u.on && u.text ? u.size * CAP[u.font] : 0;
   const cSize = Math.round(Math.max(16, (u.size || 34) * 0.62));
   const capC = L.coords && app.DATA ? cSize * CAP.SgMD : 0;
+  const nt = S.note && S.note.on !== false && S.note.text ? S.note.text : '';
+  const nSize = Math.round(Math.max(18, (u.size || 34) * 0.72));
+  const capN = nt ? nSize * CAP.SgMD : 0;
   const gap = capT && capS ? S.bar.gap : 0,
-    gapC = capC && (capT || capS) ? Math.round(S.bar.gap * 0.8) : 0;
-  const block = capT + gap + capS + gapC + capC;
+    gapC = capC && (capT || capS) ? Math.round(S.bar.gap * 0.8) : 0,
+    gapN = capN && (capT || capS || capC) ? Math.max(14, Math.round(S.bar.gap * 0.8)) : 0;
+  const block = capT + gap + capS + gapC + capC + gapN + capN;
   let my,
     H,
     barTop,
@@ -72,11 +78,13 @@ export function geo() {
   let y = top,
     yT = top,
     yS = top,
-    yC = top;
+    yC = top,
+    yN = top;
   if (capT) yT = y += capT;
   if (capS) yS = y += (capT ? gap : 0) + capS;
   if (capC) yC = y += gapC + capC;
-  return { W, H, sw, p, mx, my, MH, barTop, barH, yT, yS, yC, top, block, cSize, L };
+  if (capN) yN = y += gapN + capN;
+  return { W, H, sw, p, mx, my, MH, barTop, barH, yT, yS, yC, yN, nSize, note: nt, top, block, cSize, L };
 }
 /** Koordinaten der Kartenmitte als Textzeile. */
 export function coordText() {
@@ -123,6 +131,12 @@ function mapContent(forExport, vr) {
     const E = app.DATA.ext,
       R0 = RASTER.get(rasterKey());
     o += R0 ? `<image href="${R0.url}" x="${E.x0.toFixed(2)}" y="${E.y0.toFixed(2)}" width="${(E.x1 - E.x0).toFixed(2)}" height="${(E.y1 - E.y0).toFixed(2)}" preserveAspectRatio="none"/>` : `<rect x="${E.x0}" y="${E.y0}" width="${E.x1 - E.x0}" height="${E.y1 - E.y0}" fill="#e9e7e2"/>`;
+    // Schärferes Detailbild für den sichtbaren Bereich (nach dem Hineinzoomen)
+    const D = R0 && detailRaster();
+    if (D) {
+      const r = D.rect;
+      o += `<image href="${D.url}" x="${r[0].toFixed(2)}" y="${r[1].toFixed(2)}" width="${(r[2] - r[0]).toFixed(2)}" height="${(r[3] - r[1]).toFixed(2)}" preserveAspectRatio="none"/>`;
+    }
   } else {
   const pop = app.S.pop && app.S.pop.pal;
   if (pop) o += `<defs>${popDefs()}</defs>` + popSymbols(app.DATA, app.S, vr, pop);
@@ -159,7 +173,7 @@ function mapContent(forExport, vr) {
 const MC = { key: '', node: null, hits: null, rect: null, z: 0 };
 function mapKey() {
   const S = app.S;
-  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.mode === 'std' ? !!RASTER.get(rasterKey()) : 0]);
+  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0]);
 }
 /** Sichtbarer Bereich plus großzügiger Rand, damit Verschieben ohne Neuzeichnen geht */
 function cullRect() {
@@ -216,12 +230,41 @@ export function renderView() {
   const t = vT(g);
   // Linienstärken sind für den alten Zoom berechnet – bis zum Neuzeichnen proportional mitskalieren
   inner.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
+  const pa = app.poster.querySelector('#pinsAnsicht');
+  if (pa) pa.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
   if (MC.hits) MC.hits.setAttribute('transform', t);
   drawSel();
   syncTools();
   clearTimeout(fullTimer);
   fullTimer = window.setTimeout(render, 140);
 }
+/* ---------- Markierungen (Pins) ---------- */
+/** Formen, jeweils um (0,0) gezeichnet; Pin/Tropfen mit Spitze bei (0,0) */
+export const PIN_SHAPES = {
+  herz: { name: 'Herz', d: 'M0 15C-9 8-17 1-17-8C-17-14-12-18-7-18C-3-18-1-16 0-13C1-16 3-18 7-18C12-18 17-14 17-8C17 1 9 8 0 15Z' },
+  pin: { name: 'Pin', d: 'M0 0C-3-7-14-15-14-25A14 14 0 1 1 14-25C14-15 3-7 0 0ZM0-30A5 5 0 1 0 0-20A5 5 0 1 0 0-30Z' },
+  stern: { name: 'Stern', d: 'M0-18L5-6L18-6L8 2L12 15L0 7L-12 15L-8 2L-18-6L-5-6Z' },
+  punkt: { name: 'Punkt', d: 'M0-11A11 11 0 1 1 0 11A11 11 0 1 1 0-11Z' }
+};
+/** Pins als SVG – in eigener Ebene über der Karte, Größe unabhängig vom Zoom */
+function pinsSVG(g, forExport) {
+  const pins = app.S.pins || [];
+  if (!pins.length) return '';
+  const v = app.S.view,
+    k = 1 / v.z,
+    sz = (app.S.pinSize || 1) * 1.25;
+  const col = app.S.pinColor || '#d64545';
+  let o = `<g id="pins" clip-path="url(#cIn)"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><g id="pinsAnsicht" transform="${vT(g).replace(/^translate\([^)]*\) /, '')}">`;
+  pins.forEach((p, i) => {
+    const S = PIN_SHAPES[p.i] || PIN_SHAPES.herz;
+    const s = (k * sz).toFixed(4);
+    o += `<g transform="translate(${(+p.x).toFixed(2)},${(+p.y).toFixed(2)}) scale(${s})"${forExport ? '' : ` data-pin="${i}" style="cursor:grab"`}>`;
+    if (!forExport) o += `<circle r="26" cy="${p.i === 'pin' ? -20 : 0}" fill="transparent"/>`;
+    o += `<path d="${S.d}" fill="${col}" fill-rule="evenodd" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" paint-order="stroke"/></g>`;
+  });
+  return o + '</g></g></g></g>';
+}
+
 export function buildSVG(forExport) {
   const g = geo(),
     f = app.S.frame,
@@ -232,7 +275,7 @@ export function buildSVG(forExport) {
   [app.S.title, app.S.sub].forEach(t => {
     if (t.on && t.text) fonts.add(t.font);
   });
-  if (app.S.attr.on || g.L.coords) fonts.add('SgMD');
+  if (app.S.attr.on || g.L.coords || g.note) fonts.add('SgMD');
   o += '<defs>';
   if (forExport && fonts.size) {
     o += '<style>';
@@ -252,6 +295,7 @@ export function buildSVG(forExport) {
   o += forExport ? mapContent(true, visRect()) : '<g id="kartenInhalt"/>';
   o += '</g></g></g></g>';
   const ink = app.S.title.color;
+  o += pinsSVG(g, forExport);
   if (g.L.inner > 0) o += mapShape(g, g.L.innerGap + g.L.inner / 2, ` id="innenlinie" transform="translate(${g.mx},${g.my})" fill="none" stroke="${f.w > 0 ? f.color : ink}" stroke-width="${g.L.inner}"`);
   if (g.L.kind === 'over' && g.L.fade && g.block > 0) {
     const paper = app.S.bg !== 'none' ? app.S.bg : '#ffffff',
@@ -272,6 +316,7 @@ export function buildSVG(forExport) {
     o += `<line id="zierlinie" x1="${(g.W / 2 - 70).toFixed(1)}" x2="${(g.W / 2 + 70).toFixed(1)}" y1="${yr.toFixed(1)}" y2="${yr.toFixed(1)}" stroke="${app.S.title.color}" stroke-width="2.5" stroke-linecap="round"/>`;
   }
   if (g.L.coords && app.DATA) o += `<text id="koordinaten" x="${(g.W / 2 + 1.5).toFixed(2)}" y="${g.yC.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.cSize}" letter-spacing="3" fill="${app.S.sub.color}" fill-opacity="0.85">${esc(coordText())}</text>`;
+  if (g.note) o += `<text id="widmung" x="${(g.W / 2 + 1).toFixed(2)}" y="${g.yN.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.nSize}" letter-spacing="2" fill="${app.S.sub.color}">${esc(g.note)}</text>`;
   if (app.S.attr.on) {
     const inBar = g.L.kind === 'bar' && app.S.bar.on && g.barH > 0;
     const onPaper = !inBar && g.L.kind !== 'top' && g.L.kind !== 'bartop';
@@ -286,6 +331,12 @@ export function buildSVG(forExport) {
 export function render() {
   if (!app.DATA) return;
   clearTimeout(fullTimer);
+  if (app.S.print) {
+    // Druckformat: Kartenhöhe so anpassen, dass das Poster genau aufs Papier passt
+    const a0 = app.S.view.a;
+    fitPrint(app.S);
+    if (app.S.view.a !== a0) clampView(app.S.view);
+  }
   const svg = buildSVG(false);
   const tmp = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;
   app.poster.setAttribute('viewBox', tmp.getAttribute('viewBox'));
@@ -357,6 +408,7 @@ export function render() {
   syncWizard();
   zoom();
   syncTools();
+  if (app.S.mode === 'std') scheduleDetail();
 }
 export const FMAP = new Map();
 export function frags(id) {

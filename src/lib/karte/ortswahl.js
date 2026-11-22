@@ -1,14 +1,17 @@
 // @ts-nocheck – aus dem Prototyp übernommen; Typen folgen bei der Überarbeitung.
 // Ortswahl-Fenster mit MapLibre-Karte und Formatrahmen
 // Aus dem Prototyp übernommen (prototyp/src/script.js).
-import maplibregl from 'maplibre-gl';
 import { app } from '../editor/app.js';
 import { $ } from '../editor/basis.js';
 import { setGen } from '../editor/laden.js';
 
-export function initMap() {
+/** MapLibre (groß) erst laden, wenn das Kartenfenster wirklich gebraucht wird */
+export function loadMaplibre() {
+  return Promise.all([import('maplibre-gl'), import('maplibre-gl/dist/maplibre-gl.css')]).then(([m]) => m.default || m);
+}
+export async function initMap() {
   try {
-    if (!maplibregl) throw new Error('maplibre');
+    const maplibregl = await loadMaplibre();
     app.map = new maplibregl.Map({
       container: 'map',
       style: 'https://tiles.openfreemap.org/styles/positron',
@@ -56,17 +59,14 @@ export function fitTo(b) {
 export function openPicker(focusSearch) {
   $('picker').classList.remove('hidden');
   setGen('');
-  if (!app.mapInit) {
-    app.mapInit = true;
-    initMap();
-  }
-  setTimeout(() => {
+  const ready = app.mapInit ? Promise.resolve() : (app.mapInit = true, initMap());
+  ready.then(() => setTimeout(() => {
     if (app.map) app.map.resize();
     placeFrame();
     if (app.lastB) fitTo(app.lastB);
     sizeInfo();
     if (focusSearch) $('q').focus();
-  }, 40);
+  }, 40));
 }
 export function closePicker() {
   $('picker').classList.add('hidden');

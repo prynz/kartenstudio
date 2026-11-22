@@ -14,6 +14,8 @@ import { defView, newState, updUndo } from './zustand.js';
 import { expand, fetchOSM } from '../karte/overpass.js';
 import { fetchTiles } from '../karte/kacheln.js';
 import { panel } from './seitenleiste.js';
+import { msg } from './ansicht.js';
+import { saveDraftSoon } from './entwurf.js';
 
 export const LOADMSG = ['Wir rollen die Landkarte aus …', 'Häuser werden gezählt – bitte nicht wackeln …', 'Der Kartograf spitzt seinen Bleistift …', 'Straßen werden glatt gebügelt …', 'Kurze Kaffeepause für die Maschine – mit Milch, ohne Zucker.', 'Feldwege werden nachgemessen …', 'Noch ein Schluck Kaffee … und weiter geht’s.', 'Die Dächer werden einzeln aufgesetzt …', 'Fast geschafft – wir polieren noch die Ecken …'];
 export const LOADSUB = ['Daten kommen frisch aus OpenStreetMap', 'Wir laden etwas mehr Umgebung mit – zum Feinjustieren', 'Die öffentlichen Kartenserver haben gerade viel zu tun – wir bleiben dran', 'Dauert heute etwas länger – der Kaffee ist schon nachgefüllt'];
@@ -74,32 +76,47 @@ export async function generate() {
     setGen('Die Vorschaukarte ist nicht geladen.', 'err');
     return false;
   }
-  const b = frameBounds();
+  const c = app.map.getCenter();
+  return loadBounds(frameBounds(), { center: [c.lng, c.lat] });
+}
+
+/** Fehlermeldung dort zeigen, wo der Nutzer gerade ist (Kartenfenster oder Editor). */
+function loadErr(t) {
+  if (!$('picker').classList.contains('hidden')) setGen(t, 'err');
+  else msg(t, 'err');
+}
+
+/**
+ * Kartendaten für einen Bereich laden und in den Editor übernehmen.
+ * Wird vom Kartenfenster („Ausschnitt übernehmen“) und direkt aus der Suche genutzt.
+ * @param {{w:number,e:number,n:number,s:number}} b sichtbarer Ausschnitt
+ * @param {{center?:number[], keepLoader?:boolean}} [opt]
+ */
+export async function loadBounds(b, opt = {}) {
+  if (app.genBusy) return false;
   const m = meters(b);
-  if (m.w > 6000) {
-    setGen('Der Ausschnitt ist zu groß (über 6 km breit). Bitte näher heranzoomen.', 'err');
+  if (!(m.w > 50) || m.w > 6000) {
+    loadErr('Der Ausschnitt ist zu groß (über 6 km breit). Bitte näher heranzoomen.');
     return false;
   }
+  // Ladeanzeige dort einblenden, wo man gerade ist
+  const L = $('loader');
+  const host = $('picker').classList.contains('hidden') ? document.querySelector('.stage') : $('mapwrap');
+  if (L.parentElement !== host) host.appendChild(L);
   app.genBusy = true;
   $('gen').disabled = true;
   setGen('');
   let ldTimer = setTimeout(startLoader, 350);
-  const cached = false;
   try {
     let data = null;
-    const c0 = app.map.getCenter();
-    const pl0 = window._place || {
-      name: '',
-      region: ''
-    };
+    const pl0 = window._place || { name: '', region: '' };
     const place0 = {
       name: pl0.name || 'Mein Ort',
       region: pl0.region || '',
-      center: [c0.lng, c0.lat]
+      center: opt.center || [(b.w + b.e) / 2, (b.n + b.s) / 2]
     };
     try {
-      const mw = meters(b).w;
-      const big = expand(b, mw < 1500 ? 0.5 : mw < 3000 ? 0.35 : 0.2);
+      const big = expand(b, m.w < 1500 ? 0.5 : m.w < 3000 ? 0.35 : 0.2);
       const tiles = await fetchTiles(big);
       data = buildDataTiles(tiles, b, big, place0);
       if (!data.feats.length) data = null;
@@ -108,29 +125,20 @@ export async function generate() {
       data = null;
     }
     if (!data) {
-      if (!$('loader').style.display || $('loader').style.display === 'none') {
+      if (!L.style.display || L.style.display === 'none') {
         clearTimeout(ldTimer);
         startLoader();
       }
       const res = await fetchOSM(b);
-      const c = app.map.getCenter();
-      const pl = window._place || {
-        name: '',
-        region: ''
-      };
-      const place = {
-        name: pl.name || 'Mein Ort',
-        region: pl.region || '',
-        center: [c.lng, c.lat]
-      };
-      data = buildData(res.osm, b, res.bb, place);
+      data = buildData(res.osm, b, res.bb, place0);
     }
     clearTimeout(ldTimer);
     if (!data.feats.length) throw new Error('In diesem Ausschnitt wurden keine Kartenelemente gefunden');
-    const wasShown = $('loader').style.display === 'block';
+    const wasShown = L.style.display === 'block';
     stopLoader(true);
     if (wasShown) await new Promise(r => setTimeout(r, 350));
     app.lastB = b;
+    app.isDemo = false;
     closePicker();
     loadData(data);
     setGen('');
@@ -140,7 +148,7 @@ export async function generate() {
   } catch (e) {
     clearTimeout(ldTimer);
     stopLoader(false);
-    setGen('Das hat leider nicht geklappt: ' + (e && e.message || 'Fehler') + '. Die Kartenserver sind gerade überlastet – bitte gleich noch einmal auf „Ausschnitt übernehmen“ klicken.', 'err');
+    loadErr('Das hat leider nicht geklappt: ' + (e && e.message || 'Fehler') + '. Die Kartenserver sind gerade überlastet – bitte gleich noch einmal versuchen.');
   }
   app.genBusy = false;
   $('gen').disabled = false;
@@ -195,6 +203,7 @@ export function loadData(data) {
   render();
   renderThumbs();
   wizardAfterLoad();
+  saveDraftSoon();
 }
 export function renderThumbs() {
   if (!app.DATA) return;
