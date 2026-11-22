@@ -123,7 +123,7 @@ export function sizeInfo() {
   if (!app.map) return;
   try {
     const m = meters(frameBounds());
-    $('sizeinfo').textContent = `Rahmen: ca. ${Math.round(m.w)} × ${Math.round(m.h)} m.` + (m.w > 3500 ? ' Sehr groß – die Karte wird sehr dicht.' : '');
+    $('sizeinfo').textContent = `Rahmen: ca. ${Math.round(m.w)} × ${Math.round(m.h)} m.` + (m.w > 6000 ? ' Große Gegend – es werden vor allem Straßen und Wasser gezeigt (ideal für Inseln und Seen).' : m.w > 3500 ? ' Sehr groß – die Karte wird sehr dicht.' : '');
   } catch (e) {}
 }
 

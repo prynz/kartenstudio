@@ -28,6 +28,10 @@ import { preis, lieferung } from '../shop/preise.js';
 import { initGift } from '../shop/geschenk.js';
 import { SKY_THEMES, defaultSky, loadSky, skyLabel } from '../themen/himmel.js';
 import { STORY_BEISPIEL } from '../themen/koordinaten.js';
+import { WOLKE_FORMEN, wolkeBeispiel } from '../themen/wolke.js';
+import { loadBounds } from './laden.js';
+import { visRect } from './zustand.js';
+import { mercInv } from '../karte/raster.js';
 import { viewCenterLL } from './seitenleiste.js';
 import { esc } from './basis.js';
 import { saveDraftSoon } from './entwurf.js';
@@ -190,8 +194,17 @@ export function syncWizard() {
 	if (!S) return;
 	const sky = S.motif === 'sterne';
 	const koord = S.motif === 'koord';
-	const std = S.mode === 'std' && !sky && !koord;
-	all('#wzMode button').forEach((b) => b.classList.toggle('on', sky ? b.dataset.m === 'sterne' : koord ? b.dataset.m === 'koord' : b.dataset.m === S.mode));
+	const wolke = S.motif === 'wolke';
+	const std = S.mode === 'std' && !sky && !koord && !wolke;
+	const motiv = sky ? 'sterne' : koord ? 'koord' : wolke ? 'wolke' : S.mode;
+	all('#wzMode button').forEach((b) => b.classList.toggle('on', b.dataset.m === motiv));
+	$('wzWolke').classList.toggle('hidden', !wolke);
+	if (wolke && S.wolke) {
+		const ta = /** @type {HTMLTextAreaElement} */ ($('wolkeText'));
+		if (document.activeElement !== ta) ta.value = S.wolke.text || '';
+		all('#wolkeForm button').forEach((b) => b.classList.toggle('on', b.dataset.f === S.wolke.form));
+		/** @type {HTMLInputElement} */ ($('wolkeSchrift')).checked = !!S.wolke.schrift;
+	}
 	// Beim Koordinaten-Poster bleiben die Farbthemen sichtbar (sie bestimmen Hintergrund und Schrift)
 	$('wzStyles').classList.toggle('hidden', std || sky);
 	$('wzKoord').classList.toggle('hidden', !koord);
@@ -202,7 +215,7 @@ export function syncWizard() {
 	}
 	$('wzBases').classList.toggle('hidden', !std);
 	$('wzSky').classList.toggle('hidden', !sky);
-	$('wzHoehe').classList.toggle('hidden', std || sky || koord);
+	$('wzHoehe').classList.toggle('hidden', std || sky || koord || wolke);
 	const ho = !!(S.hoehen && S.hoehen.on);
 	/** @type {HTMLInputElement} */ ($('hoehenOn')).checked = ho;
 	const C = app.DATA && app.DATA._contours;
@@ -271,7 +284,8 @@ export function wizardAfterLoad() {
 		if (!advOpen) goStep(ANLAESSE[k].note ? 'text' : 'stil', false);
 		return;
 	}
-	if (!advOpen) goStep('stil', false);
+	// Wer gerade am Ausschnitt arbeitet (z. B. „Größere Gegend laden“), bleibt dort
+	if (!advOpen) goStep(step === 'ausschnitt' ? 'ausschnitt' : 'stil', false);
 }
 
 /**
@@ -316,6 +330,43 @@ export function enableKoord() {
 	);
 	// Zeilenumbruch misst die Schrift – nach dem Laden der Schriften einmal neu zeichnen
 	document.fonts.load('40px SgXB').then(() => document.fonts.load('20px SgMD')).then(() => render());
+}
+
+/* ---------- Wortwolke ---------- */
+export function enableWolke() {
+	smooth(() =>
+		change(() => {
+			const S = app.S;
+			S.motif = 'wolke';
+			S.mode = 'art';
+			if (!S.wolke) S.wolke = { text: wolkeBeispiel((app.DATA && app.DATA.place) || 'Heimat', (app.DATA && app.DATA.region) || ''), form: 'herz', schrift: true };
+			const D = /** @type {any} */ (DESIGNS)[S.design || 'siegritz'];
+			if (!D || D.aspect || (D.lay && D.lay.kind === 'typo')) pickDesign(S, 'galerie');
+		})
+	);
+	Promise.all(['SgXB', 'SgMD', 'SgSC'].map((f) => document.fonts.load('30px ' + f))).then(() => render());
+}
+
+/** Ausschnitt um die aktuelle Mitte 2,5-mal größer neu laden (bis 40 km) */
+async function gegendVergroessern() {
+	if (!app.DATA) return;
+	const P = app.DATA.proj,
+		v = visRect();
+	const mx = P.x0 + (v[0] + v[2]) / 2 / P.sc,
+		my = P.y0 + (v[1] + v[3]) / 2 / P.sc;
+	const lat = mercInv(mx, my)[1];
+	let hw = ((v[2] - v[0]) / P.sc) * 1.25,
+		hh = ((v[3] - v[1]) / P.sc) * 1.25;
+	// Höchstens 40 km breit
+	const maxHalb = 20000 / (40075016.7 * Math.cos((lat * Math.PI) / 180));
+	if (hw > maxHalb) {
+		hh *= maxHalb / hw;
+		hw = maxHalb;
+	}
+	const [w, n] = mercInv(mx - hw, my - hh),
+		[e, s] = mercInv(mx + hw, my + hh);
+	msg('Größere Gegend wird geladen – bei großen Gebieten nur Straßen und Wasser', 'busy');
+	await loadBounds({ w, n, e, s }, { maxW: 40000 });
 }
 
 /* ---------- Sternenhimmel ---------- */
@@ -536,6 +587,7 @@ export function initWizard() {
 				const m = /** @type {string} */ (b.dataset.m);
 				if (m === 'sterne') return enableSky();
 				if (m === 'koord') return enableKoord();
+				if (m === 'wolke') return enableWolke();
 				smooth(() =>
 					change(() => {
 						app.S.motif = 'karte';
@@ -545,6 +597,27 @@ export function initWizard() {
 				if (app.S.mode === 'std') ensureRaster();
 			})
 	);
+
+	// Wortwolke
+	{
+		const ta = /** @type {HTMLTextAreaElement} */ ($('wolkeText'));
+		ta.addEventListener('input', () => {
+			begin();
+			app.S.wolke = { ...app.S.wolke, text: ta.value.slice(0, 800) };
+			render();
+		});
+		ta.addEventListener('change', () => commit());
+		Object.entries(WOLKE_FORMEN).forEach(([k, name]) => {
+			const b = document.createElement('button');
+			b.type = 'button';
+			b.dataset.f = k;
+			b.textContent = name;
+			b.onclick = () => smooth(() => change(() => (app.S.wolke = { ...app.S.wolke, form: k })));
+			$('wolkeForm').appendChild(b);
+		});
+		$('wolkeSchrift').addEventListener('change', (e) => change(() => (app.S.wolke = { ...app.S.wolke, schrift: /** @type {HTMLInputElement} */ (e.target).checked })));
+	}
+	$('wzWider').onclick = gegendVergroessern;
 
 	// Koordinaten-Poster
 	{

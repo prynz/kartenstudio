@@ -136,7 +136,7 @@ function pinchInfo() {
   return { d: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
 function startPinch() {
-  if ((app.S.motif === 'sterne' || app.S.motif === 'koord' || (app.S.multi && app.S.multi.on))) return;
+  if ((app.S.motif === 'sterne' || app.S.motif === 'koord' || app.S.motif === 'wolke' || (app.S.multi && app.S.multi.on))) return;
   const i = pinchInfo();
   if (app.drag && app.tool !== 'move') $('marq').style.display = 'none';
   app.drag = null;
@@ -213,7 +213,7 @@ export function initEditorBedienung() {
       app.cv.setPointerCapture(ev.pointerId);
     } catch (e) {}
     // Beim Sternenhimmel gibt es nichts zu verschieben (der Himmel hängt an Ort und Zeit)
-    if (app.tool === 'move' && (app.S.motif === 'sterne' || app.S.motif === 'koord' || (app.S.multi && app.S.multi.on))) {
+    if (app.tool === 'move' && (app.S.motif === 'sterne' || app.S.motif === 'koord' || app.S.motif === 'wolke' || (app.S.multi && app.S.multi.on))) {
       app.drag = null;
       return;
     }
@@ -265,7 +265,7 @@ export function initEditorBedienung() {
   app.cv.addEventListener('pointerup', up);
   app.cv.addEventListener('pointercancel', up);
   app.cv.addEventListener('wheel', ev => {
-    if (!app.DATA || app.tool !== 'move' && !ev.ctrlKey || (app.S.motif === 'sterne' || app.S.motif === 'koord' || (app.S.multi && app.S.multi.on))) return;
+    if (!app.DATA || app.tool !== 'move' && !ev.ctrlKey || (app.S.motif === 'sterne' || app.S.motif === 'koord' || app.S.motif === 'wolke' || (app.S.multi && app.S.multi.on))) return;
     ev.preventDefault();
     const p = svgToMap(toSvg(ev.clientX, ev.clientY));
     const v = app.S.view;

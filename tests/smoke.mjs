@@ -507,6 +507,35 @@ await run('Desktop – Marktcheck-Runde 1', { viewport: { width: 1440, height: 9
 	ok(res.ok() && (await page.textContent('body')).includes('Copernicus'), 'Lizenzseite mit Copernicus-Hinweis');
 });
 
+await run('Desktop – Wortwolke', { viewport: { width: 1440, height: 900 } }, async (page) => {
+	await page.click('#demoBtn');
+	await page.waitForTimeout(900);
+	await page.click('#wzMode button[data-m="wolke"]');
+	await page.waitForTimeout(1200);
+	const n = await page.$$eval('#wortwolke text', (t) => t.length);
+	ok(n > 60, `Wortwolke füllt die Herzform (${n} Wörter)`);
+	await page.screenshot({ path: `${OUT}/32-wolke-herz.png` });
+	await page.fill('#wolkeText', 'Emil*, 11.02.2025*, Mama, Papa, Oma, Opa, Liebe, Glück, Baby, Familie');
+	await page.click('#wolkeForm button[data-f="kreis"]');
+	await page.waitForTimeout(900);
+	const t = await page.textContent('#wortwolke');
+	ok(t.includes('Emil') && t.includes('11.02.2025'), 'Eigene Wörter in der Wolke (Kreis)');
+	await page.click('#wzStyles button[data-p="pastell"]');
+	await page.waitForTimeout(800);
+	await page.screenshot({ path: `${OUT}/33-wolke-kreis.png` });
+	// gleiche Wörter → gleiche Wolke (fest, nicht bei jedem Zeichnen neu gewürfelt)
+	const a1 = await page.innerHTML('#wortwolke');
+	await page.click('#wzSteps button[data-step="text"]');
+	await page.fill('#wzSub', 'Willkommen auf der Welt');
+	await page.waitForTimeout(500);
+	ok((await page.innerHTML('#wortwolke')) === a1, 'Wolke bleibt stabil beim Tippen');
+	await page.click('#wzSteps button[data-step="stil"]');
+	await page.click('#wzStyles button[data-p="insel"]');
+	await page.click('#wzMode button[data-m="art"]');
+	await page.waitForTimeout(600);
+	ok((await page.getAttribute('#kartenhintergrund', 'fill')) === '#2b5d8c', 'Thema „Insel-Silhouette“');
+});
+
 await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {
 	await page.tap('#demoBtn');
 	await page.waitForTimeout(900);
@@ -635,6 +664,22 @@ if (ONLINE)
 		await page.waitForFunction(() => document.querySelectorAll('#poster #kartenInhalt image').length >= 2, null, { timeout: 60000 }).catch(() => {});
 		ok((await page.$$('#poster #kartenInhalt image')).length >= 2, 'Beim Hineinzoomen wird ein scharfes Detailbild nachgezeichnet');
 		await page.screenshot({ path: `${OUT}/8-standardstil-zoom.png` });
+		// Größere Gegend laden (Inseln, Seen, Regionen)
+		await page.click('#wzSteps button[data-step="stil"]');
+		await page.click('#wzMode button[data-m="art"]');
+		await page.click('#wzStyles button[data-p="insel"]');
+		await page.click('#wzSteps button[data-step="ausschnitt"]');
+		const w0 = parseInt((await page.textContent('#placeInfo')).match(/(\d+) Kartenelemente/)?.[1] || '0');
+		await page.click('#wzWider');
+		await page.waitForTimeout(800);
+		await page.waitForFunction(() => document.getElementById('loader')?.style.display !== 'block', null, { timeout: 60000 }).catch(() => {});
+		await page.waitForTimeout(1500);
+		await page.click('#wzWider');
+		await page.waitForTimeout(800);
+		await page.waitForFunction(() => document.getElementById('loader')?.style.display !== 'block', null, { timeout: 60000 }).catch(() => {});
+		await page.waitForTimeout(2000);
+		ok((await page.$$('#karte path')).length > 5, 'Größere Gegend geladen (Insel-Silhouette)');
+		await page.screenshot({ path: `${OUT}/34-gegend-gross.png` });
 	});
 
 await browser.close();

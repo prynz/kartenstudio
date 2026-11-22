@@ -89,6 +89,7 @@ export function newState(presetKey, keep) {
     if (keep.occasion) st.occasion = keep.occasion;
     if (keep.sky) st.sky = { ...keep.sky };
     if (keep.koord) st.koord = { ...keep.koord };
+    if (keep.wolke) st.wolke = { ...keep.wolke };
     if (keep.motif) st.motif = keep.motif;
     if (keep.route) st.route = JSON.parse(JSON.stringify(keep.route));
     if (keep.hoehen) st.hoehen = { ...keep.hoehen };

@@ -84,10 +84,11 @@
 <div class="lab">Zoom</div>
 <div class="wz-zoom"><button class="btn" id="wzZOut" aria-label="Herauszoomen">−</button><button class="btn" id="wzZIn" aria-label="Hineinzoomen">+</button><button class="btn ghost" id="wzReset">Zurücksetzen</button></div>
 <button type="button" class="wz-link" id="wzPick">Ausschnitt auf der Landkarte neu wählen ›</button>
+<button type="button" class="wz-link" id="wzWider">Größere Gegend laden (Inseln, Seen, Regionen bis 40 km) ›</button>
 </section>
 <section class="wz-pane" data-step="stil">
 <div class="wz-head"><h3>Stil</h3><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>
-<div class="tabs2 wz-mode wz-mode3" id="wzMode"><button data-m="art">Gezeichnet</button><button data-m="std">Landkarte</button><button data-m="sterne">Sternenhimmel</button><button data-m="koord">Koordinaten</button></div>
+<div class="tabs2 wz-mode wz-mode3" id="wzMode"><button data-m="art">Gezeichnet</button><button data-m="std">Landkarte</button><button data-m="sterne">Sternenhimmel</button><button data-m="koord">Koordinaten</button><button data-m="wolke">Wortwolke</button></div>
 <div class="wz-cards" id="wzStyles"></div>
 <div class="wz-hoehe" id="wzHoehe"><label class="tog wz-tog"><input type="checkbox" id="hoehenOn"><span>Höhenlinien (Berge &amp; Täler)</span></label><p class="wz-hint" id="hoehenInfo"></p></div>
 <div class="wz-cards wz-bases hidden" id="wzBases"></div>
@@ -96,6 +97,13 @@
 <label class="wz-field"><span>Dein Text <i>optional</i></span><textarea id="koordText" class="inp" rows="5" maxlength="600" placeholder="Eine kleine Geschichte zu diesem Ort …"></textarea></label>
 <div class="lab">Ausrichtung</div>
 <div class="wz-chips" id="koordAlign"><button type="button" data-a="links">Linksbündig</button><button type="button" data-a="mitte">Zentriert</button></div>
+</div>
+<div class="wz-wolke hidden" id="wzWolke">
+<p class="wz-hint">Namen, Daten und Wörter füllen eine Form. Wichtige Wörter mit <b>*</b> markieren – sie werden groß.</p>
+<label class="wz-field"><span>Wörter (mit Komma getrennt)</span><textarea id="wolkeText" class="inp" rows="4" maxlength="800" placeholder="Emil*, 11.02.2025*, Mama, Papa, Liebe …"></textarea></label>
+<div class="lab">Form</div>
+<div class="wz-chips" id="wolkeForm"></div>
+<label class="tog wz-tog"><input type="checkbox" id="wolkeSchrift"><span>Schreibschrift untermischen</span></label>
 </div>
 <div class="wz-sky hidden" id="wzSky">
 <p class="wz-hint">So stand der Himmel über <b id="skyPlace">deinem Ort</b> – aus echten Sterndaten berechnet.</p>

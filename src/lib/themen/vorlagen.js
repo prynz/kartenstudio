@@ -465,5 +465,17 @@ Object.assign(PRESETS, {
   koralle: MONO('Koralle', 'Kräftiges Korallenrot mit hellen Straßen.', '#e2645a', '#ffe1dc', '#ea8880', '#d4554b'),
   petrol: MONO('Petrol', 'Tiefes Petrol, Wasser und Straßen hell.', '#2f6f8a', '#d6ebf2', '#4f8aa2', '#2a6278'),
   salbei: MONO('Salbei', 'Ruhiges Salbeigrün, natürlich und hell.', '#7f9c84', '#e6efe6', '#98b19c', '#728f77'),
+  // Silhouette: Land kräftig, Wasser weiß – Inseln, Küsten und Seen zeichnen sich als Form ab
+  insel: TH('Insel-Silhouette', 'Land in kräftigem Blau, Wasser weiß – für Inseln, Küsten und Seen (Ausschnitt groß wählen).', {
+    bg: '#2b5d8c',
+    haus: ['#46739f', '#46739f'],
+    haupt: '#e3edf6',
+    neben: '#9dbbd8',
+    weg: '#6d93b9',
+    wasser: ['#ffffff', '#ffffff'],
+    frame: '#ffffff',
+    bar: '#2b5d8c',
+    text: '#ffffff'
+  }, { haus: 0.4, haupt: 3.2, neben: 1.3, weg: 0.7, wasser: 2.2, frame: 26 }),
   senf: MONO('Senf', 'Warmes Senfgelb mit hellen Linien.', '#d2a23b', '#fbefd2', '#ddb662', '#c4942e')
 });

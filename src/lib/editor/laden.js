@@ -77,7 +77,8 @@ export async function generate() {
     return false;
   }
   const c = app.map.getCenter();
-  return loadBounds(frameBounds(), { center: [c.lng, c.lat] });
+  // Große Gebiete (Inseln, Seen, Regionen) gehen bis 40 km – dann mit gröberer Kartenstufe
+  return loadBounds(frameBounds(), { center: [c.lng, c.lat], maxW: 40000 });
 }
 
 /**
