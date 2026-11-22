@@ -90,13 +90,20 @@ Aufbau (`src/lib`), aus `prototyp/src/script.js` maschinell (Babel) zerlegt – 
   - **Hilfe-Chat** `hilfe/chat.js` + Wissen `hilfe/wissen.js` (Stichwort-Bot, Knöpfe springen zu Schritten); optional KI über `server/chat-worker` (Cloudflare Worker, Claude Opus 5.5, effort low, `fallbacks:"default"`, CORS + Rate-Limit), aktiv wenn `VITE_CHAT_API` gesetzt. Doku `docs/chatbot.md`.
   - Docs: `docs/shop-plan.md`, `docs/eigene-infrastruktur.md`, `docs/LIZENZEN.md`. Marktcheck/Recht/Kosten-Übersicht als Artifact: https://claude.ai/artifact/BJoqb3u3av2Vy4KB2Zjfva
   - **Wichtig rechtlich:** GitHub Pages erlaubt keinen Shop → vor dem Verkauf umziehen; Photon/Overpass nur zum Testen.
+- **Marktcheck-Runde (Umsetzung der Empfehlungen):**
+  - Einfarbige Themen `MONO()` in `vorlagen.js` (Lavendel, Koralle, Petrol, Salbei, Senf) + `insel` (Insel-Silhouette: Land farbig, Wasser weiß).
+  - Weitere Motive (`S.motif`): `koord` (`themen/koordinaten.js`, große Koordinaten + Ortsname + eigener Text `S.koord`), `wolke` (`themen/wolke.js`, Wortwolke `S.wolke` in Herz/Kreis/Haus/Rechteck, Spirale für große Wörter + Zufallsplätze zum Füllen, Ergebnis zwischengespeichert, Farben mit Mindestkontrast). Beide werden wie der Himmel fest in die Kartenfläche gezeichnet (Ansicht aufgehoben), Ziehen/Pins aus.
+  - „Größere Gegend laden“ (`gegendVergroessern`, bis 40 km); Kartenfenster ebenfalls bis 40 km. Nach Neuladen bleibt man im Schritt Ausschnitt.
+  - Produkte `alu`, `aufsteller` (A5, steht auf dem Möbel: `ROOMS[].surf`), `download`; Preise in `shop/preise.js`, Lieferdatum `lieferung()` (Werktage, ab 14 Uhr +1), Set-Rabatt. Galerie-Wand `product.set` → `setBilder()` in `mockup.js` (Koordinaten · Karte · Sternenhimmel im selben Stil).
+  - Rechtsseite `/lizenzen` (alle Quellen, Copernicus-Volltext, BSD-Text).
+  - **Orts-Seiten für Google:** `src/lib/seo/orte.js` (90 Orte Franken/Bayern, von Hand geprüfte Koordinaten), `/poster` (Übersicht) und `/poster/[ort]` (prerender + `ssr=true`, Inhalt im HTML), `/sitemap.xml`. Einstieg in die App per `#ort=<slug>[&anlass=…]` (`ortAusLink()` in `wiederherstellen.js`). `prerender.handleMissingId: 'ignore'` in `vite.config.ts`. Orts-Seiten werden nicht vorab im Service Worker gespeichert.
 - `docs/vergleich-cartida.md` – Wettbewerbsvergleich und Ideenliste (Pins, Datum, Sternenhimmel, Raumszenen, Shop).
 - `karte/` – `ortswahl`, `ortswahl-start`, `suche` (Photon), `kacheln` (MVT-Decoder), `overpass`, `daten` (buildData/buildDataTiles), `raster` (Standard-Stile via MapLibre)
 - `themen/` – `vorlagen` (PRESETS), `standard` (BASES)
 - `export/` – SVG/PNG
 - `src/routes/+page.svelte` – HTML-Gerüst aus `shell.html`; startet den Editor in `onMount`.
 
-Die übernommenen Module tragen `// @ts-nocheck` – beim Überarbeiten jeweils typisieren und in Svelte-Komponenten überführen. MapLibre (4.7.1) ist als npm-Paket eingebunden, Schriften liegen in `src/lib/assets/fonts` (für den Export per `?inline` als base64).
+Die übernommenen Module tragen `// @ts-nocheck` – beim Überarbeiten jeweils typisieren und in Svelte-Komponenten überführen. MapLibre (6.x) ist als npm-Paket eingebunden, Schriften liegen in `src/lib/assets/fonts` (für den Export per `?inline` als base64).
 
 **Gestaltungsziel des Inhabers:** smoothe, klare Animationen und ein hochwertiges Look & Feel. Animationen kurz (≈0,2–0,3 s), Kurve `cubic-bezier(.2,.8,.2,1)`, `prefers-reduced-motion` respektieren.
 

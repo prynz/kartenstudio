@@ -12,6 +12,10 @@ import { ensureRaster } from '../karte/raster.js';
 import { ago, draftFromHash, savedDraft } from './entwurf.js';
 import { msg } from './ansicht.js';
 import { showGift } from '../shop/geschenk.js';
+import { ORTE } from '../seo/orte.js';
+import { placeBounds } from '../karte/ortswahl-start.js';
+import { loadBounds as ladeBereich } from './laden.js';
+import { ANLAESSE } from '../themen/anlaesse.js';
 
 /** @type {any} */
 const app = appUntyped;
@@ -47,7 +51,26 @@ export async function restoreDraft(d) {
 }
 
 /** Beim Start: Link-Entwurf sofort öffnen, sonst „Weiter mit deinem Entwurf“ anbieten. */
+/**
+ * Direkter Einstieg von den Orts-Seiten: …/#ort=bamberg (optional &anlass=hochzeit)
+ * öffnet sofort das fertige Poster – ohne Suche.
+ */
+async function ortAusLink() {
+	if (!location.hash.startsWith('#ort=')) return false;
+	const q = new URLSearchParams(location.hash.slice(1));
+	history.replaceState(null, '', location.pathname + location.search);
+	const o = ORTE.find((x) => x.slug === q.get('ort'));
+	if (!o) return false;
+	const anlass = q.get('anlass') || '';
+	if (anlass && /** @type {Record<string, any>} */ (ANLAESSE)[anlass]) app.occasionPending = anlass;
+	// Untertitel: Fränkische Schweiz, sonst Landkreis bzw. Regierungsbezirk
+	/** @type {any} */ (window)._place = { name: o.name, region: o.fs ? 'Fränkische Schweiz' : o.landkreis || o.bezirk, lon: o.lon, lat: o.lat };
+	const p = { osm_value: o.typ === 'dorf' ? 'village' : 'town' };
+	return ladeBereich(placeBounds(p, o.lon, o.lat, 0.8805), { center: [o.lon, o.lat] });
+}
+
 export async function initRestore() {
+	if (await ortAusLink()) return;
 	const shared = await draftFromHash();
 	if (location.hash.startsWith('#e=')) history.replaceState(null, '', location.pathname + location.search);
 	if (shared) {

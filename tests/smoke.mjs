@@ -564,6 +564,30 @@ await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (pag
 	await page.screenshot({ path: `${OUT}/14-pinch-iphone.png` });
 });
 
+await run('Orts-Seiten für Google', { viewport: { width: 1280, height: 860 } }, async (page) => {
+	const base = URL.replace(/\/$/, '');
+	const r = await page.goto(base + '/poster/siegritz');
+	ok(r.ok() && (await page.textContent('h1')) === 'Siegritz als Poster', 'Orts-Seite Siegritz erreichbar');
+	const html = await r.text();
+	ok(html.includes('Fränkische Schweiz') && html.includes('Landkreis Bamberg') && html.includes('Heiligenstadt'), 'Inhalt steht schon im HTML (für Google lesbar)');
+	await page.screenshot({ path: `${OUT}/38-ortsseite.png`, fullPage: true });
+	const ue = await page.goto(base + '/poster');
+	ok(ue.ok() && (await page.$$('section li')).length >= 85, 'Übersicht mit allen Orten');
+	const sm = await page.goto(base + '/sitemap.xml');
+	ok(sm.ok() && (await sm.text()).includes('/poster/bamberg'), 'Sitemap für Google');
+});
+
+if (ONLINE)
+	await run('Desktop – Orts-Seite öffnet direkt das Poster', { viewport: { width: 1440, height: 900 } }, async (page) => {
+		await page.goto(URL.replace(/\/$/, '') + '/poster/siegritz');
+		await page.click('.ideen a[href*="anlass=hochzeit"]');
+		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });
+		await page.waitForTimeout(1500);
+		ok((await page.textContent('#poster')).includes('SIEGRITZ') && (await page.textContent('#untertitel')) === 'Fränkische Schweiz', 'Knopf öffnet Siegritz mit Untertitel „Fränkische Schweiz“');
+		ok((await page.textContent('#widmung').catch(() => '')) === 'Hier haben wir Ja gesagt', 'Anlass „Hochzeit“ direkt angewendet');
+		await page.screenshot({ path: `${OUT}/39-ortsseite-poster.png` });
+	});
+
 if (ONLINE)
 	await run('Desktop – Höhenlinien', { viewport: { width: 1440, height: 900 } }, async (page) => {
 		await page.click('#demoBtn');

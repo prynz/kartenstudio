@@ -16,7 +16,7 @@ const MAX_TILES = 600;
 // Pfade im Manifest sind relativ zum Basis-Pfad (z. B. /kartenstudio/)
 const SCOPE = new URL(sw.registration.scope).pathname;
 const abs = (/** @type {string} */ p) => SCOPE + p.replace(/^\//, '');
-const ASSETS = [...immutable, ...assets, ...prerendered].map((x) => x.path).filter((p) => !/(^|\/)\./.test(p)).map(abs);
+const ASSETS = [...immutable, ...assets, ...prerendered].map((x) => x.path).filter((p) => !/(^|\/)\./.test(p) && !/^poster\//.test(p) && !/sitemap/.test(p)).map(abs);
 
 sw.addEventListener('install', (event) => {
 	event.waitUntil(

@@ -15,7 +15,9 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 			adapter: adapter({ fallback: '404.html' }),
-			paths: { base }
+			paths: { base },
+			// Links wie /#ort=bamberg sind Startbefehle für die App, keine Sprungmarken
+			prerender: { handleMissingId: 'ignore' }
 		})
 	],
 	server: { host: true }
