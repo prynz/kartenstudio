@@ -655,3 +655,7 @@ body:not(.wiz-on) .fav-btn,body.mk-on .fav-btn{display:none}
 #wz3dHint{display:none}
 .wz-3d.aus label,.wz-3d.aus .wz-kipp{opacity:.4;pointer-events:none}
 .wz-3d.aus #wz3dHint{display:block}
+
+.wz-3d .nur-std{display:none}
+.wz-3d.std .nur-std{display:flex}
+.wz-3d.std p.nur-std{display:block}

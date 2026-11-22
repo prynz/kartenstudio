@@ -690,6 +690,19 @@ await run('3D: Schatten und Perspektive', { viewport: { width: 1440, height: 900
 	ok((await page.$$('#haeuser3d path')).length > 200 && !(await page.$('#schatten')), '3D-Häuser (Wände + Dächer), Schatten dann aus');
 	await page.screenshot({ path: `${OUT}/51-3d-haeuser.png` });
 	await page.click('#undo');
+	// Drehen: Karte und Markierung drehen mit
+	await page.click('#wzSteps button[data-step="text"]');
+	await page.click('#wzPinAdd button:first-child');
+	await page.click('#wzSteps button[data-step="gestalten"]');
+	await page.locator('#fxDreh').scrollIntoViewIfNeeded();
+	const d0 = await page.getAttribute('#perspektive path[data-k="haupt"]', 'd');
+	await page.fill('#fxDreh', '90');
+	await page.dispatchEvent('#fxDreh', 'change');
+	await page.waitForTimeout(500);
+	ok(d0 !== (await page.getAttribute('#perspektive path[data-k="haupt"]', 'd')) && (await page.textContent('#fxDrehV')).includes('90'), 'Karte um 90° gedreht');
+	ok(!!(await page.$('#pins[pointer-events="none"] path')), 'Markierung wird in die Perspektive umgerechnet');
+	await page.click('#undo');
+	await page.click('#undo');
 	for (let i = 0; i < 3; i++) await page.click('#undo'); // Verschieben, Perspektive, Schatten
 	await page.waitForTimeout(400);
 	ok(!(await page.$('#perspektive')) && !(await page.$('#schatten')), 'Rückgängig nimmt 3D-Effekte zurück');
@@ -749,6 +762,24 @@ if (ONLINE)
 		await page.waitForSelector('#relief', { timeout: 40000 }).catch(() => {});
 		ok(!!(await page.$('#relief')), 'Relief-Schattierung erscheint');
 		ok((await page.textContent('#quelle')).includes('EU-DEM'), 'Quellenangabe Höhendaten');
+	});
+
+if (ONLINE)
+	await run('3D: echte 3D-Ansicht (Landkarte, Gebäude, Gelände)', { viewport: { width: 1280, height: 860 } }, async (page) => {
+		await page.goto(URL + '#ort=bamberg');
+		await page.reload();
+		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });
+		await page.click('#wzMode button[data-m="std"]');
+		await page.locator('#fxH3d').scrollIntoViewIfNeeded();
+		ok(await page.locator('#fxGelaende').isVisible(), 'Gelände-Schalter bei Landkarten-Stilen');
+		await page.check('#fxH3d');
+		await page.check('#fxGelaende');
+		await page.fill('#fxKipp', '55');
+		await page.dispatchEvent('#fxKipp', 'change');
+		await page.waitForSelector('#kamera image', { timeout: 120000 }).catch(() => {});
+		ok(!!(await page.$('#kamera image')), '3D-Ansicht von MapLibre gezeichnet');
+		ok((await page.textContent('#quelle')).includes('EU-DEM'), 'Quellenangabe Höhendaten');
+		await page.screenshot({ path: `${OUT}/52-3d-ansicht.png` });
 	});
 
 if (ONLINE)

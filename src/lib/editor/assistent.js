@@ -279,13 +279,18 @@ export function syncWizard() {
 	/** @type {HTMLInputElement} */ ($('fxVig')).checked = !!(S.fx && S.fx.vig);
 	/** @type {HTMLInputElement} */ ($('fxSchatten')).checked = !!(S.fx && S.fx.schatten);
 	/** @type {HTMLInputElement} */ ($('fxH3d')).checked = !!(S.fx && S.fx.h3d);
-	$('fxSchatten').closest('label')?.classList.toggle('hidden', !!(S.fx && S.fx.h3d));
+	$('fxSchatten').closest('label')?.classList.toggle('hidden', !!(S.fx && S.fx.h3d) || S.mode === 'std');
 	/** @type {HTMLInputElement} */ ($('fxRelief')).checked = !!(S.fx && S.fx.relief);
 	const kp = (S.fx && +S.fx.kipp) || 0;
 	if (document.activeElement !== $('fxKipp')) /** @type {HTMLInputElement} */ ($('fxKipp')).value = String(kp);
 	$('fxKippV').textContent = kp ? kp + '°' : 'aus';
-	const nur2d = S.mode === 'std' || (S.motif && S.motif !== 'karte') || multiOn();
+	const nur2d = (S.motif && S.motif !== 'karte') || multiOn();
 	$('wz3d').classList.toggle('aus', !!nur2d);
+	$('wz3d').classList.toggle('std', S.mode === 'std');
+	/** @type {HTMLInputElement} */ ($('fxGelaende')).checked = !!(S.fx && S.fx.gelaende);
+	const dr = (S.fx && +S.fx.dreh) || 0;
+	if (document.activeElement !== $('fxDreh')) /** @type {HTMLInputElement} */ ($('fxDreh')).value = String(dr);
+	$('fxDrehV').textContent = dr ? (dr > 0 ? dr + '° ↻' : -dr + '° ↺') : 'Nord';
 	all('[data-occ] button').forEach((b) => b.classList.toggle('on', b.dataset.k === S.occasion));
 	if (step === 'gestalten') {
 		scheduleDesignThumbs();
@@ -904,13 +909,14 @@ export function initWizard() {
 	);
 
 	// Effekte (Design-Schritt)
-	/** @param {string} id @param {'paper'|'vig'|'schatten'|'relief'|'h3d'} key */
+	/** @param {string} id @param {'paper'|'vig'|'schatten'|'relief'|'h3d'|'gelaende'} key */
 	const fxToggle = (id, key) =>
 		$(id).addEventListener('change', (e) => change(() => (app.S.fx = { ...(app.S.fx || {}), [key]: /** @type {HTMLInputElement} */ (e.target).checked })));
 	fxToggle('fxPaper', 'paper');
 	fxToggle('fxVig', 'vig');
 	fxToggle('fxSchatten', 'schatten');
 	fxToggle('fxH3d', 'h3d');
+	fxToggle('fxGelaende', 'gelaende');
 	fxToggle('fxRelief', 'relief');
 	const kipp = /** @type {HTMLInputElement} */ ($('fxKipp'));
 	kipp.addEventListener('input', () => {
@@ -919,6 +925,13 @@ export function initWizard() {
 		render();
 	});
 	kipp.addEventListener('change', () => commit());
+	const dreh = /** @type {HTMLInputElement} */ ($('fxDreh'));
+	dreh.addEventListener('input', () => {
+		begin();
+		app.S.fx = { ...(app.S.fx || {}), dreh: +dreh.value };
+		render();
+	});
+	dreh.addEventListener('change', () => commit());
 	$('softproof').addEventListener('change', (e) => document.body.classList.toggle('softproof', /** @type {HTMLInputElement} */ (e.target).checked));
 
 	// Schrift-Paare (Titel + Untertitel)

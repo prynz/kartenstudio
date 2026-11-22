@@ -193,8 +193,11 @@
 <label class="tog wz-tog"><input type="checkbox" id="fxH3d"><span>3D-Häuser (Gebäude in die Höhe)</span></label>
 <label class="tog wz-tog"><input type="checkbox" id="fxSchatten"><span>Häuser mit Schatten</span></label>
 <label class="tog wz-tog"><input type="checkbox" id="fxRelief"><span>Relief – Berge &amp; Täler schattiert</span></label>
-<div class="row wz-kipp"><span class="k">Perspektive</span><input type="range" id="fxKipp" min="0" max="55" step="5" aria-label="Perspektive kippen"><output id="fxKippV">aus</output></div>
-<p class="wz-hint" id="wz3dHint">Für gezeichnete Karten – bei Landkarten-Stilen nicht verfügbar.</p></div>
+<label class="tog wz-tog nur-std"><input type="checkbox" id="fxGelaende"><span>Gelände plastisch (Berge in 3D)</span></label>
+<div class="row wz-kipp"><span class="k">Perspektive</span><input type="range" id="fxKipp" min="0" max="60" step="5" aria-label="Perspektive kippen"><output id="fxKippV">aus</output></div>
+<div class="row wz-kipp"><span class="k">Drehen</span><input type="range" id="fxDreh" min="-180" max="180" step="15" aria-label="Karte drehen"><output id="fxDrehV">Nord</output></div>
+<p class="wz-hint" id="wz3dHint">Für Karten – bei Sternenhimmel, Koordinaten, Wortwolke und mehreren Orten nicht verfügbar.</p>
+<p class="wz-hint nur-std" id="wz3dStd">Echte 3D-Ansicht: Kamera kippen und drehen, Gebäude und Berge in 3D. Markierungen lassen sich dabei nicht verschieben.</p></div>
 </section>
 <section class="wz-pane" data-step="text">
 <h3>Text</h3>

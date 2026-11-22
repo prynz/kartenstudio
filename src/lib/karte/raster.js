@@ -176,3 +176,117 @@ async function makeDetail() {
     if (detailBusy === key) detailBusy = '';
   }
 }
+
+/* ---------- Echte 3D-Ansicht (Landkarten-Stile) ----------
+   MapLibre zeichnet die Karte mit gekippter Kamera, Drehung, 3D-Gebäuden und Gelände.
+   Ergebnis: ein Bild genau für die Kartenfläche des Posters. */
+export const KAMERA = new Map();
+/** 3D-Ansicht aktiv? (nur bei Landkarten-Stilen) */
+export function std3d() {
+  const S = app.S;
+  if (!S || S.mode !== 'std' || !S.fx) return false;
+  if (S.motif && S.motif !== 'karte') return false;
+  return +S.fx.kipp > 0 || !!S.fx.h3d || !!S.fx.relief || !!S.fx.gelaende || !!+S.fx.dreh;
+}
+export function kameraKey() {
+  const S = app.S, v = S.view, f = S.fx || {};
+  return [rasterKey(), v.cx.toFixed(1), v.cy.toFixed(1), v.z.toFixed(3), v.a, +f.kipp || 0, +f.dreh || 0, !!f.h3d, !!f.relief, !!f.gelaende, JSON.stringify(S.pins || []), S.route ? S.route.pts.length : 0].join('|');
+}
+export function kameraBild() {
+  return std3d() ? KAMERA.get(kameraKey()) || null : null;
+}
+let kamTimer = 0;
+let kamJob = '';
+export function scheduleKamera(delay = 450) {
+  clearTimeout(kamTimer);
+  kamTimer = window.setTimeout(makeKamera, delay);
+}
+/** Stil um 3D-Gebäude, Gelände und Relief ergänzen */
+function stil3d(st, f) {
+  const vec = Object.keys(st.sources).find(k => st.sources[k].type === 'vector');
+  if (f.gelaende || f.relief) {
+    const dem = { type: 'raster-dem', tiles: [KONFIG.terrain], encoding: 'terrarium', tileSize: 256, maxzoom: 14 };
+    st.sources.ksDem = dem;
+    st.sources.ksDem2 = { ...dem };
+  }
+  if (f.gelaende) st.terrain = { source: 'ksDem', exaggeration: 1.6 };
+  if (f.relief) {
+    const i = st.layers.findIndex(l => l['source-layer'] === 'building' || l.type === 'line');
+    st.layers.splice(i < 0 ? st.layers.length : i, 0, { id: 'ks-relief', type: 'hillshade', source: 'ksDem2', paint: { 'hillshade-exaggeration': 0.45, 'hillshade-shadow-color': 'rgba(40,40,50,.55)', 'hillshade-highlight-color': 'rgba(255,255,255,.35)' } });
+  }
+  if (f.h3d && vec) {
+    const fl = st.layers.find(l => l['source-layer'] === 'building' && l.type === 'fill');
+    let col = fl && fl.paint && fl.paint['fill-color'];
+    if (typeof col !== 'string') col = BASES[app.S.base].sat ? '#e8e2d8' : '#d9d2c8';
+    st.layers = st.layers.filter(l => !(l['source-layer'] === 'building' && l.type === 'fill-extrusion'));
+    const sym = st.layers.findIndex(l => l.type === 'symbol');
+    st.layers.splice(sym < 0 ? st.layers.length : sym, 0, {
+      id: 'ks-3d', type: 'fill-extrusion', source: vec, 'source-layer': 'building', minzoom: 12,
+      paint: { 'fill-extrusion-color': col, 'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 8], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity': 0.95, 'fill-extrusion-vertical-gradient': true }
+    });
+  }
+  return st;
+}
+async function makeKamera() {
+  if (!std3d() || !app.DATA) return;
+  const key = kameraKey();
+  if (KAMERA.has(key) || kamJob === key) return;
+  kamJob = key;
+  let maplibregl = null;
+  try {
+    maplibregl = await loadMaplibre();
+  } catch (e) {}
+  if (!maplibregl) {
+    kamJob = '';
+    return;
+  }
+  const S = app.S, v = S.view, P = app.DATA.proj, f = S.fx || {};
+  const MH = MW * v.a;
+  const cssW = 1300, cssH = Math.round(cssW * MH / MW);
+  const pr = Math.min(2.4, 4096 / Math.max(cssW, cssH));
+  const mw = MW / v.z / P.sc;
+  const zoom = Math.log2(cssW / (mw * 512));
+  const c = mercInv(P.x0 + v.cx / P.sc, P.y0 + v.cy / P.sc);
+  const div = document.createElement('div');
+  div.style.cssText = `position:fixed;left:-20000px;top:0;width:${cssW}px;height:${cssH}px;pointer-events:none`;
+  document.body.appendChild(div);
+  let m = null;
+  msg('3D-Ansicht wird gezeichnet …', 'busy');
+  try {
+    const st = stil3d(await styleFor(BASES[S.base], S.labels), f);
+    m = new maplibregl.Map({ container: div, style: st, center: c, zoom, pitch: Math.min(70, +f.kipp || 0), bearing: +f.dreh || 0, maxPitch: 85, interactive: false, attributionControl: false, canvasContextAttributes: { preserveDrawingBuffer: true }, pixelRatio: pr, fadeDuration: 0 });
+    await new Promise((res, rej) => {
+      const to = setTimeout(() => rej(new Error('Zeitüberschreitung')), 60000);
+      m.once('idle', () => {
+        clearTimeout(to);
+        res();
+      });
+    });
+    // Markierungen und Route an die richtige Stelle im Bild setzen
+    const k = MW / cssW;
+    const punkt = (x, y) => {
+      const q = m.project(mercInv(P.x0 + x / P.sc, P.y0 + y / P.sc));
+      return [q.x * k, q.y * k];
+    };
+    const pins = (S.pins || []).map(p => punkt(+p.x, +p.y));
+    let route = null;
+    if (S.route && S.route.pts) route = S.route.pts.map(q => {
+      const r = m.project(q);
+      return [r.x * k, r.y * k];
+    });
+    KAMERA.set(key, { url: m.getCanvas().toDataURL('image/jpeg', 0.92), pins, route, pxPerUnit: cssW * pr / (MW / v.z) });
+    if (KAMERA.size > 6) KAMERA.delete(KAMERA.keys().next().value);
+    msg('3D-Ansicht fertig', 'ok');
+  } catch (e) {
+    console.warn('3D-Ansicht', e);
+    msg('Die 3D-Ansicht konnte nicht gezeichnet werden. Bitte erneut versuchen.', 'err');
+  } finally {
+    try {
+      m && m.remove();
+    } catch (e) {}
+    div.remove();
+    if (kamJob === key) kamJob = '';
+  }
+  if (kameraKey() === key) render();
+  else if (std3d()) scheduleKamera(100);
+}

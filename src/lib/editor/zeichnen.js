@@ -4,7 +4,7 @@
 import { app } from './app.js';
 import { $, CAP, CLS, CLS1, FONTDATA, MW, NS, ORDER, esc } from './basis.js';
 import { BASES } from '../themen/standard.js';
-import { RASTER, rasterKey, detailRaster, scheduleDetail } from '../karte/raster.js';
+import { RASTER, rasterKey, detailRaster, scheduleDetail, std3d, kameraBild, kameraKey, scheduleKamera } from '../karte/raster.js';
 import { fitPrint } from './druck.js';
 import { clampView } from './zustand.js';
 import { eff, vT, visRect } from './zustand.js';
@@ -142,6 +142,20 @@ export function kippWinkel() {
   if (!k || S.mode === 'std' || (S.motif && S.motif !== 'karte') || multiOn()) return 0;
   return Math.min(60, Math.max(0, k));
 }
+/** Gezeichnete Karte gekippt oder gedreht? */
+export function perspektiveAn() {
+  const S = app.S;
+  if (!S || !S.fx || S.mode === 'std' || (S.motif && S.motif !== 'karte') || multiOn()) return false;
+  return +S.fx.kipp > 0 || !!+S.fx.dreh;
+}
+/** Umrechnung Kartenpunkt → Kartenfeld (nur wenn gekippt/gedreht/3D-Ansicht), sonst null */
+export function feldProjektion() {
+  if (perspektiveAn()) {
+    const P = kippProj(kippWinkel());
+    return (x, y) => P.f(x, y);
+  }
+  return null;
+}
 /**
  * Perspektive: Die Karte liegt wie ein Tisch vor dem Betrachter und wird nach hinten gekippt.
  * f(x,y) → Punkt im Kartenfeld (0…MW, 0…MH) und Vergrößerung s; rect = sichtbarer Boden in Kartenkoordinaten.
@@ -149,9 +163,12 @@ export function kippWinkel() {
 function kippProj(deg) {
   const v = app.S.view, z = v.z, MH = MW * v.a;
   const t = deg * Math.PI / 180, st = Math.sin(t), ct = Math.cos(t);
+  // Drehung (Kompassrichtung oben), wie bei einer Landkarte, die man auf dem Tisch dreht
+  const b = (+(app.S.fx && app.S.fx.dreh) || 0) * Math.PI / 180, cb = Math.cos(b), sb = Math.sin(b);
   const D = 1.25 * Math.max(MW, MH);
   const f = (x, y) => {
-    const X = (x - v.cx) * z, Y = (y - v.cy) * z;
+    const X0 = (x - v.cx) * z, Y0 = (y - v.cy) * z;
+    const X = X0 * cb + Y0 * sb, Y = -X0 * sb + Y0 * cb;
     const s = D / Math.max(0.25 * D, D - Y * st);
     return [X * s + MW / 2, Y * ct * s + MH / 2, s];
   };
@@ -159,7 +176,8 @@ function kippProj(deg) {
     X -= MW / 2; Y -= MH / 2;
     const Yg = Y * D / (D * ct + Y * st);
     const s = D / (D - Yg * st);
-    return [X / s / z + v.cx, Yg / z + v.cy];
+    const Xg = X / s;
+    return [(Xg * cb - Yg * sb) / z + v.cx, (Xg * sb + Yg * cb) / z + v.cy];
   };
   const E = app.DATA.ext, m = 20;
   const c = [inv(-m, -m), inv(MW + m, -m), inv(-m, MH + m), inv(MW + m, MH + m)];
@@ -342,6 +360,12 @@ export function mapContent(forExport, vr) {
     return skySVG(app.S.sky, v.cx, v.cy, R, forExport ? 'hx' : 'hv');
   }
   const sc = app.S.scale / app.S.view.z;
+  if (app.S.mode === 'std' && std3d()) {
+    const K = kameraBild();
+    // 2 Punkte Überstand, damit an den Rändern keine Lücke durchblitzt
+    if (K) return feldGruppe('kamera', `<image href="${K.url}" x="-2" y="-2" width="${MW + 4}" height="${(MW * app.S.view.a + 4).toFixed(2)}" preserveAspectRatio="none"/>`);
+    if (!forExport) scheduleKamera(60);
+  }
   if (app.S.mode === 'std') {
     const E = app.DATA.ext,
       R0 = RASTER.get(rasterKey());
@@ -354,8 +378,7 @@ export function mapContent(forExport, vr) {
     }
   } else {
   const fx = app.S.fx || {};
-  const kw = kippWinkel();
-  const P = kw ? kippProj(kw) : null;
+  const P = perspektiveAn() ? kippProj(kippWinkel()) : null;
   if (P) vr = P.rect;
   // Relief (Berge schattiert): über Wiesen/Wasser, unter Wegen, Straßen und Häusern
   let relief = '';
@@ -441,7 +464,7 @@ export const TCP = { p: 'tc' };
 const MC = { key: '', node: null, hits: null, rect: null, z: 0 };
 function mapKey() {
   const S = app.S;
-  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, S.hoehen, !!(app.DATA && app.DATA._contours), multiKey(), multiOn() ? [S.view.cx, S.view.cy, S.view.a, S.bg, S.title.color, S.sub.font] : 0, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.motif === 'wolke' || S.motif === 'koord' ? schriftenBereit() : 0, S.motif === 'wolke' ? [S.wolke, S.bg, S.cls.haupt.s, S.bar.color, S.frame.color, S.view.cx, S.view.cy, S.view.a] : 0, S.motif === 'koord' ? [S.koord, S.title.text, S.bg, S.view.cx, S.view.cy, S.view.a, S.cls.haupt.s, S.bar.color, S.frame.color] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0, S.fx ? [S.fx.schatten, S.fx.relief, S.fx.kipp, S.fx.h3d] : 0, kippWinkel() || (S.fx && S.fx.h3d) ? [S.view.cx, S.view.cy, S.view.a] : 0, !!(app.DATA && app.DATA._relief)]);
+  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, S.hoehen, !!(app.DATA && app.DATA._contours), multiKey(), multiOn() ? [S.view.cx, S.view.cy, S.view.a, S.bg, S.title.color, S.sub.font] : 0, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.motif === 'wolke' || S.motif === 'koord' ? schriftenBereit() : 0, S.motif === 'wolke' ? [S.wolke, S.bg, S.cls.haupt.s, S.bar.color, S.frame.color, S.view.cx, S.view.cy, S.view.a] : 0, S.motif === 'koord' ? [S.koord, S.title.text, S.bg, S.view.cx, S.view.cy, S.view.a, S.cls.haupt.s, S.bar.color, S.frame.color] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0, S.fx ? [S.fx.schatten, S.fx.relief, S.fx.kipp, S.fx.h3d, S.fx.dreh, S.fx.gelaende] : 0, perspektiveAn() || (S.fx && S.fx.h3d) ? [S.view.cx, S.view.cy, S.view.a] : 0, std3d() ? [kameraKey(), !!kameraBild()] : 0, !!(app.DATA && app.DATA._relief)]);
 }
 /** Sichtbarer Bereich plus großzügiger Rand, damit Verschieben ohne Neuzeichnen geht */
 function cullRect() {
@@ -464,7 +487,7 @@ function mapNodes() {
   const hits = document.createElementNS(NS, 'g');
   const hw = (12 / app.S.view.z).toFixed(2);
   // In der Perspektive passen die Klickflächen nicht zur Ansicht → dann keine
-  if (!kippWinkel() && !(app.S.fx && app.S.fx.h3d)) node.querySelectorAll('path[data-k]').forEach(p => {
+  if (!perspektiveAn() && !(app.S.fx && app.S.fx.h3d)) node.querySelectorAll('path[data-k]').forEach(p => {
     if (p.getAttribute('fill') !== 'none' || p.dataset.k === 'haus') {
       p.setAttribute('pointer-events', 'all');
       p.style.cursor = 'pointer';
@@ -492,7 +515,8 @@ export function renderView() {
   if (!app.DATA) return;
   const inner = app.poster.querySelector('#kartenAnsicht');
   // Perspektive: Verschieben ändert die Verzerrung → jedes Mal neu zeichnen
-  if (!inner || !MC.node || !cacheCovers() || kippWinkel() || (app.S.fx && app.S.fx.h3d)) {
+  if (std3d()) scheduleKamera();
+  if (!inner || !MC.node || !cacheCovers() || perspektiveAn() || (app.S.fx && app.S.fx.h3d && app.S.mode !== 'std')) {
     render();
     return;
   }
@@ -605,7 +629,7 @@ function noiseURL() {
 function fxSVG(g) {
   const fx = app.S.fx || {};
   let o = '';
-  if (kippWinkel() && app.S.bg !== 'none') {
+  if (kippWinkel() && app.S.bg !== 'none' && !std3d()) {
     const h = g.MH * (0.12 + kippWinkel() / 60 * 0.16);
     o += `<defs><linearGradient id="gDunst" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${app.S.bg}" stop-opacity=".95"/><stop offset="1" stop-color="${app.S.bg}" stop-opacity="0"/></linearGradient></defs>`;
     o += `<g clip-path="url(#cIn)" pointer-events="none"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><rect id="dunst" width="${MW}" height="${h.toFixed(1)}" fill="url(#gDunst)"/></g></g></g>`;
@@ -630,6 +654,24 @@ export const PIN_SHAPES = {
   stern: { name: 'Stern', d: 'M0-18L5-6L18-6L8 2L12 15L0 7L-12 15L-8 2L-18-6L-5-6Z' },
   punkt: { name: 'Punkt', d: 'M0-11A11 11 0 1 1 0 11A11 11 0 1 1 0-11Z' }
 };
+/** Route im Kartenfeld (gekippt/gedreht oder 3D-Ansicht) */
+function routeFeld(K, pf) {
+  const R = app.S.route;
+  if (!R || !R.pts || R.pts.length < 2) return '';
+  let xy = K ? K.route : null;
+  if (!K && pf) {
+    const P = app.DATA.proj;
+    xy = R.pts.map(p => {
+      const mx = (p[0] + 180) / 360, s = Math.sin(p[1] * Math.PI / 180);
+      const my = 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI);
+      return pf((mx - P.x0) * P.sc, (my - P.y0) * P.sc);
+    });
+  }
+  if (!xy || xy.length < 2) return '';
+  const w = R.w || 7, c = R.c || '#d64545';
+  const d = xy.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
+  return `<path d="${d}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="${(w * 1.9).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
 /** Pins als SVG – in eigener Ebene über der Karte, Größe unabhängig vom Zoom */
 function pinsSVG(g, forExport) {
   const pins = app.S.pins || [];
@@ -639,6 +681,21 @@ function pinsSVG(g, forExport) {
     k = 1 / v.z,
     sz = (app.S.pinSize || 1) * 1.25;
   const col = app.S.pinColor || '#d64545';
+  // Gekippt/gedreht oder 3D-Ansicht: Markierungen ins Kartenfeld umrechnen (dort nicht verschiebbar)
+  const K = std3d() ? kameraBild() : null;
+  const pf = K ? null : feldProjektion();
+  if (std3d() || pf) {
+    if (std3d() && !K) return '';
+    let q = `<g id="pins" clip-path="url(#cIn)" pointer-events="none"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)">`;
+    q += routeFeld(K, pf);
+    pins.forEach((p, i) => {
+      const xy = K ? K.pins[i] : pf(+p.x, +p.y);
+      if (!xy) return;
+      const S = PIN_SHAPES[p.i] || PIN_SHAPES.herz;
+      q += `<g transform="translate(${xy[0].toFixed(2)},${xy[1].toFixed(2)}) scale(${sz.toFixed(4)})"><path d="${S.d}" fill="${col}" fill-rule="evenodd" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" paint-order="stroke"/></g>`;
+    });
+    return q + '</g></g></g>';
+  }
   let o = `<g id="pins" clip-path="url(#cIn)"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><g id="pinsAnsicht" transform="${vT(g).replace(/^translate\([^)]*\) /, '')}">` + route;
   pins.forEach((p, i) => {
     const S = PIN_SHAPES[p.i] || PIN_SHAPES.herz;
@@ -720,7 +777,8 @@ export function buildSVG(forExport) {
     const x = g.W - g.sw - g.p - 4;
     const y = inBar ? g.H - g.sw - 8 : g.L.kind === 'below' ? g.H - g.sw - Math.min(14, g.p / 2 + 4) : g.my + g.MH - 6;
     let at = app.S.mode === 'std' ? BASES[app.S.base].sat ? 'Luftbild © Bayer. Vermessungsverwaltung (CC BY 4.0) · © OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenStreetMap-Mitwirkende';
-    if (((app.S.hoehen && app.S.hoehen.on) || (app.S.fx && app.S.fx.relief && !kippWinkel())) && app.S.mode !== 'std') at += ' · Höhen © EU-DEM';
+    if (((app.S.hoehen && app.S.hoehen.on) || (app.S.fx && app.S.fx.relief && !perspektiveAn())) && app.S.mode !== 'std') at += ' · Höhen © EU-DEM';
+    if (std3d() && (app.S.fx.relief || app.S.fx.gelaende)) at += ' · Höhen © EU-DEM';
     o += `<text id="quelle" x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" font-family="SgMD" font-size="11" fill="${col}" fill-opacity="0.75">${at}</text>`;
   }
   return o + '</svg>';
