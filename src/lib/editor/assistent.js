@@ -193,7 +193,7 @@ function renderDesignThumbs() {
 	if (designBeobachter && !designSichtbar) return;
 	const S = app.S;
 	// Bewusst OHNE Kartenausschnitt: Verschieben/Zoomen soll nicht 22 Vorschaubilder neu berechnen
-	const key = JSON.stringify([app.DATA.place, app.DATA.feats.length, S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.motif, S.fx, S.view.a, S.title.text, S.sub.text, S.title.font, S.sub.font, S.scale]);
+	const key = JSON.stringify([app.DATA.place, app.DATA.feats.length, S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.motif, S.fx && [S.fx.paper, S.fx.vig], S.view.a, S.title.text, S.sub.text, S.title.font, S.sub.font, S.scale]);
 	if (key === thumbKey) return;
 	thumbKey = key;
 	const lauf = ++thumbLauf;
@@ -213,6 +213,8 @@ function renderDesignThumbs() {
 		let svg = '';
 		try {
 			const c = JSON.parse(JSON.stringify(keep));
+			// Vorschaubild zeigt nur den Aufbau – ohne 3D (das wäre je Bild die ganze Stadt in 3D)
+			if (c.fx) c.fx = { ...c.fx, h3d: false, kipp: 0, dreh: 0, schatten: false, relief: false, gelaende: false };
 			applyDesign(c, k, PRESETS[c.preset], true);
 			const D = DESIGNS[k];
 			if (D.aspect) c.view.a = D.aspect;

@@ -40,6 +40,23 @@ await p.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 3 + 60, { s
 await p.mouse.up();
 await p.waitForTimeout(+(process.env.W || 3000));
 await lt('Karte ziehen');
+if (process.env.D3) {
+	// 3D: Häuser hochziehen, kippen, gekippt ziehen
+	await p.locator('#fxH3d').scrollIntoViewIfNeeded();
+	await p.check('#fxH3d');
+	await p.waitForTimeout(+(process.env.W || 3000));
+	await lt('3D-Häuser an');
+	await p.fill('#fxKipp', '45');
+	await p.dispatchEvent('#fxKipp', 'change');
+	await p.waitForTimeout(+(process.env.W || 3000));
+	await lt('Perspektive 45°');
+	await p.mouse.move(box.x + box.width / 2, box.y + box.height / 3);
+	await p.mouse.down();
+	await p.mouse.move(box.x + box.width / 2 - 100, box.y + box.height / 3 - 50, { steps: 20 });
+	await p.mouse.up();
+	await p.waitForTimeout(+(process.env.W || 3000));
+	await lt('3D gekippt ziehen');
+}
 await p.click('#wzSteps button[data-step="text"]');
 await p.waitForTimeout(500);
 await lt('Schritt Text');

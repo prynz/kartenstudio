@@ -6,7 +6,7 @@ import { revealEditor } from './animation.js';
 import { wizardAfterLoad } from './assistent.js';
 import { popColor, popDefs, popSymbols } from '../themen/pop.js';
 import { $, CLS, MW, ORDER } from './basis.js';
-import { FMAP, drawSel, render } from './zeichnen.js';
+import { FMAP, alsBild, drawSel, render } from './zeichnen.js';
 import { PRESETS } from '../themen/vorlagen.js';
 import { buildData, buildDataTiles } from '../karte/daten.js';
 import { closePicker, frameBounds, meters } from '../karte/ortswahl.js';
@@ -217,29 +217,136 @@ export function loadData(data) {
   wizardAfterLoad();
   saveDraftSoon();
 }
+/** Umrisse für die Vorschaubilder einmal vorbereiten (gilt für alle Stile desselben Orts) */
+let PFADE = { D: null, r: '', liste: null };
+function vorbereitet(D, r, klein) {
+  const k = r.join();
+  if (PFADE.D === D && PFADE.r === k) return PFADE.liste;
+  const liste = {};
+  ORDER.forEach(c => (liste[c] = { flaechen: [], linien: [] }));
+  D.feats.forEach(f => {
+    const bx = f.bx;
+    if (!liste[f.k]) return;
+    if (bx[2] < r[0] || bx[0] > r[2] || bx[3] < r[1] || bx[1] > r[3]) return;
+    if (Math.max(bx[2] - bx[0], bx[3] - bx[1]) < klein) return;
+    (f.a ? liste[f.k].flaechen : liste[f.k].linien).push(new Path2D(f.d));
+  });
+  PFADE = { D, r: k, liste };
+  return liste;
+}
+/** Ein Stil-Vorschaubild direkt auf eine Leinwand malen → Blob-URL */
+async function leinwandBild(p, D, vb, r, klein) {
+  const liste = vorbereitet(D, r, klein);
+  const N = 200;
+  const c = document.createElement('canvas');
+  c.width = c.height = N;
+  const x = c.getContext('2d');
+  x.fillStyle = p.bg !== 'none' ? p.bg : '#ffffff';
+  x.fillRect(0, 0, N, N);
+  x.setTransform(N / vb[2], 0, 0, N / vb[3], -vb[0] * N / vb[2], -vb[1] * N / vb[3]);
+  x.lineCap = 'round';
+  x.lineJoin = 'round';
+  ORDER.forEach(k => {
+    const cl = p.cls[k];
+    if (!cl || cl.h) return;
+    const L = liste[k];
+    const strich = cl.s && cl.s !== 'none';
+    x.lineWidth = cl.w * 1.6;
+    if (strich) x.strokeStyle = cl.s;
+    const fuellen = cl.f && cl.f !== 'none';
+    if (fuellen) x.fillStyle = cl.f;
+    L.flaechen.forEach(pf => {
+      if (fuellen) x.fill(pf, 'evenodd');
+      if (strich) x.stroke(pf);
+    });
+    if (strich) L.linien.forEach(pf => x.stroke(pf));
+  });
+  const b = await new Promise(res => c.toBlob(res, 'image/png'));
+  return URL.createObjectURL(b);
+}
+
+/* ---------- Vorschaubilder der Farbstile ----------
+   Früher: je Stil eine Mini-Karte mit ALLEN Häusern als SVG direkt in der Seite (×2: Assistent und
+   erweiterte Einstellungen). Bei Städten hunderttausende Elemente → alles wurde zäh.
+   Jetzt: nur der sichtbare Ausschnitt, ohne Winzigteile, einmal in ein kleines Bild umgerechnet,
+   nacheinander in ruhigen Momenten (beliebteste zuerst). */
+let stilLauf = 0;
+/** @type {string[]} */
+let stilUrls = [];
 export function renderThumbs() {
   if (!app.DATA) return;
+  const lauf = ++stilLauf;
   const v = defView(),
     MH = MW * v.a;
-  document.querySelectorAll('#styles button[data-p], #wzStyles button[data-p]').forEach(b => {
-    const p = PRESETS[b.dataset.p];
-    let o = `<svg viewBox="${MW * 0.18} ${MH * 0.18} ${MW * 0.64} ${MW * 0.64}" preserveAspectRatio="xMidYMid slice">`;
+  const vb = [MW * 0.18, MH * 0.18, MW * 0.64, MW * 0.64];
+  const r = [vb[0], vb[1], vb[0] + vb[2], vb[1] + vb[3]];
+  const klein = vb[2] / 160; // kleiner als ein Bildpunkt im Vorschaubild
+  const knoepfe = [...document.querySelectorAll('#wzStyles button[data-p], #styles button[data-p]')];
+  const reihe = [...new Set(knoepfe.map(b => b.dataset.p))];
+  const alt = stilUrls;
+  stilUrls = [];
+  const D = app.DATA;
+  let i = 0;
+  const naechstes = async () => {
+    if (lauf !== stilLauf || app.DATA !== D) return;
+    if (i >= reihe.length) {
+      alt.forEach(u => URL.revokeObjectURL(u));
+      return;
+    }
+    const key = reihe[i++];
+    const p = PRESETS[key];
+    // Ohne Pop-Art-Symbole: direkt auf eine Leinwand malen (viel schneller als SVG → Bild)
+    if (!p.pop) {
+      try {
+        const url = await leinwandBild(p, D, vb, r, klein);
+        if (lauf !== stilLauf) return URL.revokeObjectURL(url);
+        stilUrls.push(url);
+        setzen(key, url);
+      } catch (e) {}
+      return weiter();
+    }
+    let o = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="${vb.join(' ')}" preserveAspectRatio="xMidYMid slice">`;
     o += `<rect x="-2000" y="-2000" width="6000" height="6000" fill="${p.bg !== 'none' ? p.bg : '#ffffff'}"/>`;
-    if (p.pop) o += `<defs>${popDefs()}</defs>` + popSymbols(app.DATA, { view: { z: 1.4 }, scale: 1, cls: p.cls }, [MW * 0.18, MH * 0.18, MW * 0.82, MH * 0.18 + MW * 0.64], p.pop.pal);
+    if (p.pop) o += `<defs>${popDefs()}</defs>` + popSymbols(D, { view: { z: 1.4 }, scale: 1, cls: p.cls }, r, p.pop.pal);
     ORDER.forEach(k => {
       const c = p.cls[k];
       if (c.h) return;
-      app.DATA.feats.forEach(f => {
+      let pfade = '';
+      D.feats.forEach(f => {
         if (f.k !== k) return;
         const bx = f.bx;
-        if (bx[2] < 0 || bx[0] > MW || bx[3] < 0 || bx[1] > MH) return;
+        if (bx[2] < r[0] || bx[0] > r[2] || bx[3] < r[1] || bx[1] > r[3]) return;
+        if (Math.max(bx[2] - bx[0], bx[3] - bx[1]) < klein) return;
         const fl = p.pop && k === 'haus' ? popColor(f.id, p.pop.pal) : f.a ? c.f : 'none';
-        o += `<path d="${f.d}" fill="${fl}" stroke="${c.s}" stroke-width="${c.w * 1.6}" stroke-linecap="round" stroke-linejoin="round"/>`;
+        pfade += `<path d="${f.d}" fill="${fl}"/>`;
       });
+      if (pfade) o += `<g stroke="${c.s}" stroke-width="${c.w * 1.6}" stroke-linecap="round" stroke-linejoin="round" fill-rule="evenodd">${pfade}</g>`;
     });
-    o += `<rect x="-2000" y="-2000" width="6000" height="6000" fill="none"/>`;
-    b.querySelector('.th').innerHTML = o + '</svg>';
+    o += '</svg>';
+    try {
+      const url = await alsBild(o, 200);
+      if (lauf !== stilLauf) return URL.revokeObjectURL(url);
+      stilUrls.push(url);
+      setzen(key, url);
+    } catch (e) {}
+    weiter();
+  };
+  const setzen = (key, url) => knoepfe.forEach(b => {
+    if (b.dataset.p !== key) return;
+    const th = b.querySelector('.th');
+    if (th) th.innerHTML = `<img src="${url}" alt="">`;
   });
+  const weiter = () => {
+    const w = window;
+    if (w.requestIdleCallback) w.requestIdleCallback(naechstes, { timeout: 300 });
+    else setTimeout(naechstes, 20);
+  };
+  // Alte Bilder (anderer Ort) sofort weg, damit kein falscher Ort zu sehen ist
+  knoepfe.forEach(b => {
+    const th = b.querySelector('.th');
+    if (th) th.innerHTML = '';
+  });
+  naechstes();
 }
 
 /* ---------- Poster-Geometrie & SVG ---------- */

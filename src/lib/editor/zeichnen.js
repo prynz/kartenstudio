@@ -241,7 +241,7 @@ function zufall(id) {
  * Ohne Perspektive als Schrägansicht, mit Perspektive passend zum Kippwinkel.
  * Ergebnis in Kartenfeld-Koordinaten (0…MW, 0…MH).
  */
-function haeuser3d(liste, P) {
+function haeuser3d(liste, P, forExport) {
   const v = app.S.view, z = v.z, MH = MW * v.a, D = app.DATA;
   const pr = P ? P.f : (x, y) => [(x - v.cx) * z + MW / 2, (y - v.cy) * z + MH / 2, 1];
   // Meter je Kartenfeld-Punkt
@@ -289,6 +289,7 @@ function haeuser3d(liste, P) {
         const dx = b[0] - a[0], dy = b[1] - a[1];
         const ny = -dx * sg; // Außennormale (y-Anteil); > 0 = zeigt zum Betrachter
         if (ny <= 0) continue;
+        if (!forExport && Math.abs(dx) + Math.abs(dy) < 0.4) continue; // winzige Wandstücke: am Bildschirm unsichtbar
         const ha = hm * k * a[2], hb = hm * k * b[2];
         const q = `M${a[0].toFixed(1)} ${a[1].toFixed(1)}L${b[0].toFixed(1)} ${b[1].toFixed(1)}L${b[0].toFixed(1)} ${(b[1] - hb).toFixed(1)}L${a[0].toFixed(1)} ${(a[1] - ha).toFixed(1)}Z`;
         const nx = dy * sg;
@@ -451,7 +452,8 @@ export function mapContent(forExport, vr) {
       // Vorschaubild: Teile unter ~5 Poster-Punkten sind dort kleiner als ein Bildpunkt
       if (klein && Math.max(bx[2] - bx[0], bx[3] - bx[1]) < klein) return;
       if (h3d && k === 'haus') {
-        if (ft.a) haus3.push({ ft, e });
+        // Vorschau am Bildschirm: Häuser unter ~2 Poster-Punkten sind kleiner als ein Bildpunkt → weglassen (Export zeichnet alle)
+        if (ft.a && (forExport || Math.max(bx[2] - bx[0], bx[3] - bx[1]) * app.S.view.z >= 2)) haus3.push({ ft, e });
         return;
       }
       const lc = k === 'haus' ? 'stroke-linejoin="miter"' : 'stroke-linecap="round" stroke-linejoin="round"';
@@ -482,7 +484,7 @@ export function mapContent(forExport, vr) {
     });
   });
   // 3D-Häuser zuletzt: sie verdecken Straßen dahinter
-  const h3 = haus3.length ? haeuser3d(haus3, P) : '';
+  const h3 = haus3.length ? haeuser3d(haus3, P, forExport) : '';
   if (P) o = kippen(o, P, h3 ? `<g id="haeuser3d">${h3}</g>` : '');
   else if (h3) o += feldGruppe('haeuser3d', h3);
   }
@@ -515,8 +517,10 @@ function mapNodes() {
   const key = mapKey();
   if (key === MC.key && cacheCovers()) return MC;
   const rect = cullRect();
-  const doc = new DOMParser().parseFromString(`<svg xmlns="${NS}"><g id="kartenInhalt">${mapContent(false, rect)}</g></svg>`, 'image/svg+xml');
-  const node = document.importNode(doc.documentElement.firstChild, true);
+  // Einlesen über den HTML-Parser (template) – rund 3,5× schneller als DOMParser mit XML
+  const tpl = document.createElement('template');
+  tpl.innerHTML = `<svg xmlns="${NS}"><g id="kartenInhalt">${mapContent(false, rect)}</g></svg>`;
+  const node = document.adoptNode(tpl.content.firstChild.firstChild);
   // Klickflächen: breite unsichtbare Linien, damit man dünne Straßen gut trifft
   const hits = document.createElementNS(NS, 'g');
   const hw = (12 / app.S.view.z).toFixed(2);
@@ -548,9 +552,11 @@ let fullTimer = 0;
 export function renderView() {
   if (!app.DATA) return;
   const inner = app.poster.querySelector('#kartenAnsicht');
-  // Perspektive: Verschieben ändert die Verzerrung → jedes Mal neu zeichnen
+  // 3D-Ansicht (Landkarte): neues Kamerabild kurz nach dem Loslassen
   if (std3d()) scheduleKamera();
-  if (!inner || !MC.node || !cacheCovers() || perspektiveAn() || (app.S.fx && app.S.fx.h3d && app.S.mode !== 'std')) {
+  // Auch gekippt/3D: während des Ziehens das fertige Bild nur verschieben (flüssig),
+  // die genaue Perspektive wird 140 ms nach der letzten Bewegung neu berechnet.
+  if (!inner || !MC.node || !cacheCovers()) {
     render();
     return;
   }

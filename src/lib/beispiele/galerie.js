@@ -93,6 +93,8 @@ export function vorschlaegeZeichnen() {
 		let svg = '';
 		try {
 			app.S = lookZustand(B, JSON.parse(JSON.stringify(keep)), false);
+			// Vorschaubild ohne 3D – sonst wäre jedes Bild die ganze Stadt in 3D
+			if (app.S.fx) app.S.fx = { ...app.S.fx, h3d: false, kipp: 0, dreh: 0, schatten: false, relief: false, gelaende: false };
 			svg = vorschauSVG();
 		} finally {
 			app.S = keep;

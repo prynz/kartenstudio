@@ -29,6 +29,23 @@ function merken(f) {
 	} catch (e) {}
 }
 
+/**
+ * Anfrage an den Suchdienst – bei einem Aussetzer (kommt beim öffentlichen Dienst vor) nach kurzer Pause noch einmal.
+ * @param {string} url @returns {Promise<any>}
+ */
+export async function holen(url) {
+	for (let versuch = 0; ; versuch++) {
+		try {
+			const r = await fetch(url);
+			if (!r.ok) throw new Error('HTTP ' + r.status);
+			return await r.json();
+		} catch (e) {
+			if (versuch >= 1) throw e;
+			await new Promise((res) => setTimeout(res, 600));
+		}
+	}
+}
+
 /** Unterzeile eines Treffers @param {any} p */
 const zeile = (p) => [p.city && p.city !== p.name ? p.city : '', p.county, p.state, p.country].filter(Boolean).join(', ');
 
@@ -68,8 +85,7 @@ export function attachSearch(inp, btn, box, onPick) {
 			r.innerHTML = '<div class="info">Suche …</div>';
 		}
 		try {
-			const res = await fetch(KONFIG.geocoder + '?lang=de&limit=6&q=' + encodeURIComponent(q));
-			const j = await res.json();
+			const j = await holen(KONFIG.geocoder + '?lang=de&limit=6&q=' + encodeURIComponent(q));
 			if (meine !== nr) return; // inzwischen weitergetippt
 			if (!j.features || !j.features.length) {
 				r.classList.remove('hidden');
@@ -130,8 +146,7 @@ export function meinStandort(onPick, meldung) {
 			const { latitude: lat, longitude: lon } = pos.coords;
 			let f = { type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: { name: 'Mein Ort', osm_value: 'village' } };
 			try {
-				const r = await fetch(KONFIG.geocoder.replace(/api\/?$/, 'reverse') + `?lang=de&lon=${lon}&lat=${lat}`);
-				const j = await r.json();
+				const j = await holen(KONFIG.geocoder.replace(/api\/?$/, 'reverse') + `?lang=de&lon=${lon}&lat=${lat}`);
 				const g = j.features && j.features[0];
 				if (g) {
 					const p = g.properties;
