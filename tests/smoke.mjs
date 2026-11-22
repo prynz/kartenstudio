@@ -26,6 +26,8 @@ async function run(name, ctxOpts, fn) {
 	page.on('console', (m) => m.type() === 'error' && errors.push('console: ' + m.text()));
 	console.log(`\n— ${name}`);
 	await page.goto(URL);
+	// warten, bis die App gestartet ist (Knöpfe verbunden) – sonst klickt der Test ins Leere
+	await page.waitForFunction(() => document.querySelectorAll('#wzStyles button').length > 0, null, { timeout: 30000 }).catch(() => {});
 	await fn(page);
 	ok(errors.filter((e) => !/Failed to load resource/.test(e)).length === 0, 'keine Fehler im Browser' + (errors.length ? ': ' + errors.join(' | ') : ''));
 	await ctx.close();
@@ -36,7 +38,8 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 	await page.waitForTimeout(700);
 	await page.screenshot({ path: `${OUT}/1-start-desktop.png` });
 	await page.click('#demoBtn');
-	await page.waitForTimeout(900);
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForTimeout(500);
 	const n = await page.$$eval('#poster path[data-k]', (p) => p.length);
 	ok(n > 100, `Poster gezeichnet (${n} Kartenelemente)`);
 	ok(await page.locator('#landing').isHidden(), 'Startseite ausgeblendet');
@@ -160,7 +163,8 @@ await run('iPhone – Offline-Beispiel', { ...devices['iPhone 14'] }, async (pag
 	await page.waitForTimeout(700);
 	await page.screenshot({ path: `${OUT}/4-start-iphone.png` });
 	await page.click('#demoBtn');
-	await page.waitForTimeout(900);
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForTimeout(500);
 	ok((await page.$$eval('#poster path[data-k]', (p) => p.length)) > 100, 'Poster auf dem Handy gezeichnet');
 	await page.screenshot({ path: `${OUT}/5-editor-iphone.png` });
 	// Poster muss sichtbar bleiben, während man unten Einstellungen ändert
@@ -198,7 +202,8 @@ await run('iPhone – Offline-Beispiel', { ...devices['iPhone 14'] }, async (pag
 
 await run('Desktop – Druck, Pins, Teilen, Merken', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, acceptDownloads: true }, async (page) => {
 	await page.click('#demoBtn');
-	await page.waitForTimeout(900);
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForTimeout(500);
 	// Überrasch mich
 	const pre0 = await page.evaluate(() => document.querySelector('#wzStyles .on')?.dataset.p);
 	await page.click('.wz-pane[data-step="stil"] [data-dice]');
@@ -320,7 +325,8 @@ await run('Desktop – Anlass-Vorlagen und Effekte', { viewport: { width: 1440, 
 	await page.click('.occ-landing button[data-k="hochzeit"]');
 	ok((await page.getAttribute('#lq', 'placeholder')) === 'Wo habt ihr geheiratet?', 'Anlass „Hochzeit“ vorgemerkt (Suchfeld fragt passend)');
 	await page.click('#demoBtn');
-	await page.waitForTimeout(1200);
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForTimeout(500);
 	ok(await page.locator('.wz-pane[data-step="text"]').isVisible(), 'Nach dem Laden direkt beim Text (Datum eintragen)');
 	ok((await page.$$('#poster [data-pin]')).length === 1 && (await page.textContent('#widmung')) === 'Hier haben wir Ja gesagt', 'Herz und Widmung gesetzt');
 	ok((await page.$('#papier')) !== null, 'Papier-Struktur aktiv');
@@ -356,7 +362,8 @@ await run('Desktop – Anlass-Vorlagen und Effekte', { viewport: { width: 1440, 
 
 await run('Desktop – Sternenhimmel', { viewport: { width: 1440, height: 900 }, acceptDownloads: true }, async (page) => {
 	await page.click('#demoBtn');
-	await page.waitForTimeout(900);
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForTimeout(500);
 	await page.click('#wzMode button[data-m="sterne"]');
 	await page.waitForFunction(() => (document.querySelector('#kartenInhalt')?.innerHTML.length || 0) > 20000, null, { timeout: 15000 }).catch(() => {});
 	await page.fill('#skyDate', '2021-06-12');
@@ -392,7 +399,8 @@ await run('Desktop – Sternenhimmel', { viewport: { width: 1440, height: 900 },
 
 await run('Desktop – Preis, Geschenk, Rechtliches', { viewport: { width: 1440, height: 900 }, acceptDownloads: true }, async (page) => {
 	await page.click('#demoBtn');
-	await page.waitForTimeout(900);
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForTimeout(500);
 	await page.click('#wzSteps button[data-step="produkt"]');
 	await page.click('#wzProd button[data-t="gerahmt"]');
 	await page.click('.wz-pane[data-step="produkt"] [data-sizes] button[data-k="50x70"]');
@@ -455,7 +463,8 @@ await run('Desktop – Hilfe-Chat', { viewport: { width: 1440, height: 900 } }, 
 	await page.screenshot({ path: `${OUT}/28-chat.png` });
 	await page.keyboard.press('Escape');
 	await page.click('#demoBtn');
-	await page.waitForTimeout(900);
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForTimeout(500);
 	await page.click('#chatBtn');
 	await page.fill('#chatIn', 'Gibt es einen Sternenhimmel?');
 	await page.press('#chatIn', 'Enter');
@@ -467,7 +476,8 @@ await run('Desktop – Hilfe-Chat', { viewport: { width: 1440, height: 900 } }, 
 
 await run('Desktop – Marktcheck-Runde 1', { viewport: { width: 1440, height: 900 } }, async (page) => {
 	await page.click('#demoBtn');
-	await page.waitForTimeout(900);
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForTimeout(500);
 	// Einfarbige Themen + Typografie
 	await page.click('#wzStyles button[data-p="koralle"]');
 	await page.click('#wzSteps button[data-step="design"]');
@@ -515,7 +525,8 @@ await run('Desktop – Marktcheck-Runde 1', { viewport: { width: 1440, height: 9
 
 await run('Desktop – Wortwolke', { viewport: { width: 1440, height: 900 } }, async (page) => {
 	await page.click('#demoBtn');
-	await page.waitForTimeout(900);
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForTimeout(500);
 	await page.click('#wzMode button[data-m="wolke"]');
 	await page.waitForTimeout(1200);
 	const n = await page.$$eval('#wortwolke text', (t) => t.length);
@@ -544,7 +555,8 @@ await run('Desktop – Wortwolke', { viewport: { width: 1440, height: 900 } }, a
 
 await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {
 	await page.tap('#demoBtn');
-	await page.waitForTimeout(900);
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForTimeout(500);
 	const z0 = await page.evaluate(() => document.querySelector('#kartenAnsicht').getAttribute('transform'));
 	const b = await page.locator('#poster').boundingBox();
 	const cdp = await page.context().newCDPSession(page);
@@ -591,7 +603,8 @@ if (ONLINE)
 if (ONLINE)
 	await run('Desktop – Höhenlinien', { viewport: { width: 1440, height: 900 } }, async (page) => {
 		await page.click('#demoBtn');
-		await page.waitForTimeout(900);
+		await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+		await page.waitForTimeout(500);
 		await page.click('#wzStyles button[data-p="vintage"]');
 		await page.check('#hoehenOn');
 		await page.waitForSelector('#hoehenlinien', { timeout: 60000 }).catch(() => {});
@@ -606,7 +619,8 @@ if (ONLINE)
 if (ONLINE)
 	await run('Desktop – Route aus GPS-Datei', { viewport: { width: 1440, height: 900 } }, async (page) => {
 		await page.click('#demoBtn');
-		await page.waitForTimeout(900);
+		await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+		await page.waitForTimeout(500);
 		await page.click('#wzSteps button[data-step="ort"]');
 		await page.setInputFiles('#routeFile', new globalThis.URL('./fixtures/route-bamberg.gpx', import.meta.url).pathname);
 		await page.waitForSelector('#route', { timeout: 60000 }).catch(() => {});
@@ -626,7 +640,8 @@ if (ONLINE)
 if (ONLINE)
 	await run('Desktop – Mehrere Orte auf einem Poster', { viewport: { width: 1440, height: 900 } }, async (page) => {
 		await page.click('#demoBtn');
-		await page.waitForTimeout(900);
+		await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+		await page.waitForTimeout(500);
 		await page.click('#wzSteps button[data-step="ort"]');
 		await page.check('#multiOn');
 		await page.waitForTimeout(400);
