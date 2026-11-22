@@ -52,6 +52,12 @@ export function endDrag(ev) {
   }
   if (app.tool === 'move') {
     commit();
+    // Antippen (ohne Ziehen) von Titel/Untertitel → Text direkt im Poster ändern
+    const id = !d.moved && idOf(d.t);
+    if (id === 'title' || id === 'sub') {
+      app.curText = id;
+      openSec('text');
+    }
     return;
   }
   if (!d.moved) {

@@ -20,6 +20,7 @@ const ok = (cond, text) => {
 
 async function run(name, ctxOpts, fn) {
 	const ctx = await browser.newContext(ctxOpts);
+	if (!/Einführung/.test(name)) await ctx.addInitScript(() => localStorage.setItem('kartenstudio.tipps.v1', '1'));
 	const page = await ctx.newPage();
 	const errors = [];
 	page.on('pageerror', (e) => errors.push(String(e)));
@@ -606,6 +607,53 @@ await run('Einfacher Ablauf: Vorschläge, Top 6, Umfang, Widmungs-Ideen', { view
 	await page.click('#wzNoteIdeen button:first-child');
 	await page.waitForTimeout(300);
 	ok((await page.inputValue('#wzNote')) === 'Hier hat alles begonnen', 'Widmungs-Idee per Tippen');
+});
+
+await run('Bedienung im Poster: Einführung, Text im Poster, Gespeichert, Favoriten', { viewport: { width: 1440, height: 900 } }, async (page) => {
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForSelector('.coach', { timeout: 5000 }).catch(() => {});
+	ok(!!(await page.$('.coach')), 'Einführung erscheint beim ersten Mal');
+	await page.screenshot({ path: `${OUT}/48-einfuehrung.png` });
+	await page.click('.coach-ok');
+	await page.click('.coach-ok');
+	await page.click('.coach-ok');
+	ok(!(await page.$('.coach')) && (await page.evaluate(() => localStorage.getItem('kartenstudio.tipps.v1'))) === '1', 'Einführung durchgeklickt und gemerkt');
+	// Titel im Poster antippen → Eingabefeld direkt im Poster
+	const t = await page.locator('#titel').boundingBox();
+	await page.mouse.click(t.x + t.width / 2, t.y + t.height / 2);
+	await page.waitForSelector('.pe-feld', { timeout: 3000 }).catch(() => {});
+	ok(!!(await page.$('.pe-feld')), 'Eingabefeld erscheint direkt über dem Titel');
+	await page.fill('.pe-feld', 'MEIN DORF');
+	await page.keyboard.press('Enter');
+	await page.waitForTimeout(300);
+	ok((await page.textContent('#titel')).includes('MEIN DORF') && !(await page.$('.pe-feld')), 'Titel im Poster geändert');
+	await page.click('#undo');
+	await page.waitForTimeout(300);
+	ok((await page.textContent('#titel')).includes('SIEGRITZ'), 'Rückgängig stellt den Titel wieder her');
+	await page.waitForSelector('#gespeichert.on', { timeout: 4000 }).catch(() => {});
+	ok(!!(await page.$('#gespeichert.on')), '„Gespeichert ✓“ erscheint');
+	// Favoriten
+	await page.click('#wzSteps button[data-step="gestalten"]');
+	const p0 = await page.getAttribute('#wzStyles button.on', 'data-p');
+	await page.click('#favBtn');
+	await page.click('#wzStyles button[data-p="dunkel"]');
+	await page.waitForTimeout(400);
+	await page.click('#favBtn');
+	await page.waitForTimeout(600);
+	ok((await page.$$('#favGrid .fav')).length === 2, '2 Favoriten gemerkt');
+	await page.click('#favCmp');
+	await page.waitForTimeout(500);
+	ok((await page.$$('#favCmpGrid img')).length === 2, 'Vergleich zeigt beide nebeneinander');
+	await page.screenshot({ path: `${OUT}/49-vergleich.png` });
+	await page.click('#favCmpGrid .fc:last-child');
+	await page.waitForTimeout(500);
+	ok((await page.getAttribute('#wzStyles button.on', 'data-p')) === p0, `Favorit übernommen (${p0})`);
+	ok(await page.locator('#favOverlay').isHidden(), 'Vergleich schließt nach Auswahl');
+	// Vorschau als Bild teilen (am PC: Download)
+	await page.click('#wzSteps button[data-step="fertig"]');
+	const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), page.click('#shareImg')]);
+	ok(/vorschau\.jpg$/.test(dl.suggestedFilename()), `Vorschaubild: ${dl.suggestedFilename()}`);
 });
 
 await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {

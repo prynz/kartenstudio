@@ -16,6 +16,7 @@ import { initWizard } from './assistent.js';
 import { initRestore } from './wiederherstellen.js';
 import { initChat } from '../hilfe/chat.js';
 import { initGalerie } from '../beispiele/galerie.js';
+import { initDirekt } from './direkt.js';
 
 let started = false;
 export function start() {
@@ -36,4 +37,5 @@ export function start() {
   initRestore();
   initChat();
   initGalerie();
+  initDirekt();
 }

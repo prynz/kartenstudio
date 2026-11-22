@@ -31,6 +31,7 @@ export function saveDraft() {
 	if (!app.DATA || !app.S || !app.lastB) return;
 	try {
 		localStorage.setItem(KEY, JSON.stringify({ ...draftPayload(), t: Date.now() }));
+		dispatchEvent(new Event('ks-gespeichert'));
 	} catch (e) {
 		/* Speicher voll oder privat – dann eben ohne */
 	}

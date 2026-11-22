@@ -1,6 +1,7 @@
 // Geführter Ablauf („Assistent“): Ort → Ausschnitt → Stil → Design → Text → Fertig.
 // Es ist immer nur ein Schritt sichtbar. Alle Detailregler aus dem Prototyp
 // bleiben unter „Erweiterte Einstellungen“ erreichbar.
+import { textImPoster, einfuehrung, favoritenZeichnen } from './direkt.js';
 import { app as appUntyped } from './app.js';
 import { buildSVG, render } from './zeichnen.js';
 import { begin, change, clampView, commit, newState } from './zustand.js';
@@ -280,6 +281,7 @@ export function syncWizard() {
 	if (step === 'gestalten') {
 		scheduleDesignThumbs();
 		vorschlaegeZeichnen();
+		favoritenZeichnen();
 	}
 	if (step === 'fertig') {
 		syncFinish();
@@ -312,6 +314,7 @@ export function wizardAfterLoad() {
 	const bleib = app.bleibAusschnitt;
 	app.bleibAusschnitt = false;
 	if (!advOpen) goStep(bleib ? 'ausschnitt' : 'stil', false);
+	einfuehrung();
 }
 
 /**
@@ -454,6 +457,9 @@ export function wizardOpenSec(name) {
 	if (!wizOn()) return false;
 	if (name === 'text') {
 		goStep('text');
+		// Titel/Untertitel gleich im Poster bearbeiten
+		const k = app.curText;
+		if (k === 'title' || k === 'sub') requestAnimationFrame(() => textImPoster(k));
 		return true;
 	}
 	showAdvanced(true);

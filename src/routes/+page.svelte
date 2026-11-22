@@ -76,6 +76,7 @@
 <div class="hsp"></div>
 <button class="ibtn chat-btn" id="chatBtn" aria-controls="chat" aria-expanded="false" title="Fragen? Hilfe-Chat öffnen"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.3 2.4c-.5.2-.8.6-.8 1.1v.5"/><circle cx="12" cy="16.3" r=".6" fill="currentColor"/></svg><span>Hilfe</span></button>
 <span id="hdrEdit" class="hidden" style="display:flex;align-items:center;gap:4px">
+<span class="gesp" id="gespeichert" aria-live="polite"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Gespeichert</span></span>
 <button class="ibtn" id="undo" title="Rückgängig (Strg+Z)">↶</button><button class="ibtn" id="redo" title="Wiederholen (Strg+Y)">↷</button>
 <span style="width:8px"></span>
 <button class="btn primary" id="dlBtn">Herunterladen <span style="opacity:.7">▾</span></button>
@@ -144,6 +145,7 @@
 </section>
 <section class="wz-pane" data-step="stil">
 <div class="wz-head"><h3>Stil</h3><button type="button" class="wz-dice wz-bsp" data-bsp-open><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="6" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="12.5" width="7" height="8" rx="1.5"/></svg>Beispiele</button><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>
+<div class="fav-box" id="favBox" hidden><div class="lab">Deine Favoriten <i id="favN"></i><button type="button" class="wz-link fav-cmp" id="favCmp" hidden>Vergleichen ›</button></div><div class="fav-grid" id="favGrid"></div></div>
 <div class="lab vs-lab">Vorschläge für deinen Ort <i>antippen übernimmt den Look</i></div>
 <div class="vs-grid" id="wzVorschlaege"></div>
 <div class="lab">Oder selbst wählen</div>
@@ -233,6 +235,9 @@
 <p class="wz-hint">PNG und SVG haben einen transparenten Hintergrund – ideal für T-Shirts.</p>
 <div class="lab">Bestellen</div>
 <button type="button" class="btn wz-order" disabled title="Kommt bald"><span id="orderLabel">Bestellen</span><small>bald verfügbar</small></button>
+<div class="lab">Meinung einholen</div>
+<button type="button" class="btn wz-share" id="shareImg"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>Vorschau als Bild teilen</button>
+<p class="wz-hint">Schick das Bild per WhatsApp &amp; Co. an Familie oder Freunde.</p>
 <div class="lab">Verschenken</div>
 <label class="wz-field"><span>Deine Botschaft</span><textarea id="giftMsg" class="inp" rows="3" maxlength="280" placeholder="z. B. Damit du deine Heimat immer bei dir hast."></textarea></label>
 <label class="wz-field"><span>Von</span><input id="giftFrom" class="inp" type="text" maxlength="60" placeholder="z. B. Anna &amp; Tom"></label>
@@ -346,6 +351,7 @@
 
 <section class="stage">
 <div class="canvas checker" id="canvas"><svg id="poster" xmlns="http://www.w3.org/2000/svg"></svg></div>
+<button type="button" class="fav-btn" id="favBtn" title="Diesen Entwurf merken" aria-label="Entwurf merken"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/></svg><span>Merken</span></button>
 <div class="mockup" id="mockup" aria-live="polite"><div class="mk-scene" id="mkScene"></div></div>
 <div class="toolhint" id="toolHint"></div>
 <div class="dock" id="dock">
@@ -445,6 +451,9 @@
 </section>
 </div>
 
+<div class="bsp-ov" id="favOverlay" hidden><div class="bsp-panel fav-panel" role="dialog" aria-modal="true" aria-labelledby="favTitel">
+<div class="bsp-ph"><div><b id="favTitel">Favoriten vergleichen</b><small>Antippen übernimmt den Entwurf.</small></div><button class="ibtn" id="favClose" aria-label="Schließen">✕</button></div>
+<div class="fav-cmpgrid" id="favCmpGrid"></div></div></div>
 <div class="bsp-ov" id="bspOverlay" hidden><div class="bsp-panel" role="dialog" aria-modal="true" aria-labelledby="bspTitel">
 <div class="bsp-ph"><div><b id="bspTitel">Beispiele zur Inspiration</b><small>Antippen übernimmt den Look für deinen Ort – Stil, Design und Motiv.</small></div><button class="ibtn" id="bspClose" aria-label="Schließen">✕</button></div>
 <div class="bsp-grid" id="bspGrid"></div></div></div>

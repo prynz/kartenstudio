@@ -19,7 +19,7 @@ export const FAQ = [
 		id: 'preis',
 		q: 'Was kostet ein Poster?',
 		k: ['preis', 'kosten', 'kostet', 'teuer', 'euro', '€', 'günstig'],
-		a: 'Beispielpreise: Poster A4 ab 19,90 €, 50 × 70 cm 39,90 €, gerahmt ab 44,90 €, Leinwand ab 34,90 €, T-Shirt 29,90 €, Tasse 19,90 €. Den genauen Preis siehst du im Schritt „Produkt“. Die Druckdatei zum Selbstdrucken kannst du schon jetzt kostenlos herunterladen.',
+		a: 'Beispielpreise: Poster A4 ab 19,90 €, 50 × 70 cm 39,90 €, gerahmt ab 44,90 €, Leinwand ab 34,90 €, T-Shirt 29,90 €, Tasse 19,90 €. Den genauen Preis siehst du im Schritt „Fertig“. Die Druckdatei zum Selbstdrucken kannst du schon jetzt kostenlos herunterladen.',
 		act: { label: 'Zum Schritt Produkt', step: 'produkt' }
 	},
 	{
@@ -33,7 +33,7 @@ export const FAQ = [
 		id: 'groesse',
 		q: 'Welche Größen gibt es?',
 		k: ['größe', 'groesse', 'format', 'a4', 'a3', 'a2', '50x70', '70x100', 'quer', 'querformat', 'quadrat'],
-		a: 'A4, A3, A2, 30 × 40, 50 × 70, 70 × 100 cm sowie quadratisch 30 × 30 und 50 × 50 cm – jeweils auch quer. Wähl die Größe im Schritt „Ausschnitt“; das Poster passt sich dann genau an.',
+		a: 'A4, A3, A2, 30 × 40, 50 × 70, 70 × 100 cm sowie quadratisch 30 × 30 und 50 × 50 cm – jeweils auch quer. Wähl die Größe im Schritt „Ort“; das Poster passt sich dann genau an.',
 		act: { label: 'Größe wählen', step: 'ausschnitt' }
 	},
 	{
@@ -59,14 +59,14 @@ export const FAQ = [
 		id: 'ausschnitt',
 		q: 'Wie verschiebe oder zoome ich die Karte?',
 		k: ['verschieben', 'zoomen', 'zoom', 'ausschnitt', 'größer', 'kleiner', 'näher'],
-		a: 'Zieh die Karte direkt im Poster. Zoomen geht mit zwei Fingern, mit + / − im Schritt „Ausschnitt“ oder am PC mit dem Mausrad.',
+		a: 'Zieh die Karte direkt im Poster. Zoomen geht mit zwei Fingern, mit + / − im Schritt „Ort“ oder am PC mit dem Mausrad.',
 		act: { label: 'Zum Ausschnitt', step: 'ausschnitt' }
 	},
 	{
 		id: 'sterne',
 		q: 'Gibt es einen Sternenhimmel?',
 		k: ['stern', 'sterne', 'sternenhimmel', 'himmel', 'sternbild', 'nacht', 'geburt datum'],
-		a: 'Ja: Im Schritt „Stil“ auf „Sternenhimmel“ tippen, Datum und Uhrzeit eintragen – der Himmel wird aus echten Sterndaten für genau diesen Ort und Moment berechnet. Sternbilder, Namen, Milchstraße und Farben sind einstellbar.',
+		a: 'Ja: Im Schritt „Gestalten“ auf „Sternenhimmel“ tippen, Datum und Uhrzeit eintragen – der Himmel wird aus echten Sterndaten für genau diesen Ort und Moment berechnet. Sternbilder, Namen, Milchstraße und Farben sind einstellbar.',
 		act: { label: 'Sternenhimmel öffnen', do: 'sterne' }
 	},
 	{
@@ -121,7 +121,7 @@ export const FAQ = [
 		id: 'produkte',
 		q: 'Welche Produkte gibt es?',
 		k: ['produkt', 'rahmen', 'leinwand', 'tasse', 'shirt', 't-shirt', 'mockup', 'vorschau', 'wand'],
-		a: 'Poster, Poster mit Rahmen (7 Rahmen, optional Passepartout), Leinwand, T-Shirt (7 Farben) und Tasse. Im Schritt „Produkt“ siehst du alles maßstäblich im Raum oder am Model.',
+		a: 'Poster, Poster mit Rahmen (7 Rahmen, optional Passepartout), Leinwand, T-Shirt (7 Farben) und Tasse. Im Schritt „Fertig“ siehst du alles maßstäblich im Raum oder am Model.',
 		act: { label: 'Zum Schritt Produkt', step: 'produkt' }
 	},
 	{
@@ -146,7 +146,7 @@ export const FAQ = [
 		id: 'hoehe',
 		q: 'Gibt es Höhenlinien?',
 		k: ['höhe', 'höhenlinien', 'berg', 'berge', 'gelände', 'relief'],
-		a: 'Ja: Im Schritt „Stil“ „Höhenlinien“ einschalten – besonders schön bei hügeligen Orten.'
+		a: 'Ja: Im Schritt „Gestalten“ „Höhenlinien“ einschalten – besonders schön bei hügeligen Orten.'
 	},
 	{
 		id: 'datenschutz',
