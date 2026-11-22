@@ -3,7 +3,9 @@
 // Später auch selbst hostbar (gleiches Format).
 // Ablauf: Höhenkacheln laden → Höhenraster in Poster-Koordinaten → glätten → Linien per „Marching Squares“.
 
-const URL_T = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+import { KONFIG } from '../konfig.js';
+
+const URL_T = KONFIG.terrain;
 const TILES = new Map();
 
 /** Eine Höhenkachel laden und in Meter umrechnen @param {number} z @param {number} x @param {number} y */

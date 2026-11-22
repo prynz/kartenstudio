@@ -279,6 +279,11 @@ await run('Desktop – Druck, Pins, Teilen, Merken', { viewport: { width: 1440, 
 	const mb = head.match(/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/);
 	const mm = mb ? [(+mb[1] * 25.4) / 72, (+mb[2] * 25.4) / 72] : [0, 0];
 	ok(head.startsWith('%PDF') && /TrimBox/.test(head) && Math.abs(mm[0] - 303) < 0.5 && Math.abs(mm[1] - 426) < 0.5, `PDF A3 mit Beschnitt (${mm.map((v) => v.toFixed(1)).join(' × ')} mm, ${Math.round(fs.statSync(pdf).size / 1024)} KB)`);
+	const [dlv] = await Promise.all([page.waitForEvent('download', { timeout: 90000 }), page.click('.wz-dl button[data-f="pdfv"]')]);
+	const pdfv = `${OUT}/${dlv.suggestedFilename()}`;
+	await dlv.saveAs(pdfv);
+	const vpdf = fs.readFileSync(pdfv).toString('latin1');
+	ok(vpdf.startsWith("%PDF") && /TrimBox/.test(vpdf) && /BleedBox/.test(vpdf) && /FontFile2/.test(vpdf), `Vektor-PDF mit eingebetteten Schriften und Beschnitt (${Math.round(fs.statSync(pdfv).size / 1024)} KB)`);
 	// Teilen-Link
 	await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
 	await page.click('#wzShare');

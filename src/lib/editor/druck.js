@@ -243,3 +243,133 @@ export function neonColors(S) {
 		return s > 0.85 && l > 0.38 && l < 0.72 && (g > 0.75 || (b > 0.8 && r < 0.4) || (r > 0.85 && b > 0.6));
 	});
 }
+
+/* ---------- Vektor-PDF ----------
+   Wie das Bild-PDF (Endformat + 3 mm Beschnitt), aber Linien und Schrift bleiben Vektoren:
+   gestochen scharf in jeder Größe und meist deutlich kleiner. jsPDF + svg2pdf werden erst
+   beim Export geladen. Schriften werden eingebettet (WOFF → TTF im Browser umgewandelt). */
+
+/** WOFF (Version 1) in eine normale TTF-Schrift zurückverwandeln @param {Uint8Array} w */
+async function woffToTtf(w) {
+	const dv = new DataView(w.buffer, w.byteOffset, w.byteLength);
+	if (dv.getUint32(0) !== 0x774f4646) return w; // kein WOFF → schon TTF
+	const n = dv.getUint16(12);
+	/** @type {{tag:number, data:Uint8Array, sum:number}[]} */
+	const tables = [];
+	for (let i = 0; i < n; i++) {
+		const o = 44 + i * 20;
+		const tag = dv.getUint32(o),
+			off = dv.getUint32(o + 4),
+			comp = dv.getUint32(o + 8),
+			orig = dv.getUint32(o + 12),
+			sum = dv.getUint32(o + 16);
+		let data = w.subarray(off, off + comp);
+		if (comp < orig) {
+			const res = new Response(new Blob([/** @type {BlobPart} */ (data)]).stream().pipeThrough(new DecompressionStream('deflate')));
+			data = new Uint8Array(await res.arrayBuffer());
+		}
+		tables.push({ tag, data, sum });
+	}
+	let size = 12 + 16 * n;
+	tables.forEach((t) => (size += (t.data.length + 3) & ~3));
+	const out = new Uint8Array(size),
+		ov = new DataView(out.buffer);
+	ov.setUint32(0, dv.getUint32(4)); // flavor
+	ov.setUint16(4, n);
+	let es = 0;
+	while (1 << (es + 1) <= n) es++;
+	ov.setUint16(6, 16 << es);
+	ov.setUint16(8, es);
+	ov.setUint16(10, n * 16 - (16 << es));
+	let off = 12 + 16 * n;
+	tables.forEach((t, i) => {
+		const r = 12 + i * 16;
+		ov.setUint32(r, t.tag);
+		ov.setUint32(r + 4, t.sum);
+		ov.setUint32(r + 8, off);
+		ov.setUint32(r + 12, t.data.length);
+		out.set(t.data, off);
+		off += (t.data.length + 3) & ~3;
+	});
+	return out;
+}
+/** @param {Uint8Array} u */
+function toB64(u) {
+	let s = '';
+	for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000));
+	return btoa(s);
+}
+
+export async function buildVectorPDF() {
+	const S = app.S;
+	const P = paperOrFree(S);
+	const [{ jsPDF }, { svg2pdf }, { FONTDATA }] = await Promise.all([import('jspdf'), import('svg2pdf.js'), import('./basis.js')]);
+	const pw = P.w * 10 + 2 * BLEED,
+		ph = P.h * 10 + 2 * BLEED;
+	const doc = new jsPDF({ unit: 'mm', format: [pw, ph], orientation: pw > ph ? 'landscape' : 'portrait', compress: true });
+	// Schriften einbetten. Inter liegt im Browser als CFF-Schrift vor, die jsPDF nicht kann –
+	// dafür gibt es eine TrueType-Fassung (nur fürs PDF, wird erst hier geladen).
+	const [xb, md] = await Promise.all([import('../assets/fonts/inter-xb-tt.ttf?inline'), import('../assets/fonts/inter-md-tt.ttf?inline')]);
+	const b64 = (/** @type {string} */ u) => u.slice(u.indexOf(',') + 1);
+	/** @type {Record<string,string>} */
+	const TT = { SgXB: b64(xb.default), SgMD: b64(md.default) };
+	for (const name of /** @type {const} */ (['SgXB', 'SgMD', 'SgFR'])) {
+		const data = TT[name] || toB64(await woffToTtf(Uint8Array.from(atob(FONTDATA[name]), (c) => c.charCodeAt(0))));
+		doc.addFileToVFS(name + '.ttf', data);
+		doc.addFont(name + '.ttf', name, 'normal');
+	}
+	// Seite in Papierfarbe (inkl. Beschnitt)
+	doc.setFillColor(S.bg && S.bg !== 'none' ? S.bg : '#ffffff');
+	doc.rect(0, 0, pw, ph, 'F');
+	const el = new DOMParser().parseFromString(buildSVG(true), 'image/svg+xml').documentElement;
+	el.querySelectorAll('style').forEach((s) => s.remove());
+	// Papier-Struktur ist ein Pixelmuster mit Mischmodus – im Vektor-PDF weglassen
+	el.querySelectorAll('#papier').forEach((s) => s.remove());
+	// Laufweite (letter-spacing) kennt svg2pdf nicht → jeden Buchstaben einzeln positionieren
+	await Promise.all(['SgXB', 'SgMD', 'SgFR'].map((f) => document.fonts.load(`40px ${f}`)));
+	const mc = /** @type {CanvasRenderingContext2D} */ (document.createElement('canvas').getContext('2d'));
+	el.querySelectorAll('text[letter-spacing]').forEach((t) => {
+		const ls = parseFloat(t.getAttribute('letter-spacing') || '0');
+		const txt = t.textContent || '';
+		if (!ls || !txt || t.children.length) return;
+		const size = parseFloat(t.getAttribute('font-size') || '16');
+		mc.font = `${size}px ${t.getAttribute('font-family')}`;
+		const chars = [...txt];
+		const ws = chars.map((c) => mc.measureText(c).width);
+		const total = ws.reduce((a, b) => a + b, 0) + ls * chars.length;
+		const x = parseFloat(t.getAttribute('x') || '0');
+		const anchor = t.getAttribute('text-anchor') || 'start';
+		let cx = anchor === 'middle' ? x - total / 2 : anchor === 'end' ? x - total : x;
+		t.textContent = '';
+		t.setAttribute('text-anchor', 'start');
+		t.removeAttribute('letter-spacing');
+		chars.forEach((c, i) => {
+			const sp = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+			sp.setAttribute('x', cx.toFixed(2));
+			sp.textContent = c;
+			t.appendChild(sp);
+			cx += ws[i] + ls;
+		});
+	});
+	const g = geo();
+	const fit = Math.min((P.w * 10) / g.W, (P.h * 10) / g.H);
+	const dw = g.W * fit,
+		dh = g.H * fit;
+	// svg2pdf braucht das SVG im Dokument (für Maße), unsichtbar anhängen
+	const host = document.createElement('div');
+	host.style.cssText = 'position:fixed;left:-99999px;top:0;width:10px;height:10px;overflow:hidden';
+	host.appendChild(el);
+	document.body.appendChild(host);
+	try {
+		await svg2pdf(/** @type {any} */ (el), doc, { x: (pw - dw) / 2, y: (ph - dh) / 2, width: dw, height: dh });
+	} finally {
+		host.remove();
+	}
+	// Druckerei-Angaben: Endformat (TrimBox) und Beschnitt (BleedBox), in Punkt
+	const pt = (/** @type {number} */ v) => (v * 72) / 25.4;
+	const ctx = /** @type {any} */ (doc.internal).getCurrentPageInfo().pageContext;
+	ctx.trimBox = { bottomLeftX: pt(BLEED), bottomLeftY: pt(BLEED), topRightX: pt(pw - BLEED), topRightY: pt(ph - BLEED) };
+	ctx.bleedBox = { bottomLeftX: 0, bottomLeftY: 0, topRightX: pt(pw), topRightY: pt(ph) };
+	doc.setProperties({ title: 'Kartenstudio – ' + String(app.DATA.place || 'Karte'), creator: 'Kartenstudio' });
+	return { blob: doc.output('blob'), paper: P };
+}

@@ -2,6 +2,7 @@
 // Vektorkacheln (OpenFreeMap) laden und dekodieren
 // Aus dem Prototyp übernommen (prototyp/src/script.js).
 import { app } from '../editor/app.js';
+import { KONFIG } from '../konfig.js';
 
 export /* ---------- Vektorkacheln (OpenFreeMap, OpenMapTiles-Schema) ---------- */
 function PB(buf) {
@@ -145,7 +146,7 @@ export function decodeTile(buf, want) {
 export const TILECACHE = new Map();
 export async function tileTemplate() {
   if (app.TILEURL) return app.TILEURL;
-  const r = await fetch('https://tiles.openfreemap.org/planet');
+  const r = await fetch(KONFIG.tileJson);
   if (!r.ok) throw new Error('TileJSON HTTP ' + r.status);
   const j = await r.json();
   app.TILEURL = {

@@ -4,17 +4,23 @@
 import { app } from '../editor/app.js';
 import { $ } from '../editor/basis.js';
 import { setGen } from '../editor/laden.js';
+import { KONFIG } from '../konfig.js';
 
 /** MapLibre (groß) erst laden, wenn das Kartenfenster wirklich gebraucht wird */
 export function loadMaplibre() {
-  return Promise.all([import('maplibre-gl'), import('maplibre-gl/dist/maplibre-gl.css')]).then(([m]) => m.default || m);
+  // MapLibre 6: der Hintergrund-Prozess (Worker) wird als eigene Datei mit ausgeliefert
+  return Promise.all([import('maplibre-gl'), import('maplibre-gl/dist/maplibre-gl-worker.mjs?url'), import('maplibre-gl/dist/maplibre-gl.css')]).then(([m, w]) => {
+    const lib = m.default || m;
+    if (lib.setWorkerUrl) lib.setWorkerUrl(w.default);
+    return lib;
+  });
 }
 export async function initMap() {
   try {
     const maplibregl = await loadMaplibre();
     app.map = new maplibregl.Map({
       container: 'map',
-      style: 'https://tiles.openfreemap.org/styles/positron',
+      style: KONFIG.styles + '/positron',
       center: [11.2111, 49.8514],
       zoom: 15.3,
       attributionControl: {

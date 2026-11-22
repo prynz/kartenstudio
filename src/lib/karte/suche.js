@@ -2,6 +2,7 @@
 // Ortssuche (Photon-Geocoder)
 // Aus dem Prototyp übernommen (prototyp/src/script.js).
 import { $, esc } from '../editor/basis.js';
+import { KONFIG } from '../konfig.js';
 
 export function attachSearch(inp, btn, box, onPick) {
   async function run() {
@@ -11,7 +12,7 @@ export function attachSearch(inp, btn, box, onPick) {
     R.classList.remove('hidden');
     R.innerHTML = '<div class="info">Suche …</div>';
     try {
-      const r = await fetch('https://photon.komoot.io/api/?lang=de&limit=6&q=' + encodeURIComponent(q));
+      const r = await fetch(KONFIG.geocoder + '?lang=de&limit=6&q=' + encodeURIComponent(q));
       const j = await r.json();
       R.innerHTML = '';
       if (!j.features || !j.features.length) {

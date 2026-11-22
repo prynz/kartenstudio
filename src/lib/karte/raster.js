@@ -2,6 +2,7 @@
 // Standard-Stile als hochaufgelöstes Bild rendern
 // Aus dem Prototyp übernommen (prototyp/src/script.js).
 import { loadMaplibre } from './ortswahl.js';
+import { KONFIG } from '../konfig.js';
 import { app } from '../editor/app.js';
 import { BASES } from '../themen/standard.js';
 import { MW } from '../editor/basis.js';
@@ -34,7 +35,7 @@ async function styleFor(B, labels) {
     st.sources.sat = {
       type: 'raster',
       // Amtliches Luftbild Bayern (WMS, 40 cm), Datenquelle: Bayerische Vermessungsverwaltung, CC BY 4.0
-      tiles: ['https://geoservices.bayern.de/od/wms/dop/v1/dop40?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=by_dop40c&STYLES=&SRS=EPSG:3857&BBOX={bbox-epsg-3857}&WIDTH=256&HEIGHT=256&FORMAT=image/jpeg'],
+      tiles: [KONFIG.luftbildBayern],
       tileSize: 256,
       maxzoom: 20
     };
@@ -71,7 +72,7 @@ async function drawRect(maplibregl, rect, cssW) {
   let m = null;
   try {
     const st = await styleFor(B, app.S.labels);
-    m = new maplibregl.Map({ container: div, style: st, center: c, zoom, interactive: false, attributionControl: false, preserveDrawingBuffer: true, pixelRatio: pr, fadeDuration: 0 });
+    m = new maplibregl.Map({ container: div, style: st, center: c, zoom, interactive: false, attributionControl: false, canvasContextAttributes: { preserveDrawingBuffer: true }, pixelRatio: pr, fadeDuration: 0 });
     await new Promise((res, rej) => {
       const to = setTimeout(() => rej(new Error('Zeitüberschreitung')), 60000);
       m.once('idle', () => {

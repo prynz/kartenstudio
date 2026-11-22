@@ -28,7 +28,7 @@
 <div class="pop hidden" id="dlPop">
 <h4>Design herunterladen</h4>
 <div class="lab" style="margin-top:0">Format</div>
-<div class="seg" id="dlFmt"><button data-f="png" class="on">PNG</button><button data-f="svg">SVG</button><button data-f="pdf">PDF Druck</button></div>
+<div class="seg" id="dlFmt"><button data-f="png" class="on">PNG</button><button data-f="svg">SVG</button><button data-f="pdfv">PDF Vektor</button><button data-f="pdf">PDF Bild</button></div>
 <div id="dlSizeRow"><div class="lab">Breite</div>
 <select class="inp" id="pngW" style="width:100%"><option value="2400">2400 px · Web & kleine Drucke</option><option value="3600" selected>3600 px · 30 cm bei 300 dpi</option><option value="4800">4800 px · 40 cm bei 300 dpi</option></select></div>
 <button class="btn accent" id="dlGo" style="width:100%;margin-top:14px;justify-content:center">Datei erstellen</button>
@@ -143,7 +143,8 @@
 <div class="qa" id="wzQa"></div>
 <label class="tog wz-tog wz-proof"><input type="checkbox" id="softproof"><span>Druckfarben simulieren</span></label>
 <div class="wz-dl">
-<button data-f="pdf"><b>PDF für die Druckerei</b><span id="wzPdfInfo">Endformat + 3 mm Beschnitt</span></button>
+<button data-f="pdfv"><b>PDF für die Druckerei</b><span>Vektor · gestochen scharf in jeder Größe · 3 mm Beschnitt</span></button>
+<button data-f="pdf"><b>PDF als Bild</b><span id="wzPdfInfo">Endformat + 3 mm Beschnitt</span></button>
 <button data-f="png" data-w="3600"><b>PNG für den Druck</b><span>3600 px · ca. 30 cm bei 300 dpi</span></button>
 <button data-f="png" data-w="4800"><b>PNG groß</b><span>4800 px · ca. 40 cm bei 300 dpi</span></button>
 <button data-f="svg"><b>SVG (Vektor)</b><span>beliebig skalierbar · für Druckereien</span></button>
