@@ -23,7 +23,9 @@ import { PIN_SHAPES } from './zeichnen.js';
 import { shareLink } from './entwurf.js';
 import { ANLAESSE } from '../themen/anlaesse.js';
 import { initMulti, syncMulti } from './mehrere.js';
-import { beispielNachLaden } from '../beispiele/galerie.js';
+import { beispielNachLaden, vorschlaegeZeichnen } from '../beispiele/galerie.js';
+import { meinStandort } from '../karte/suche.js';
+import { defView, vLimits } from './zustand.js';
 import { initRoute, syncRoute } from './route.js';
 import { preis, lieferung } from '../shop/preise.js';
 import { initGift } from '../shop/geschenk.js';
@@ -264,6 +266,7 @@ export function syncWizard() {
 	/** @type {HTMLInputElement} */ ($('fxVig')).checked = !!(S.fx && S.fx.vig);
 	all('[data-occ] button').forEach((b) => b.classList.toggle('on', b.dataset.k === S.occasion));
 	if (step === 'design') scheduleDesignThumbs();
+	if (step === 'stil') vorschlaegeZeichnen();
 	if (step === 'fertig') syncFinish();
 	syncProduct();
 	if (step === 'produkt') scheduleMockup();
@@ -602,6 +605,73 @@ export function initWizard() {
 				if (app.S.mode === 'std') ensureRaster();
 			})
 	);
+
+	// „Top 6 zuerst“: beliebte Stile und Designs nach vorn, der Rest auf Wunsch
+	/** @param {string} id @param {string[]} top @param {string} attr */
+	const nachVorn = (id, top, attr) => {
+		const box = $(id);
+		[...top].reverse().forEach((k) => {
+			const b = box.querySelector(`[data-${attr}="${k}"]`);
+			if (b) box.prepend(b);
+		});
+	};
+	// (erst nachdem alle Karten erzeugt sind – das passiert weiter unten)
+	setTimeout(() => {
+		nachVorn('wzStyles', ['umriss', 'dunkel', 'vintage', 'koralle', 'blaupause', 'popart'], 'p');
+		nachVorn('wzDesigns', ['siegritz', 'klassisch', 'galerie', 'kreiskoord', 'herz', 'typo'], 'd');
+	}, 0);
+	all('[data-alle]').forEach(
+		(b) =>
+			(b.onclick = () => {
+				const box = $(/** @type {string} */ (b.dataset.alle));
+				const zu = box.classList.toggle('kurz');
+				b.textContent = zu ? (b.dataset.alle === 'wzStyles' ? 'Alle Farbstile anzeigen ›' : 'Alle Designs anzeigen ›') : 'Weniger anzeigen ‹';
+				if (!zu && !reducedMotion()) box.animate([{ opacity: 0.6 }, { opacity: 1 }], { duration: 220, easing: EASE });
+			})
+	);
+
+	// Wie viel vom Ort? (statt + / −)
+	all('#wzUmfang button').forEach(
+		(b) =>
+			(b.onclick = () =>
+				smooth(() =>
+					change(() => {
+						const S = app.S;
+						const v = { ...defView(), a: S.view.a };
+						const L = vLimits(v);
+						v.z = b.dataset.z === 'kern' ? 1.7 : b.dataset.z === 'ort' ? 1 : L.zmin;
+						S.view = v;
+						clampView(S.view);
+					})
+				))
+	);
+
+	// Widmungs-Ideen zum Antippen
+	[
+		'Hier hat alles begonnen',
+		'Unser Zuhause seit …',
+		'Wo unser Herz wohnt',
+		'Willkommen auf der Welt',
+		'Heimat ist kein Ort, sondern ein Gefühl',
+		'Hier haben wir Ja gesagt'
+	].forEach((t) => {
+		const b = document.createElement('button');
+		b.type = 'button';
+		b.textContent = t;
+		b.onclick = () => {
+			change(() => (app.S.note = { ...(app.S.note || {}), on: true, auto: false, text: t }));
+			// „…“ = hier fehlt noch etwas (z. B. das Jahr) → Eingabefeld mit Cursor ans Ende
+			if (t.includes('…')) {
+				const inp = /** @type {HTMLInputElement} */ ($('wzNote'));
+				inp.focus();
+				inp.setSelectionRange(inp.value.length - 1, inp.value.length);
+			}
+		};
+		$('wzNoteIdeen').appendChild(b);
+	});
+
+	// Mein Standort (Startseite und Schritt „Ort“)
+	['lgeo', 'wgeo'].forEach((id) => ($(id).onclick = () => meinStandort(pickPlace, (t) => t && msg(t, t.includes('…') ? 'busy' : 'err'))));
 
 	// Wortwolke
 	{

@@ -580,3 +580,23 @@ textarea.inp{width:100%;box-sizing:border-box;resize:vertical;font:inherit;min-h
 .bsp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;padding:18px 22px 24px;overflow:auto;overscroll-behavior:contain}
 @media(max-width:600px){.bsp-ov{padding:0;place-items:end stretch}.bsp-panel{border-radius:18px 18px 0 0;max-height:88vh}.bsp-grid{grid-template-columns:repeat(2,1fr);padding:14px 16px 24px}}
 @media(prefers-reduced-motion:reduce){.bsp-img{transition:none}}
+/* Vorschläge, Top 6, Umfang, Widmungs-Ideen, Standort */
+.vs-lab i,.wz-field i{font-style:normal;font-weight:400;color:var(--soft,#9aa0aa);margin-left:6px;text-transform:none;letter-spacing:0}
+.vs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:6px}
+.vs{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:5px;min-width:0}
+.vs-img{display:block;aspect-ratio:3/4;transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.vs-img img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(20,24,35,.16))}
+.vs-img img:not([src]){visibility:hidden}
+.vs:hover .vs-img,.vs:focus-visible .vs-img{transform:translateY(-2px)}
+.vs:focus-visible{outline:2px solid var(--accent,#2f6fe4);outline-offset:3px;border-radius:10px}
+.vs b{font-size:12px;font-weight:600;line-height:1.25;color:var(--ink,#1c1f26)}
+.wz-cards.kurz>button:nth-child(n+7):not(.on){display:none}
+.wz-alle{margin-top:8px}
+.wz-ideen{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 12px}
+.wz-ideen button{all:unset;cursor:pointer;font-size:12.5px;padding:5px 10px;border-radius:999px;background:var(--hover,#f3f2ef);color:var(--ink,#1c1f26)}
+.wz-ideen button:hover{background:#e8e6e0}
+.wz-ideen button:focus-visible{outline:2px solid var(--accent,#2f6fe4);outline-offset:2px}
+.lp-geo{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:13.5px;font-weight:600;color:var(--slate,#262c3a)}
+.lp-geo:hover{text-decoration:underline}
+.lp-geo:focus-visible{outline:2px solid var(--accent,#2f6fe4);outline-offset:3px;border-radius:6px}
+@media(max-width:900px){.wz-ideen{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-16px;margin-right:-16px;padding:0 16px 4px}.wz-ideen button{flex:0 0 auto}}

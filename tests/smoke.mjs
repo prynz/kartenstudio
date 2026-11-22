@@ -28,6 +28,8 @@ async function run(name, ctxOpts, fn) {
 	await page.goto(URL);
 	// warten, bis die App gestartet ist (Knöpfe verbunden) – sonst klickt der Test ins Leere
 	await page.waitForFunction(() => document.querySelectorAll('#wzStyles button').length > 0, null, { timeout: 30000 }).catch(() => {});
+	// Für die Tests alle Stile/Designs sichtbar (im Alltag zeigt die App zuerst die beliebtesten 6)
+	if (!/Top 6/.test(name)) await page.evaluate(() => document.querySelectorAll('.wz-cards.kurz').forEach((e) => e.classList.remove('kurz'))).catch(() => {});
 	await fn(page);
 	ok(errors.filter((e) => !/Failed to load resource/.test(e)).length === 0, 'keine Fehler im Browser' + (errors.length ? ': ' + errors.join(' | ') : ''));
 	await ctx.close();
@@ -575,6 +577,34 @@ await run('Beispiel-Galerie', { viewport: { width: 1440, height: 900 } }, async 
 	ok(await page.locator('#bspOverlay').isHidden(), 'Galerie schließt sich danach');
 });
 
+await run('Einfacher Ablauf: Vorschläge, Top 6, Umfang, Widmungs-Ideen', { viewport: { width: 1440, height: 900 } }, async (page) => {
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForFunction(() => [...document.querySelectorAll('#wzVorschlaege img')].filter((i) => i.complete && i.naturalWidth > 0).length === 6, null, { timeout: 20000 }).catch(() => {});
+	ok((await page.$$eval('#wzVorschlaege img', (i) => i.filter((x) => x.complete && x.naturalWidth > 0).length)) === 6, '6 Vorschläge mit dem eigenen Ort');
+	await page.screenshot({ path: `${OUT}/47-vorschlaege.png` });
+	const sichtbar = await page.$$eval('#wzStyles > button', (b) => b.filter((x) => x.offsetParent !== null).length);
+	ok(sichtbar === 6, `Top 6 Stile zuerst (${sichtbar} sichtbar)`);
+	await page.click('[data-alle="wzStyles"]');
+	ok((await page.$$eval('#wzStyles > button', (b) => b.filter((x) => x.offsetParent !== null).length)) > 15, '„Alle anzeigen“ zeigt alle Stile');
+	await page.click('#wzVorschlaege [data-id="bamberg-typo"]');
+	await page.waitForTimeout(700);
+	ok((await page.$$('#titel text')).length >= 2 && (await page.textContent('#titel')).includes('SIE'), 'Vorschlag „Typografie“ übernommen – mit eigenem Ort');
+	await page.click('#wzSteps button[data-step="ausschnitt"]');
+	const sc = async () => parseFloat(((await page.getAttribute('#kartenAnsicht', 'transform')) || '').match(/scale\(([\d.]+)\)/)?.[1] || '0');
+	await page.click('#wzUmfang button[data-z="kern"]');
+	await page.waitForTimeout(500);
+	const zk = await sc();
+	await page.click('#wzUmfang button[data-z="weit"]');
+	await page.waitForTimeout(500);
+	const zw = await sc();
+	ok(zk > 1.5 && zw < zk - 0.1, `Ortskern / Mit Umgebung (${zk.toFixed(2)} → ${zw.toFixed(2)})`);
+	await page.click('#wzSteps button[data-step="text"]');
+	await page.click('#wzNoteIdeen button:first-child');
+	await page.waitForTimeout(300);
+	ok((await page.inputValue('#wzNote')) === 'Hier hat alles begonnen', 'Widmungs-Idee per Tippen');
+});
+
 await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {
 	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
@@ -617,6 +647,20 @@ if (ONLINE)
 		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });
 		await page.waitForTimeout(2000);
 		ok((await page.textContent('#widmung')) === '21. Juni 2019 · 22:30 Uhr' && (await page.textContent('#poster')).includes('BAMBERG'), 'Beispiel öffnet Bamberg mit Sternenhimmel vom 21.06.2019');
+	});
+
+if (ONLINE)
+	await run('Suche beim Tippen und zuletzt gesucht', { viewport: { width: 1280, height: 860 } }, async (page) => {
+		await page.fill('#lq', 'Pottenst');
+		await page.waitForSelector('#lresults button', { timeout: 20000 }).catch(() => {});
+		ok((await page.$$('#lresults button')).length > 0, 'Vorschläge erscheinen beim Tippen (ohne Klick auf Suchen)');
+		await page.click('#lresults button');
+		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });
+		await page.reload();
+		await page.waitForFunction(() => document.querySelectorAll('#wzStyles button').length > 0);
+		await page.focus('#lq');
+		await page.waitForTimeout(300);
+		ok((await page.textContent('#lresults')).includes('Zuletzt gesucht') && (await page.textContent('#lresults')).includes('Pottenstein'), 'Zuletzt gesucht: Pottenstein');
 	});
 
 if (ONLINE)

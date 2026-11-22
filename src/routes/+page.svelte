@@ -110,6 +110,7 @@
 <div class="wz-place"><div class="pin">⌖</div><div><b id="wzPlace">–</b><span id="wzPlaceInfo"></span></div></div>
 <p class="wz-hint">Du kannst jederzeit einen anderen Ort suchen.</p>
 <div class="search wz-search"><input id="wq" type="search" placeholder="Dorf, Stadt oder Adresse" autocomplete="off" enterkeyhint="search"><button class="btn primary" id="wgo">Suchen</button><div class="results hidden" id="wresults"></div></div>
+<button type="button" class="lp-geo" id="wgeo"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>Mein Standort</button>
 <div class="lab">Vorlage für einen Anlass</div>
 <div class="occ" data-occ></div>
 <div class="lab">Route einzeichnen</div>
@@ -135,6 +136,8 @@
 <label class="tog wz-tog wz-quer"><input type="checkbox" data-quer><span>Querformat</span></label>
 <div class="wz-free" id="wzFree"><div class="lab">Seitenverhältnis der Karte</div>
 <div class="wz-chips" id="wzFmt"><button data-a="0.8805">8 : 7</button><button data-a="1">1 : 1</button><button data-a="1.25">4 : 5</button><button data-a="1.3333">3 : 4</button><button data-a="0.6667">3 : 2</button></div></div>
+<div class="lab">Wie viel vom Ort?</div>
+<div class="wz-chips" id="wzUmfang"><button type="button" data-z="kern">Ortskern</button><button type="button" data-z="ort">Ganzer Ort</button><button type="button" data-z="weit">Mit Umgebung</button></div>
 <div class="lab">Zoom</div>
 <div class="wz-zoom"><button class="btn" id="wzZOut" aria-label="Herauszoomen">−</button><button class="btn" id="wzZIn" aria-label="Hineinzoomen">+</button><button class="btn ghost" id="wzReset">Zurücksetzen</button></div>
 <button type="button" class="wz-link" id="wzPick">Ausschnitt auf der Landkarte neu wählen ›</button>
@@ -142,8 +145,12 @@
 </section>
 <section class="wz-pane" data-step="stil">
 <div class="wz-head"><h3>Stil</h3><button type="button" class="wz-dice wz-bsp" data-bsp-open><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="6" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="12.5" width="7" height="8" rx="1.5"/></svg>Beispiele</button><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>
+<div class="lab vs-lab">Vorschläge für deinen Ort <i>antippen übernimmt den Look</i></div>
+<div class="vs-grid" id="wzVorschlaege"></div>
+<div class="lab">Oder selbst wählen</div>
 <div class="tabs2 wz-mode wz-mode3" id="wzMode"><button data-m="art">Gezeichnet</button><button data-m="std">Landkarte</button><button data-m="sterne">Sternenhimmel</button><button data-m="koord">Koordinaten</button><button data-m="wolke">Wortwolke</button></div>
-<div class="wz-cards" id="wzStyles"></div>
+<div class="wz-cards kurz" id="wzStyles"></div>
+<button type="button" class="wz-link wz-alle" data-alle="wzStyles">Alle Farbstile anzeigen ›</button>
 <div class="wz-hoehe" id="wzHoehe"><label class="tog wz-tog"><input type="checkbox" id="hoehenOn"><span>Höhenlinien (Berge &amp; Täler)</span></label><p class="wz-hint" id="hoehenInfo"></p></div>
 <div class="wz-cards wz-bases hidden" id="wzBases"></div>
 <div class="wz-koord hidden" id="wzKoord">
@@ -176,7 +183,8 @@
 <section class="wz-pane" data-step="design">
 <div class="wz-head"><h3>Design</h3><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>
 <p class="wz-hint">Wie Rahmen, Karte und Text angeordnet sind. Die Farben kommen vom Stil.</p>
-<div class="wz-cards wz-designs" id="wzDesigns"></div>
+<div class="wz-cards wz-designs kurz" id="wzDesigns"></div>
+<button type="button" class="wz-link wz-alle" data-alle="wzDesigns">Alle Designs anzeigen ›</button>
 <div class="lab">Effekte</div>
 <label class="tog wz-tog"><input type="checkbox" id="fxPaper"><span>Papier-Struktur</span></label>
 <label class="tog wz-tog"><input type="checkbox" id="fxVig"><span>Vignette (Rand abdunkeln)</span></label>
@@ -188,6 +196,7 @@
 <div class="lab">Schriften</div>
 <div class="wz-chips wz-fonts" id="wzFonts"><button type="button" data-t="SgXB" data-s="SgFR"><b style="font-family:SgXB">AB</b> <span style="font-family:SgFR">Fraktur</span></button><button type="button" data-t="SgXB" data-s="SgMD"><b style="font-family:SgXB">AB</b> <span style="font-family:SgMD">Modern</span></button><button type="button" data-t="SgXB" data-s="SgSC"><b style="font-family:SgXB">AB</b> <span style="font-family:SgSC;font-size:17px">Schrift</span></button><button type="button" data-t="SgSC" data-s="SgMD"><b style="font-family:SgSC;font-size:19px;font-weight:400">Schreibschrift</b></button></div>
 <label class="wz-field"><span>Datum oder Widmung <i>optional</i></span><input id="wzNote" class="inp" type="text" autocomplete="off" placeholder="z. B. 12.06.2021 · Hier hat alles begonnen"></label>
+<div class="wz-ideen" id="wzNoteIdeen"></div>
 <label class="tog wz-tog"><input type="checkbox" id="wzCoords"><span>Koordinaten anzeigen</span></label>
 <div class="lab">Orte markieren</div>
 <div class="wz-pinadd" id="wzPinAdd"></div>
@@ -359,6 +368,7 @@
 <p class="lp-lead">Ort eintippen, und dein Kartenposter steht sofort. Dann Stil, Design und Text wählen und direkt an Wand, Shirt oder Tasse ansehen.</p>
 <div class="occ occ-landing" data-occ aria-label="Anlass (optional)"></div>
 <div class="search lp-search"><input id="lq" placeholder="Dorf, Stadt oder Adresse" autocomplete="off" enterkeyhint="search" aria-label="Ort suchen"><button class="btn primary" id="lgo">Poster gestalten</button><div class="results hidden" id="lresults"></div></div>
+<button type="button" class="lp-geo" id="lgeo"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>Mein Standort</button>
 <button class="demo resume hidden" id="resumeBtn"><span class="dpin">↺</span><span><b>Weiter mit deinem Entwurf</b><small></small></span></button>
 <ul class="lp-trust"><li>Ohne Anmeldung</li><li>Vorschau sofort</li><li>Poster ab {ab('poster')}</li></ul>
 </div>
