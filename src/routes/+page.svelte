@@ -71,9 +71,22 @@
 </section>
 <section class="wz-pane" data-step="stil">
 <div class="wz-head"><h3>Stil</h3><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>
-<div class="tabs2 wz-mode" id="wzMode"><button data-m="art">Gezeichnet</button><button data-m="std">Landkarte</button></div>
+<div class="tabs2 wz-mode wz-mode3" id="wzMode"><button data-m="art">Gezeichnet</button><button data-m="std">Landkarte</button><button data-m="sterne">Sternenhimmel</button></div>
 <div class="wz-cards" id="wzStyles"></div>
 <div class="wz-cards wz-bases hidden" id="wzBases"></div>
+<div class="wz-sky hidden" id="wzSky">
+<p class="wz-hint">So stand der Himmel über <b id="skyPlace">deinem Ort</b> – aus echten Sterndaten berechnet.</p>
+<div class="wz-row2"><label class="wz-field"><span>Datum</span><input id="skyDate" class="inp" type="date"></label>
+<label class="wz-field"><span>Uhrzeit</span><input id="skyTime" class="inp" type="time" step="300"></label></div>
+<div class="lab">Himmelsfarbe</div>
+<div class="mk-sw" id="skyThemes"></div>
+<div class="lab">Anzeigen</div>
+<label class="tog wz-tog"><input type="checkbox" id="skyLines"><span>Sternbilder verbinden</span></label>
+<label class="tog wz-tog"><input type="checkbox" id="skyNames"><span>Namen der Sternbilder</span></label>
+<label class="tog wz-tog"><input type="checkbox" id="skyMw"><span>Milchstraße</span></label>
+<label class="tog wz-tog"><input type="checkbox" id="skyGrid"><span>Gitternetz &amp; Himmelsrichtungen</span></label>
+<label class="tog wz-tog"><input type="checkbox" id="skyReal"><span>Echte Sternfarben</span></label>
+</div>
 </section>
 <section class="wz-pane" data-step="design">
 <div class="wz-head"><h3>Design</h3><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>

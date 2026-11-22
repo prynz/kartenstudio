@@ -12,6 +12,7 @@ import { dms, panel, viewCenterLL } from './seitenleiste.js';
 import { LAY_DEFAULT } from '../themen/designs.js';
 import { syncWizard } from './assistent.js';
 import { popDefs, popSymbols, popColor, popK } from '../themen/pop.js';
+import { loadSky, skyReady, skySVG } from '../themen/himmel.js';
 import { syncTools } from './bedienung.js';
 import { zoom } from './ansicht.js';
 
@@ -126,6 +127,13 @@ function mapShape(g, grow, attrs) {
  */
 function mapContent(forExport, vr) {
   let o = '';
+  // Sternenhimmel statt Karte: Kreis füllt die Kartenfläche, unabhängig vom Kartenausschnitt
+  if (app.S.motif === 'sterne' && app.S.sky) {
+    const v = app.S.view,
+      R = Math.min(MW, MW * v.a) / 2 / v.z;
+    if (!skyReady()) loadSky().then(() => render());
+    return skySVG(app.S.sky, v.cx, v.cy, R, forExport ? 'hx' : 'hv');
+  }
   const sc = app.S.scale / app.S.view.z;
   if (app.S.mode === 'std') {
     const E = app.DATA.ext,
@@ -173,7 +181,7 @@ function mapContent(forExport, vr) {
 const MC = { key: '', node: null, hits: null, rect: null, z: 0 };
 function mapKey() {
   const S = app.S;
-  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0]);
+  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0]);
 }
 /** Sichtbarer Bereich plus großzügiger Rand, damit Verschieben ohne Neuzeichnen geht */
 function cullRect() {
@@ -294,7 +302,7 @@ export const PIN_SHAPES = {
 /** Pins als SVG – in eigener Ebene über der Karte, Größe unabhängig vom Zoom */
 function pinsSVG(g, forExport) {
   const pins = app.S.pins || [];
-  if (!pins.length) return '';
+  if (!pins.length || app.S.motif === 'sterne') return '';
   const v = app.S.view,
     k = 1 / v.z,
     sz = (app.S.pinSize || 1) * 1.25;
@@ -320,7 +328,7 @@ export function buildSVG(forExport) {
   [app.S.title, app.S.sub].forEach(t => {
     if (t.on && t.text) fonts.add(t.font);
   });
-  if (app.S.attr.on || g.L.coords || g.note) fonts.add('SgMD');
+  if (app.S.attr.on || g.L.coords || g.note || (app.S.motif === 'sterne' && app.S.sky && (app.S.sky.names || app.S.sky.grid))) fonts.add('SgMD');
   o += '<defs>';
   if (forExport && fonts.size) {
     o += '<style>';
@@ -363,7 +371,7 @@ export function buildSVG(forExport) {
   }
   if (g.L.coords && app.DATA) o += `<text id="koordinaten" x="${(g.W / 2 + 1.5).toFixed(2)}" y="${g.yC.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.cSize}" letter-spacing="3" fill="${app.S.sub.color}" fill-opacity="0.85">${esc(coordText())}</text>`;
   if (g.note) o += `<text id="widmung" x="${(g.W / 2 + 1).toFixed(2)}" y="${g.yN.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.nSize}" letter-spacing="2" fill="${app.S.sub.color}">${esc(g.note)}</text>`;
-  if (app.S.attr.on) {
+  if (app.S.attr.on && app.S.motif !== 'sterne') {
     const inBar = g.L.kind === 'bar' && app.S.bar.on && g.barH > 0;
     const onPaper = !inBar && g.L.kind !== 'top' && g.L.kind !== 'bartop';
     const col = inBar || onPaper ? app.S.title.color : app.S.mode === 'std' ? BASES[app.S.base].sat || app.S.base === 'dark' || app.S.base === 'fiord' ? '#ffffff' : '#333333' : app.S.cls.haupt.s;

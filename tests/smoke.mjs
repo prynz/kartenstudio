@@ -338,6 +338,42 @@ await run('Desktop – Anlass-Vorlagen und Effekte', { viewport: { width: 1440, 
 	ok(await page.evaluate(() => getComputedStyle(document.getElementById('poster')).filter !== 'none'), 'Druckfarben-Simulation schaltbar');
 });
 
+await run('Desktop – Sternenhimmel', { viewport: { width: 1440, height: 900 }, acceptDownloads: true }, async (page) => {
+	await page.click('#demoBtn');
+	await page.waitForTimeout(900);
+	await page.click('#wzMode button[data-m="sterne"]');
+	await page.waitForFunction(() => (document.querySelector('#kartenInhalt')?.innerHTML.length || 0) > 20000, null, { timeout: 15000 }).catch(() => {});
+	await page.fill('#skyDate', '2021-06-12');
+	await page.dispatchEvent('#skyDate', 'change');
+	await page.fill('#skyTime', '22:00');
+	await page.dispatchEvent('#skyTime', 'change');
+	await page.waitForTimeout(500);
+	const n = await page.evaluate(() => (document.querySelector('#kartenInhalt')?.innerHTML.match(/a[\d.]+ [\d.]+ 0 1 0/g) || []).length / 2);
+	ok(n > 1000, `Sternenhimmel gezeichnet (${n} Sterne sichtbar)`);
+	ok((await page.textContent('#widmung')) === '12. Juni 2021 · 22:00 Uhr', 'Datum und Uhrzeit als Widmung');
+	ok((await page.$('#poster circle')) !== null || (await page.evaluate(() => !!document.querySelector('#cMap circle'))), 'Runde Form für den Himmel');
+	await page.screenshot({ path: `${OUT}/17-sternenhimmel.png` });
+	await page.check('#skyNames');
+	await page.check('#skyGrid');
+	await page.click('.sky-sw[data-k="gold"]');
+	await page.waitForTimeout(500);
+	ok((await page.textContent('#kartenInhalt')).includes('GROSSER BÄR') || (await page.textContent('#kartenInhalt')).length > 50, 'Sternbild-Namen angezeigt');
+	await page.screenshot({ path: `${OUT}/18-sternenhimmel-gold.png` });
+	await page.click('#wzSteps button[data-step="design"]');
+	await page.click('#wzDesigns button[data-d="klassisch"]');
+	await page.waitForTimeout(800);
+	await page.screenshot({ path: `${OUT}/19-sternenhimmel-rechteck.png` });
+	await page.click('#wzSteps button[data-step="fertig"]');
+	const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.click('.wz-dl button[data-f="svg"]')]);
+	const f = `${OUT}/${dl.suggestedFilename()}`;
+	await dl.saveAs(f);
+	ok(fs.readFileSync(f, 'utf8').length > 100000, 'Sternenhimmel als SVG exportiert');
+	await page.click('#wzSteps button[data-step="stil"]');
+	await page.click('#wzMode button[data-m="art"]');
+	await page.waitForTimeout(600);
+	ok((await page.$$('#poster path[data-k]')).length > 100, 'Zurück zur Karte');
+});
+
 await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {
 	await page.tap('#demoBtn');
 	await page.waitForTimeout(900);

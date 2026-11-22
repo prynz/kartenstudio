@@ -22,6 +22,8 @@ import { SIZES, fitPrint, paperOrFree, quality, exportDpi } from './druck.js';
 import { PIN_SHAPES } from './zeichnen.js';
 import { shareLink } from './entwurf.js';
 import { ANLAESSE } from '../themen/anlaesse.js';
+import { SKY_THEMES, defaultSky, loadSky, skyLabel } from '../themen/himmel.js';
+import { viewCenterLL } from './seitenleiste.js';
 import { esc } from './basis.js';
 import { saveDraftSoon } from './entwurf.js';
 
@@ -175,10 +177,13 @@ function renderDesignThumbs() {
 export function syncWizard() {
 	const S = app.S;
 	if (!S) return;
-	const std = S.mode === 'std';
-	all('#wzMode button').forEach((b) => b.classList.toggle('on', b.dataset.m === S.mode));
-	$('wzStyles').classList.toggle('hidden', std);
+	const sky = S.motif === 'sterne';
+	const std = S.mode === 'std' && !sky;
+	all('#wzMode button').forEach((b) => b.classList.toggle('on', sky ? b.dataset.m === 'sterne' : b.dataset.m === S.mode));
+	$('wzStyles').classList.toggle('hidden', std || sky);
 	$('wzBases').classList.toggle('hidden', !std);
+	$('wzSky').classList.toggle('hidden', !sky);
+	if (sky && S.sky) syncSky(S.sky);
 	all('#wzStyles button').forEach((b) => b.classList.toggle('on', !std && b.dataset.p === S.preset));
 	all('#wzBases button').forEach((b) => b.classList.toggle('on', std && b.dataset.b === S.base));
 	all('#wzDesigns button').forEach((b) => b.classList.toggle('on', b.dataset.d === (S.design || 'siegritz')));
@@ -216,6 +221,11 @@ export function syncWizard() {
 /** Nach dem Laden eines Orts: im Assistenten beim Stil weitermachen. */
 export function wizardAfterLoad() {
 	thumbKey = '';
+	// Neuer Ort: Himmel über dem neuen Ort berechnen
+	if (app.S && app.S.sky) {
+		const [lon, lat] = viewCenterLL();
+		app.S.sky = { ...app.S.sky, lat: +lat.toFixed(4), lon: +lon.toFixed(4) };
+	}
 	setTool(advOpen ? 'sel' : 'move');
 	// Anlass vor der Suche gewählt → jetzt anwenden und direkt zum Text (Datum eintragen)
 	if (app.occasionPending) {
@@ -252,6 +262,47 @@ export function applyOccasion(k, anim = true) {
 	syncOccasion();
 	if (A.pin) msg(`Vorlage „${A.name}“ – Markierung im Poster an die richtige Stelle ziehen`, 'ok');
 	else msg(`Vorlage „${A.name}“ angewendet`, 'ok');
+}
+
+/* ---------- Sternenhimmel ---------- */
+/** Motiv „Sternenhimmel“ einschalten: Ort/Zeit setzen, runde Form, Datum als Widmung */
+export function enableSky() {
+	loadSky();
+	smooth(() =>
+		change(() => {
+			const S = app.S;
+			S.motif = 'sterne';
+			const [lon, lat] = viewCenterLL();
+			if (!S.sky) S.sky = defaultSky(lat, lon);
+			const D = /** @type {any} */ (DESIGNS)[S.design || 'siegritz'];
+			if (!D || !D.aspect) pickDesign(S, 'kreiskoord');
+			if (!S.note || !S.note.text || S.note.auto) S.note = { on: true, text: skyLabel(S.sky), auto: true };
+		})
+	);
+}
+/** @param {Record<string, any>} patch */
+function setSky(patch) {
+	change(() => {
+		const S = app.S;
+		S.sky = { ...S.sky, ...patch };
+		if (S.note && S.note.auto) S.note.text = skyLabel(S.sky);
+	});
+}
+/** @param {any} sky */
+function syncSky(sky) {
+	const d = /** @type {HTMLInputElement} */ ($('skyDate')),
+		t = /** @type {HTMLInputElement} */ ($('skyTime'));
+	if (document.activeElement !== d) d.value = sky.date;
+	if (document.activeElement !== t) t.value = `${String(Math.floor(sky.min / 60)).padStart(2, '0')}:${String(sky.min % 60).padStart(2, '0')}`;
+	all('.sky-sw').forEach((b) => b.classList.toggle('on', b.dataset.k === sky.theme));
+	/** @type {[string,string,boolean][]} */ ([
+		['skyLines', 'lines', true],
+		['skyNames', 'names', false],
+		['skyMw', 'mw', true],
+		['skyGrid', 'grid', false],
+		['skyReal', 'real', false]
+	]).forEach(([id, k, def]) => (/** @type {HTMLInputElement} */ ($(id)).checked = sky[k] ?? def));
+	$('skyPlace').textContent = (app.DATA && app.DATA.place) || 'deinem Ort';
 }
 
 /** Auswahlzustand der Anlass-Knöpfe (Startseite + Assistent) */
@@ -428,10 +479,44 @@ export function initWizard() {
 	all('#wzMode button').forEach(
 		(b) =>
 			(b.onclick = () => {
-				change(() => (app.S.mode = /** @type {string} */ (b.dataset.m)));
+				const m = /** @type {string} */ (b.dataset.m);
+				if (m === 'sterne') return enableSky();
+				smooth(() =>
+					change(() => {
+						app.S.motif = 'karte';
+						app.S.mode = m;
+					})
+				);
 				if (app.S.mode === 'std') ensureRaster();
 			})
 	);
+
+	// Sternenhimmel
+	Object.entries(SKY_THEMES).forEach(([k, T]) => {
+		const s = document.createElement('button');
+		s.type = 'button';
+		s.className = 'mk-swatch sky-sw';
+		s.dataset.k = k;
+		s.title = T.name;
+		s.innerHTML = `<i style="background:radial-gradient(circle at 35% 35%,${T.star} 0 6%,transparent 7%),radial-gradient(circle at 68% 60%,${T.star} 0 4%,transparent 5%),${T.bg}"></i><span>${T.name}</span>`;
+		s.onclick = () => setSky({ theme: k });
+		$('skyThemes').appendChild(s);
+	});
+	$('skyDate').addEventListener('change', (e) => {
+		const v = /** @type {HTMLInputElement} */ (e.target).value;
+		if (/^\d{4}-\d{2}-\d{2}$/.test(v)) setSky({ date: v });
+	});
+	$('skyTime').addEventListener('change', (e) => {
+		const m = /** @type {HTMLInputElement} */ (e.target).value.match(/^(\d{1,2}):(\d{2})/);
+		if (m) setSky({ min: +m[1] * 60 + +m[2] });
+	});
+	/** @type {[string,string][]} */ ([
+		['skyLines', 'lines'],
+		['skyNames', 'names'],
+		['skyMw', 'mw'],
+		['skyGrid', 'grid'],
+		['skyReal', 'real']
+	]).forEach(([id, key]) => $(id).addEventListener('change', (e) => setSky({ [key]: /** @type {HTMLInputElement} */ (e.target).checked })));
 
 	// 4 Design
 	Object.entries(DESIGNS).forEach(([k, D]) => {
@@ -560,7 +645,7 @@ export function initWizard() {
 	$('softproof').addEventListener('change', (e) => document.body.classList.toggle('softproof', /** @type {HTMLInputElement} */ (e.target).checked));
 
 	// Widmung / Datum
-	textInput('wzNote', (v) => (app.S.note = { ...(app.S.note || {}), on: true, text: v }));
+	textInput('wzNote', (v) => (app.S.note = { ...(app.S.note || {}), on: true, text: v, auto: false }));
 
 	// Markierungen
 	Object.entries(PIN_SHAPES).forEach(([k, P]) => {

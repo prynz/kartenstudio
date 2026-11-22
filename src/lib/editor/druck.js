@@ -88,7 +88,7 @@ export function quality() {
 			else if (dpi < 150) items.push({ level: 'warn', text: `Kartenbild ca. ${dpi} dpi – aus der Nähe leicht weich, aus Betrachtungsabstand gut.` });
 			else items.push({ level: 'ok', text: `Kartenbild ca. ${Math.min(dpi, 300)} dpi – scharf.` });
 		}
-	} else {
+	} else if (S.motif !== 'sterne') {
 		// Dünnste sichtbare Linie in Millimetern
 		const pk = S.pop ? popK(app.DATA, S) : 1;
 		let thin = Infinity,
