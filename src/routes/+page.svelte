@@ -97,12 +97,9 @@
 <div class="wiz" id="wiz">
 <nav class="wz-steps" id="wzSteps" aria-label="Schritte">
 <button data-step="ort"><i>1</i><span>Ort</span></button>
-<button data-step="ausschnitt"><i>2</i><span>Ausschnitt</span></button>
-<button data-step="stil"><i>3</i><span>Stil</span></button>
-<button data-step="design"><i>4</i><span>Design</span></button>
-<button data-step="text"><i>5</i><span>Text</span></button>
-<button data-step="produkt"><i>6</i><span>Produkt</span></button>
-<button data-step="fertig"><i>7</i><span>Fertig</span></button>
+<button data-step="gestalten"><i>2</i><span>Gestalten</span></button>
+<button data-step="text"><i>3</i><span>Text</span></button>
+<button data-step="fertig"><i>4</i><span>Fertig</span></button>
 </nav>
 <div class="wz-panes">
 <section class="wz-pane" data-step="ort">
@@ -111,6 +108,7 @@
 <p class="wz-hint">Du kannst jederzeit einen anderen Ort suchen.</p>
 <div class="search wz-search"><input id="wq" type="search" placeholder="Dorf, Stadt oder Adresse" autocomplete="off" enterkeyhint="search"><button class="btn primary" id="wgo">Suchen</button><div class="results hidden" id="wresults"></div></div>
 <button type="button" class="lp-geo" id="wgeo"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>Mein Standort</button>
+<details class="wz-more"><summary>Mehr: Anlass-Vorlage, Route, mehrere Orte</summary>
 <div class="lab">Vorlage für einen Anlass</div>
 <div class="occ" data-occ></div>
 <div class="lab">Route einzeichnen</div>
@@ -127,6 +125,7 @@
 <div id="multiList"></div>
 <div class="search wz-search" id="multiAdd"><input id="mq" type="search" placeholder="Weiteren Ort hinzufügen" autocomplete="off" enterkeyhint="search"><button class="btn primary" id="mgo">Suchen</button><div class="results hidden" id="mresults"></div></div>
 </div>
+</details>
 </section>
 <section class="wz-pane" data-step="ausschnitt">
 <h3>Ausschnitt</h3>
@@ -181,7 +180,7 @@
 </div>
 </section>
 <section class="wz-pane" data-step="design">
-<div class="wz-head"><h3>Design</h3><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>
+<h3>Design</h3>
 <p class="wz-hint">Wie Rahmen, Karte und Text angeordnet sind. Die Farben kommen vom Stil.</p>
 <div class="wz-cards wz-designs kurz" id="wzDesigns"></div>
 <button type="button" class="wz-link wz-alle" data-alle="wzDesigns">Alle Designs anzeigen ›</button>
@@ -218,10 +217,10 @@
 <div class="mk-opt" data-for="shirt"><div class="lab">Shirtfarbe</div><div class="mk-sw" id="mkShirtSw"></div>
 <label class="tog wz-tog"><input type="checkbox" id="mkModel"><span>Am Model zeigen</span></label></div>
 <div class="mk-opt" data-for="poster gerahmt leinwand alu aufsteller"><div class="lab">Wandfarbe</div><div class="mk-sw" id="mkWallSw"></div></div>
-<p class="wz-hint mk-note">Bestellen kommt bald. Die Druckdatei kannst du im nächsten Schritt schon herunterladen.</p>
+<p class="wz-hint mk-note">Bestellen kommt bald. Die Druckdatei kannst du weiter unten schon herunterladen.</p>
 </section>
 <section class="wz-pane" data-step="fertig">
-<h3>Fertig – herunterladen</h3>
+<h3>Herunterladen</h3>
 <div class="qa" id="wzQa"></div>
 <label class="tog wz-tog wz-proof"><input type="checkbox" id="softproof"><span>Druckfarben simulieren</span></label>
 <div class="wz-dl">
@@ -248,7 +247,7 @@
 <div class="wz-foot">
 <button class="wz-back" id="wzBack" aria-label="Zurück"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
 <button class="wz-advbtn" id="wzAdv" title="Alle Detailregler: Linien, einzelne Häuser, Farben tauschen …"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg><span>Erweitert</span></button>
-<button class="wz-next" id="wzNext"><span class="nx"><small>Weiter</small><b id="wzNextLabel">Stil</b></span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+<button class="wz-next" id="wzNext"><span class="nx"><small id="wzNextSmall">Weiter</small><b id="wzNextLabel">Gestalten</b></span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
 </div>
 </div>
 

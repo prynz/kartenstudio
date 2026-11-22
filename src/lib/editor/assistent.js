@@ -47,14 +47,19 @@ const PRESETS = PRESETS_UNTYPED;
 /** @param {string} id */
 const $ = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
 
-export const STEPS = ['ort', 'ausschnitt', 'stil', 'design', 'text', 'produkt', 'fertig'];
+/** Vier Schritte; jeder zeigt einen oder zwei Bereiche (Panes) untereinander */
+export const STEPS = ['ort', 'gestalten', 'text', 'fertig'];
+/** @type {Record<string,string[]>} */
+const GRUPPE = { ort: ['ort', 'ausschnitt'], gestalten: ['stil', 'design'], text: ['text'], fertig: ['produkt', 'fertig'] };
+/** Alter Bereichsname → Schritt (für Links, Chat-Knöpfe, gespeicherte Entwürfe) @param {string} n */
+export const schrittVon = (n) => (GRUPPE[n] ? n : Object.keys(GRUPPE).find((g) => GRUPPE[g].includes(n)) || '');
+/** @type {Record<string,string>} */
+const LABEL = { ort: 'Ort & Ausschnitt', gestalten: 'Gestalten', text: 'Text', fertig: 'Fertig' };
 /** Welcher Abschnitt der erweiterten Einstellungen passt zu welchem Schritt */
 /** @type {Record<string,string>} */
-const LABEL = { ort: 'Ort', ausschnitt: 'Ausschnitt', stil: 'Stil', design: 'Design', text: 'Text', produkt: 'Produkt', fertig: 'Fertig' };
-/** @type {Record<string,string>} */
-const ADV_FOR = { ort: 'ausschnitt', ausschnitt: 'ausschnitt', stil: 'stil', design: 'rahmen', text: 'text', produkt: 'rahmen', fertig: 'farben' };
+const ADV_FOR = { ort: 'ausschnitt', gestalten: 'stil', text: 'text', fertig: 'farben' };
 
-let step = 'stil';
+let step = 'gestalten';
 let advOpen = false;
 
 const wizOn = () => !advOpen;
@@ -63,16 +68,17 @@ const all = (sel) => /** @type {HTMLElement[]} */ ([...document.querySelectorAll
 
 /**
  * Zu einem Schritt wechseln.
- * @param {string} next
+ * @param {string} ziel Schritt oder Bereich (z. B. „design“)
  * @param {boolean} [animate]
  */
-export function goStep(next, animate = true) {
-	if (!STEPS.includes(next)) return;
+export function goStep(ziel, animate = true) {
+	const next = schrittVon(ziel);
+	if (!next) return;
 	const dir = STEPS.indexOf(next) - STEPS.indexOf(step);
 	step = next;
 	app.wizStep = next;
 	saveDraftSoon();
-	all('.wz-pane').forEach((p) => p.classList.toggle('on', p.dataset.step === next));
+	all('.wz-pane').forEach((p) => p.classList.toggle('on', GRUPPE[next].includes(/** @type {string} */ (p.dataset.step))));
 	const idx = STEPS.indexOf(next);
 	all('#wzSteps button').forEach((b, i) => {
 		b.classList.toggle('on', i === idx);
@@ -80,9 +86,11 @@ export function goStep(next, animate = true) {
 		b.setAttribute('aria-current', i === idx ? 'step' : 'false');
 	});
 	/** @type {HTMLButtonElement} */ ($('wzBack')).disabled = idx === 0;
-	$('wzNext').classList.toggle('hidden', idx === STEPS.length - 1);
-	$('wzNextLabel').textContent = idx < STEPS.length - 1 ? LABEL[STEPS[idx + 1]] : '';
-	const pane = document.querySelector(`.wz-pane[data-step="${next}"]`);
+	const letzter = idx === STEPS.length - 1;
+	$('wiz').classList.toggle('wz-last', letzter);
+	$('wzNextLabel').textContent = letzter ? 'Download' : LABEL[STEPS[idx + 1]];
+	if (!letzter) $('wzNextSmall').textContent = 'Weiter';
+	const pane = document.querySelector(`.wz-pane[data-step="${GRUPPE[next][0]}"]`);
 	if (animate && dir && pane && !reducedMotion()) {
 		pane.animate(
 			[
@@ -93,9 +101,12 @@ export function goStep(next, animate = true) {
 		);
 	}
 	const side = $('side');
-	if (side) side.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
-	if (next === 'design') scheduleDesignThumbs(0);
-	setMockup(next === 'produkt' && !advOpen);
+	// Bereich weiter unten im Schritt angefragt (z. B. „Design“) → dorthin scrollen, sonst nach oben
+	const unten = ziel !== next && GRUPPE[next].indexOf(ziel) > 0 ? document.querySelector(`.wz-pane[data-step="${ziel}"]`) : null;
+	if (unten) requestAnimationFrame(() => unten.scrollIntoView({ block: 'start', behavior: reducedMotion() || !animate ? 'auto' : 'smooth' }));
+	else if (side) side.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
+	if (next === 'gestalten') scheduleDesignThumbs(0);
+	setMockup(next === 'fertig' && !advOpen);
 	syncWizard();
 }
 
@@ -128,6 +139,7 @@ function syncProduct() {
 	/** @type {HTMLElement} */ ($('mkMat').closest('label')).classList.toggle('hidden', P.type !== 'gerahmt');
 	const pr = preis(P, app.S.print);
 	$('priceVal').textContent = pr.text;
+	if (step === 'fertig') $('wzNextSmall').textContent = pr.text;
 	$('priceDet').textContent = pr.details.join(' · ');
 	$('orderLabel').textContent = `Bestellen · ${pr.text}`;
 	$('priceShip').textContent = P.type === 'download' ? 'Kein Versand nötig · ' + lieferung('download') : `Versand in Deutschland kostenlos · ${lieferung(P.type)}`;
@@ -136,7 +148,7 @@ function syncProduct() {
 /** Assistent ↔ erweiterte Einstellungen umschalten. @param {boolean} on */
 function showAdvanced(on) {
 	advOpen = on;
-	setMockup(!on && step === 'produkt');
+	setMockup(!on && step === 'fertig');
 	$('wiz').classList.toggle('hidden', on);
 	$('adv').classList.toggle('hidden', !on);
 	document.body.classList.toggle('wiz-on', !on);
@@ -162,7 +174,7 @@ function scheduleDesignThumbs(delay = 350) {
 	thumbTimer = window.setTimeout(renderDesignThumbs, delay);
 }
 function renderDesignThumbs() {
-	if (!app.DATA || !app.S || step !== 'design' || advOpen) return;
+	if (!app.DATA || !app.S || step !== 'gestalten' || advOpen) return;
 	const S = app.S;
 	const key = JSON.stringify([S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.view, S.title.text, S.sub.text, S.title.font, S.sub.font, S.scale]);
 	if (key === thumbKey) return;
@@ -265,11 +277,15 @@ export function syncWizard() {
 	/** @type {HTMLInputElement} */ ($('fxPaper')).checked = !!(S.fx && S.fx.paper);
 	/** @type {HTMLInputElement} */ ($('fxVig')).checked = !!(S.fx && S.fx.vig);
 	all('[data-occ] button').forEach((b) => b.classList.toggle('on', b.dataset.k === S.occasion));
-	if (step === 'design') scheduleDesignThumbs();
-	if (step === 'stil') vorschlaegeZeichnen();
-	if (step === 'fertig') syncFinish();
+	if (step === 'gestalten') {
+		scheduleDesignThumbs();
+		vorschlaegeZeichnen();
+	}
+	if (step === 'fertig') {
+		syncFinish();
+		scheduleMockup();
+	}
 	syncProduct();
-	if (step === 'produkt') scheduleMockup();
 }
 
 /** Nach dem Laden eines Orts: im Assistenten beim Stil weitermachen. */
@@ -293,7 +309,9 @@ export function wizardAfterLoad() {
 	// Beispiel aus der Galerie geöffnet → dessen Look anwenden
 	if (beispielNachLaden()) return;
 	// Wer gerade am Ausschnitt arbeitet (z. B. „Größere Gegend laden“), bleibt dort
-	if (!advOpen) goStep(step === 'ausschnitt' ? 'ausschnitt' : 'stil', false);
+	const bleib = app.bleibAusschnitt;
+	app.bleibAusschnitt = false;
+	if (!advOpen) goStep(bleib ? 'ausschnitt' : 'stil', false);
 }
 
 /**
@@ -540,11 +558,19 @@ export function initWizard() {
 	// Schritte
 	all('#wzSteps button').forEach((b) => (b.onclick = () => goStep(/** @type {string} */ (b.dataset.step))));
 	$('wzBack').onclick = () => goStep(STEPS[Math.max(0, STEPS.indexOf(step) - 1)]);
-	$('wzNext').onclick = () => goStep(STEPS[Math.min(STEPS.length - 1, STEPS.indexOf(step) + 1)]);
+	$('wzNext').onclick = () => {
+		if (step !== 'fertig') return goStep(STEPS[STEPS.indexOf(step) + 1]);
+		// Letzter Schritt: zu den Druckdateien scrollen
+		const dl = document.querySelector('.wz-pane[data-step="fertig"]');
+		if (dl) dl.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
+	};
 	$('wzAdv').onclick = () => showAdvanced(true);
 	$('advBack').onclick = () => showAdvanced(false);
 	all('[data-dice]').forEach((b) => (b.onclick = surprise));
-	$('wzPick').onclick = () => openPicker(false);
+	$('wzPick').onclick = () => {
+		app.bleibAusschnitt = true;
+		openPicker(false);
+	};
 
 	// 1 Ort
 	attachSearch('wq', 'wgo', 'wresults', pickPlace);
@@ -692,7 +718,10 @@ export function initWizard() {
 		});
 		$('wolkeSchrift').addEventListener('change', (e) => change(() => (app.S.wolke = { ...app.S.wolke, schrift: /** @type {HTMLInputElement} */ (e.target).checked })));
 	}
-	$('wzWider').onclick = gegendVergroessern;
+	$('wzWider').onclick = () => {
+		app.bleibAusschnitt = true;
+		gegendVergroessern();
+	};
 
 	// Koordinaten-Poster
 	{

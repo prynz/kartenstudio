@@ -600,3 +600,13 @@ textarea.inp{width:100%;box-sizing:border-box;resize:vertical;font:inherit;min-h
 .lp-geo:hover{text-decoration:underline}
 .lp-geo:focus-visible{outline:2px solid var(--accent,#2f6fe4);outline-offset:3px;border-radius:6px}
 @media(max-width:900px){.wz-ideen{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-16px;margin-right:-16px;padding:0 16px 4px}.wz-ideen button{flex:0 0 auto}}
+
+/* 4 Schritte: zwei Bereiche untereinander, sanft getrennt */
+.wz-pane.on+.wz-pane.on{margin-top:18px;padding-top:6px;border-top:1px solid var(--line,#e6e4df)}
+@media (max-width:760px){.wz-pane.on+.wz-pane.on h3{display:block}}
+.wz-more{margin:14px 0 6px;border:1px solid var(--line,#e6e4df);border-radius:12px;padding:0 12px}
+.wz-more>summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13.5px;font-weight:600;color:var(--ink,#1c1f26);display:flex;align-items:center;gap:8px}
+.wz-more>summary::-webkit-details-marker{display:none}
+.wz-more>summary::after{content:'';margin-left:auto;width:7px;height:7px;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(45deg);transition:transform .25s cubic-bezier(.2,.8,.2,1);opacity:.6}
+.wz-more[open]>summary::after{transform:rotate(-135deg)}
+.wz-more[open]{padding-bottom:10px}
