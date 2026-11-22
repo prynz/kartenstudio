@@ -5,7 +5,7 @@ import { app as appUntyped } from '../editor/app.js';
 import { BEISPIELE } from './liste.js';
 import { ORTE } from '../seo/orte.js';
 import { change, newState } from '../editor/zustand.js';
-import { buildSVG, render } from '../editor/zeichnen.js';
+import { alsBild, render, vorschauSVG } from '../editor/zeichnen.js';
 import { loadBounds } from '../editor/laden.js';
 import { loadDemo } from '../editor/beispiel.js';
 import { placeBounds } from '../karte/ortswahl-start.js';
@@ -90,18 +90,23 @@ export function vorschlaegeZeichnen() {
 		if (i >= liste.length || vorKey !== key) return;
 		const B = /** @type {import('./liste.js').Beispiel} */ (liste[i]);
 		const keep = app.S;
+		let svg = '';
 		try {
-			const c = lookZustand(B, JSON.parse(JSON.stringify(keep)), false);
-			app.S = c;
-			const u = URL.createObjectURL(new Blob([buildSVG(true)], { type: 'image/svg+xml' }));
-			vorUrls.push(u);
-			const img = /** @type {HTMLImageElement|null} */ (box.querySelector(`[data-id="${B.id}"] img`));
-			if (img) img.src = u;
+			app.S = lookZustand(B, JSON.parse(JSON.stringify(keep)), false);
+			svg = vorschauSVG();
 		} finally {
 			app.S = keep;
 		}
 		i++;
-		setTimeout(naechstes, 30);
+		alsBild(svg, 220)
+			.then((u) => {
+				if (vorKey !== key) return URL.revokeObjectURL(u);
+				vorUrls.push(u);
+				const img = /** @type {HTMLImageElement|null} */ (box.querySelector(`[data-id="${B.id}"] img`));
+				if (img) img.src = u;
+			})
+			.catch(() => {})
+			.finally(() => setTimeout(naechstes, 16));
 	};
 	setTimeout(naechstes, 60);
 }

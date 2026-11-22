@@ -2,7 +2,7 @@
 // „Gespeichert ✓“, Favoriten mit Vergleich, Vorschau als Bild teilen.
 import { app as appUntyped } from './app.js';
 import { begin, commit, change, clampView } from './zustand.js';
-import { buildSVG, render } from './zeichnen.js';
+import { alsBild, buildSVG, render, vorschauSVG } from './zeichnen.js';
 import { renderPNG, dlPlain } from '../export/export.js';
 import { EASE, reducedMotion } from './animation.js';
 import { msg } from './ansicht.js';
@@ -157,16 +157,18 @@ function favSpeichern(l) {
 }
 const hier = () => favoriten().filter((f) => app.DATA && f.place === app.DATA.place);
 
-/** Vorschaubild eines gespeicherten Zustands @param {any} S */
-function bildVon(S) {
+/** Vorschaubild eines gespeicherten Zustands (klein = kleines Bild für die Liste) @param {any} S @param {number} w */
+function bildVon(S, w) {
 	const keep = app.S;
+	let svg = '';
 	try {
 		app.S = kopie(S);
 		clampView(app.S.view);
-		return URL.createObjectURL(new Blob([buildSVG(true)], { type: 'image/svg+xml' }));
+		svg = w < 400 ? vorschauSVG() : buildSVG(true);
 	} finally {
 		app.S = keep;
 	}
+	return alsBild(svg, w);
 }
 
 /** @type {string[]} */
@@ -187,13 +189,14 @@ export function favoritenZeichnen() {
 	const grid = $('favGrid');
 	grid.innerHTML = l.map((f) => `<div class="fav" data-t="${f.t}"><button type="button" class="fav-img" data-t="${f.t}" aria-label="Favorit übernehmen"><img alt=""></button><button type="button" class="fav-x" data-x="${f.t}" aria-label="Favorit löschen">×</button></div>`).join('');
 	l.forEach((f, i) =>
-		setTimeout(() => {
+		setTimeout(async () => {
 			if (favKey !== key) return;
-			const u = bildVon(f.S);
+			const u = await bildVon(f.S, 140);
+			if (favKey !== key) return URL.revokeObjectURL(u);
 			favUrls.push(u);
 			const img = /** @type {HTMLImageElement|null} */ (grid.querySelector(`[data-t="${f.t}"] img`));
 			if (img) img.src = u;
-		}, 40 * i)
+		}, 60 * i)
 	);
 }
 
@@ -229,7 +232,13 @@ function vergleichAuf() {
 	const o = $('favOverlay');
 	const g = $('favCmpGrid');
 	g.style.setProperty('--n', String(Math.min(l.length, 4)));
-	g.innerHTML = l.map((f) => `<button type="button" class="fc" data-t="${f.t}"><img alt="" src="${bildVon(f.S)}"><span>Diesen nehmen</span></button>`).join('');
+	g.innerHTML = l.map((f) => `<button type="button" class="fc" data-t="${f.t}"><img alt=""><span>Diesen nehmen</span></button>`).join('');
+	l.forEach(async (f) => {
+		const u = await bildVon(f.S, 900);
+		const img = /** @type {HTMLImageElement|null} */ (g.querySelector(`[data-t="${f.t}"] img`));
+		if (img) img.src = u;
+		else URL.revokeObjectURL(u);
+	});
 	o.hidden = false;
 	if (!reducedMotion()) /** @type {HTMLElement} */ (o.firstElementChild).animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: EASE });
 }

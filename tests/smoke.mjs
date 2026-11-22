@@ -32,7 +32,7 @@ async function run(name, ctxOpts, fn) {
 	// Für die Tests alle Stile/Designs sichtbar (im Alltag zeigt die App zuerst die beliebtesten 6)
 	if (!/Top 6/.test(name)) await page.evaluate(() => (document.querySelectorAll('.wz-cards.kurz').forEach((e) => e.classList.remove('kurz')), document.querySelectorAll('.wz-more').forEach((d) => (d.open = true)))).catch(() => {});
 	await fn(page);
-	ok(errors.filter((e) => !/Failed to load resource/.test(e)).length === 0, 'keine Fehler im Browser' + (errors.length ? ': ' + errors.join(' | ') : ''));
+	ok(errors.filter((e) => !/Failed to load resource|photon\.komoot\.io/.test(e)).length === 0, 'keine Fehler im Browser' + (errors.length ? ': ' + errors.join(' | ') : ''));
 	await ctx.close();
 }
 
@@ -74,7 +74,8 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 	ok(await page.locator('.wz-pane[data-step="text"]').isVisible(), '„Weiter“ führt zum Schritt „Text“');
 	await page.click('#wzSteps button[data-step="gestalten"]');
 	await page.locator('#wzDesigns').scrollIntoViewIfNeeded();
-	await page.waitForTimeout(800);
+	// Vorschaubilder entstehen nacheinander, wenn der Browser Zeit hat
+	await page.waitForFunction(() => [...document.querySelectorAll('#wzDesigns img')].every((x) => x.complete && x.naturalWidth > 0), null, { timeout: 30000 }).catch(() => {});
 	const designs = await page.$$eval('#wzDesigns button', (b) => b.map((x) => x.dataset.d));
 	ok(designs.length >= 9, `${designs.length} Designs zur Auswahl`);
 	const thumbs = await page.$$eval('#wzDesigns img', (i) => i.filter((x) => x.complete && x.naturalWidth > 0).length);
@@ -786,6 +787,11 @@ if (ONLINE)
 	await run('Suche beim Tippen und zuletzt gesucht', { viewport: { width: 1280, height: 860 } }, async (page) => {
 		await page.fill('#lq', 'Pottenst');
 		await page.waitForSelector('#lresults button', { timeout: 20000 }).catch(() => {});
+		// Öffentlicher Suchdienst hat manchmal Aussetzer → einmal neu tippen
+		if (!(await page.$('#lresults button'))) {
+			await page.fill('#lq', 'Pottenstei');
+			await page.waitForSelector('#lresults button', { timeout: 20000 }).catch(() => {});
+		}
 		ok((await page.$$('#lresults button')).length > 0, 'Vorschläge erscheinen beim Tippen (ohne Klick auf Suchen)');
 		await page.click('#lresults button');
 		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });

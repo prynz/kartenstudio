@@ -3,7 +3,7 @@
 // bleiben unter „Erweiterte Einstellungen“ erreichbar.
 import { textImPoster, einfuehrung, favoritenZeichnen } from './direkt.js';
 import { app as appUntyped } from './app.js';
-import { buildSVG, render } from './zeichnen.js';
+import { alsBild, buildSVG, render, vorschauSVG } from './zeichnen.js';
 import { begin, change, clampView, commit, newState } from './zustand.js';
 import { openSec } from './seitenleiste.js';
 import { setTool } from './bedienung.js';
@@ -170,21 +170,48 @@ let thumbKey = '';
 /** @type {string[]} */
 let thumbUrls = [];
 /** @param {number} delay */
-function scheduleDesignThumbs(delay = 350) {
+function scheduleDesignThumbs(delay = 600) {
 	clearTimeout(thumbTimer);
 	thumbTimer = window.setTimeout(renderDesignThumbs, delay);
 }
+let thumbLauf = 0;
+/** Sind die Design-Karten (fast) im sichtbaren Bereich? Vorher lohnt sich das Berechnen nicht. */
+let designSichtbar = false;
+let designBeobachter = /** @type {IntersectionObserver|null} */ (null);
 function renderDesignThumbs() {
 	if (!app.DATA || !app.S || step !== 'gestalten' || advOpen) return;
+	if (!designBeobachter && 'IntersectionObserver' in window) {
+		designBeobachter = new IntersectionObserver(
+			(e) => {
+				designSichtbar = e.some((x) => x.isIntersecting);
+				if (designSichtbar) scheduleDesignThumbs(150);
+			},
+			{ rootMargin: '300px 0px' }
+		);
+		designBeobachter.observe($('wzDesigns'));
+	}
+	if (designBeobachter && !designSichtbar) return;
 	const S = app.S;
-	const key = JSON.stringify([S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.view, S.title.text, S.sub.text, S.title.font, S.sub.font, S.scale]);
+	// Bewusst OHNE Kartenausschnitt: Verschieben/Zoomen soll nicht 22 Vorschaubilder neu berechnen
+	const key = JSON.stringify([app.DATA.place, app.DATA.feats.length, S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.motif, S.fx, S.view.a, S.title.text, S.sub.text, S.title.font, S.sub.font, S.scale]);
 	if (key === thumbKey) return;
 	thumbKey = key;
-	const keep = app.S;
-	const urls = [];
-	try {
-		for (const b of all('#wzDesigns button[data-d]')) {
-			const k = /** @type {string} */ (b.dataset.d);
+	const lauf = ++thumbLauf;
+	const knoepfe = all('#wzDesigns button[data-d]');
+	const alt = thumbUrls;
+	thumbUrls = [];
+	let i = 0;
+	// Eins nach dem anderen, mit Pausen dazwischen – die Seite bleibt bedienbar
+	const naechstes = async () => {
+		if (lauf !== thumbLauf || i >= knoepfe.length) {
+			if (i >= knoepfe.length) alt.forEach((u) => URL.revokeObjectURL(u));
+			return;
+		}
+		const b = knoepfe[i++];
+		const k = /** @type {string} */ (b.dataset.d);
+		const keep = app.S;
+		let svg = '';
+		try {
 			const c = JSON.parse(JSON.stringify(keep));
 			applyDesign(c, k, PRESETS[c.preset], true);
 			const D = DESIGNS[k];
@@ -193,16 +220,22 @@ function renderDesignThumbs() {
 			app.S = c;
 			fitPrint(c);
 			clampView(c.view);
-			const url = URL.createObjectURL(new Blob([buildSVG(true)], { type: 'image/svg+xml' }));
-			urls.push(url);
-			const img = /** @type {HTMLImageElement} */ (b.querySelector('img'));
-			img.src = url;
+			svg = vorschauSVG();
+		} finally {
+			app.S = keep;
 		}
-	} finally {
-		app.S = keep;
-	}
-	thumbUrls.forEach((u) => URL.revokeObjectURL(u));
-	thumbUrls = urls;
+		try {
+			const url = await alsBild(svg, 200);
+			if (lauf !== thumbLauf) return URL.revokeObjectURL(url);
+			thumbUrls.push(url);
+			/** @type {HTMLImageElement} */ (b.querySelector('img')).src = url;
+		} catch (e) {}
+		// Nächstes Bild erst, wenn der Browser gerade nichts anderes zu tun hat
+		const w = /** @type {any} */ (window);
+		if (w.requestIdleCallback) w.requestIdleCallback(naechstes, { timeout: 400 });
+		else setTimeout(naechstes, 30);
+	};
+	naechstes();
 }
 
 /* ---------- Anzeige mit dem Zustand abgleichen ---------- */

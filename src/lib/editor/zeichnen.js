@@ -331,6 +331,37 @@ function hoehenDaten() {
   return null;
 }
 
+/**
+ * Vorschaubild: SVG einmalig in ein kleines Bild umrechnen. Ein fertiges kleines Bild kostet beim
+ * Bildschirm-Neuzeichnen fast nichts – eine volle Karte als SVG-Bild dagegen jedes Mal sehr viel.
+ * @returns {Promise<string>} Blob-URL (PNG)
+ */
+export async function alsBild(svg, w = 240) {
+  const u = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  try {
+    const img = new Image();
+    img.src = u;
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = Math.max(1, Math.round(w * (img.naturalHeight || 1) / (img.naturalWidth || 1)));
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const b = await new Promise(r => c.toBlob(r, 'image/png'));
+    return URL.createObjectURL(b);
+  } finally {
+    URL.revokeObjectURL(u);
+  }
+}
+/** SVG für ein Vorschaubild: winzige Details (im kleinen Bild unsichtbar) werden weggelassen */
+export function vorschauSVG() {
+  app.vorschau = true;
+  try {
+    return buildSVG(true);
+  } finally {
+    app.vorschau = false;
+  }
+}
+
 export function mapContent(forExport, vr) {
   let o = '';
   // Mehrere Orte: Kreise nebeneinander (TCP.p ≠ 'tc' heißt: wir zeichnen gerade einen der Orte)
@@ -403,6 +434,7 @@ export function mapContent(forExport, vr) {
   }
   // Schatten der Häuser: Licht von links oben, Schatten fällt nach rechts unten
   const h3d = !!fx.h3d && !pop;
+  const klein = app.vorschau ? 5 / app.S.view.z : 0;
   /** @type {{ft:any, e:any}[]} */
   const haus3 = [];
   const schatten = fx.schatten && !h3d ? new Map() : null;
@@ -416,6 +448,8 @@ export function mapContent(forExport, vr) {
       if (e.h) return;
       const bx = ft.bx;
       if (bx[2] < vr[0] || bx[0] > vr[2] || bx[3] < vr[1] || bx[1] > vr[3]) return;
+      // Vorschaubild: Teile unter ~5 Poster-Punkten sind dort kleiner als ein Bildpunkt
+      if (klein && Math.max(bx[2] - bx[0], bx[3] - bx[1]) < klein) return;
       if (h3d && k === 'haus') {
         if (ft.a) haus3.push({ ft, e });
         return;
