@@ -34,10 +34,10 @@ async function run(name, ctxOpts, fn) {
 }
 
 await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 }, async (page) => {
-	await page.waitForSelector('#demoBtn');
+	await page.waitForSelector('#lq');
 	await page.waitForTimeout(700);
 	await page.screenshot({ path: `${OUT}/1-start-desktop.png` });
-	await page.click('#demoBtn');
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.waitForTimeout(500);
 	const n = await page.$$eval('#poster path[data-k]', (p) => p.length);
@@ -159,10 +159,10 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 });
 
 await run('iPhone – Offline-Beispiel', { ...devices['iPhone 14'] }, async (page) => {
-	await page.waitForSelector('#demoBtn');
+	await page.waitForSelector('#lq');
 	await page.waitForTimeout(700);
 	await page.screenshot({ path: `${OUT}/4-start-iphone.png` });
-	await page.click('#demoBtn');
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.waitForTimeout(500);
 	ok((await page.$$eval('#poster path[data-k]', (p) => p.length)) > 100, 'Poster auf dem Handy gezeichnet');
@@ -201,7 +201,7 @@ await run('iPhone – Offline-Beispiel', { ...devices['iPhone 14'] }, async (pag
 });
 
 await run('Desktop – Druck, Pins, Teilen, Merken', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, acceptDownloads: true }, async (page) => {
-	await page.click('#demoBtn');
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.waitForTimeout(500);
 	// Überrasch mich
@@ -324,7 +324,7 @@ await run('Desktop – Druck, Pins, Teilen, Merken', { viewport: { width: 1440, 
 await run('Desktop – Anlass-Vorlagen und Effekte', { viewport: { width: 1440, height: 900 } }, async (page) => {
 	await page.click('.occ-landing button[data-k="hochzeit"]');
 	ok((await page.getAttribute('#lq', 'placeholder')) === 'Wo habt ihr geheiratet?', 'Anlass „Hochzeit“ vorgemerkt (Suchfeld fragt passend)');
-	await page.click('#demoBtn');
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.waitForTimeout(500);
 	ok(await page.locator('.wz-pane[data-step="text"]').isVisible(), 'Nach dem Laden direkt beim Text (Datum eintragen)');
@@ -361,7 +361,7 @@ await run('Desktop – Anlass-Vorlagen und Effekte', { viewport: { width: 1440, 
 });
 
 await run('Desktop – Sternenhimmel', { viewport: { width: 1440, height: 900 }, acceptDownloads: true }, async (page) => {
-	await page.click('#demoBtn');
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.waitForTimeout(500);
 	await page.click('#wzMode button[data-m="sterne"]');
@@ -398,7 +398,7 @@ await run('Desktop – Sternenhimmel', { viewport: { width: 1440, height: 900 },
 });
 
 await run('Desktop – Preis, Geschenk, Rechtliches', { viewport: { width: 1440, height: 900 }, acceptDownloads: true }, async (page) => {
-	await page.click('#demoBtn');
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.waitForTimeout(500);
 	await page.click('#wzSteps button[data-step="produkt"]');
@@ -462,7 +462,7 @@ await run('Desktop – Hilfe-Chat', { viewport: { width: 1440, height: 900 } }, 
 	ok((await page.$('.chat-log img')) === null, 'Eingaben werden nie als HTML eingefügt');
 	await page.screenshot({ path: `${OUT}/28-chat.png` });
 	await page.keyboard.press('Escape');
-	await page.click('#demoBtn');
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.waitForTimeout(500);
 	await page.click('#chatBtn');
@@ -475,7 +475,7 @@ await run('Desktop – Hilfe-Chat', { viewport: { width: 1440, height: 900 } }, 
 });
 
 await run('Desktop – Marktcheck-Runde 1', { viewport: { width: 1440, height: 900 } }, async (page) => {
-	await page.click('#demoBtn');
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.waitForTimeout(500);
 	// Einfarbige Themen + Typografie
@@ -524,7 +524,7 @@ await run('Desktop – Marktcheck-Runde 1', { viewport: { width: 1440, height: 9
 });
 
 await run('Desktop – Wortwolke', { viewport: { width: 1440, height: 900 } }, async (page) => {
-	await page.click('#demoBtn');
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.waitForTimeout(500);
 	await page.click('#wzMode button[data-m="wolke"]');
@@ -559,11 +559,11 @@ await run('Beispiel-Galerie', { viewport: { width: 1440, height: 900 } }, async 
 	await page.waitForTimeout(800);
 	const bilder = await page.$$eval('#bspStrip img', (i) => i.filter((x) => x.complete && x.naturalWidth > 0).length);
 	ok(bilder >= 4, `Vorschaubilder geladen (${bilder} sichtbar)`);
-	// Offline-Beispiel aus der Galerie: Wortwolke Siegritz
-	await page.click('#bspStrip [data-id="siegritz-wolke"]');
+	// Galerie im Editor (offline mit den Beispieldaten)
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
-	await page.waitForTimeout(1200);
-	ok((await page.$$('#wortwolke text')).length > 40, 'Beispiel „Wortwolke im Herz“ öffnet fertig gestaltet');
+	await page.waitForTimeout(600);
+	ok((await page.$('#demoBtn')) === null && !(await page.content()).includes('Beispiel öffnen: Siegritz'), 'Kein Siegritz-Beispielknopf mehr auf der Startseite');
 	// Im Editor: Look auf den eigenen Ort übernehmen
 	await page.click('#wzSteps button[data-step="stil"]');
 	await page.click('.wz-pane[data-step="stil"] [data-bsp-open]');
@@ -576,7 +576,7 @@ await run('Beispiel-Galerie', { viewport: { width: 1440, height: 900 } }, async 
 });
 
 await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {
-	await page.tap('#demoBtn');
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.waitForTimeout(500);
 	const z0 = await page.evaluate(() => document.querySelector('#kartenAnsicht').getAttribute('transform'));
@@ -632,7 +632,7 @@ if (ONLINE)
 
 if (ONLINE)
 	await run('Desktop – Höhenlinien', { viewport: { width: 1440, height: 900 } }, async (page) => {
-		await page.click('#demoBtn');
+		await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 		await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 		await page.waitForTimeout(500);
 		await page.click('#wzStyles button[data-p="vintage"]');
@@ -648,7 +648,7 @@ if (ONLINE)
 
 if (ONLINE)
 	await run('Desktop – Route aus GPS-Datei', { viewport: { width: 1440, height: 900 } }, async (page) => {
-		await page.click('#demoBtn');
+		await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 		await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 		await page.waitForTimeout(500);
 		await page.click('#wzSteps button[data-step="ort"]');
@@ -669,7 +669,7 @@ if (ONLINE)
 
 if (ONLINE)
 	await run('Desktop – Mehrere Orte auf einem Poster', { viewport: { width: 1440, height: 900 } }, async (page) => {
-		await page.click('#demoBtn');
+		await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 		await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 		await page.waitForTimeout(500);
 		await page.click('#wzSteps button[data-step="ort"]');

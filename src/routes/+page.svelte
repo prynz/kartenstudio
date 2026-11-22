@@ -2,8 +2,62 @@
 	// Kartenstudio – Editor-Seite.
 	// Das HTML-Gerüst stammt aus dem Prototyp; die Logik liegt in #lib/editor, #lib/karte, #lib/themen, #lib/export.
 	import '#lib/editor/editor.css';
+	import '#lib/startseite.css';
 	import { onMount } from 'svelte';
-	import { resolve } from '$app/paths';
+	import { resolve, asset } from '$app/paths';
+	import { PREISE, FESTPREISE, fmt } from '#lib/shop/preise.js';
+
+	// Startseite: Preise „ab …“ aus der Preisliste, Anlässe und Motive zum Antippen
+	const P: Record<string, Record<string, number>> = PREISE;
+	const F: Record<string, number> = FESTPREISE;
+	const ab = (k: string) => fmt(F[k] ?? Math.min(...Object.values(P[k] || { x: 0 })));
+	const ANL = [
+		['hochzeit', 'Hochzeit', 'Herzform mit Herz an eurem Ort'],
+		['geburt', 'Geburt', 'Rund, sanftes Pastell, mit Stern'],
+		['zuhause', 'Neues Zuhause', 'Klar und modern, mit Koordinaten'],
+		['heimat', 'Heimat', 'Navy-Balken und Fraktur – der Klassiker'],
+		['urlaub', 'Urlaub', 'Sonnige Farben im Polaroid-Look'],
+		['verein', 'Verein & Firma', 'Kräftig, ideal fürs Vereins-Shirt']
+	];
+	const MOTIVE = [
+		['bamberg-sterne', 'Sternenhimmel', 'Der echte Himmel über deinem Ort an deinem Datum'],
+		['erlangen-koord', 'Koordinaten', 'Große Koordinaten mit deiner Geschichte'],
+		['kulmbach-geburt', 'Wortwolke', 'Namen und Daten in Herz, Kreis oder Haus'],
+		['bamberg-typo', 'Typografie', 'Der Ortsname in riesigen Buchstaben'],
+		['pottenstein-hoehen', 'Höhenlinien', 'Berge und Täler als feine Linien'],
+		['lindau-insel', 'Insel & See', 'Land und Wasser als klare Silhouette']
+	];
+	const PROD = [
+		['poster', 'Poster', 'Mattes Premiumpapier, A4 bis 70 × 100'],
+		['gerahmt', 'Mit Rahmen', '7 Rahmen, mit Passepartout'],
+		['leinwand', 'Leinwand', 'Auf Keilrahmen gespannt'],
+		['alu', 'Alu-Dibond', 'Edel, matt, mit Aufhängung'],
+		['shirt', 'T-Shirt', '7 Farben, Motiv auf der Brust'],
+		['tasse', 'Tasse', 'Keramik, spülmaschinenfest']
+	];
+	const PICON: Record<string, string> = {
+		poster: '<rect x="9" y="5" width="22" height="30" rx="1.5"/>',
+		gerahmt: '<rect x="7" y="3" width="26" height="34" rx="2" stroke-width="3.2"/><rect x="12" y="9" width="16" height="22"/>',
+		leinwand: '<path d="M8 6h22v28H8z"/><path d="M30 6l3 3v28l-3-3M8 34l3 3h22"/>',
+		alu: '<rect x="8" y="5" width="24" height="30" rx="1"/><path d="M11 8h18v24" stroke-opacity=".45"/>',
+		shirt: '<path d="M14 5c2 3 10 3 12 0l8 4 4 9-6 3-1-2v17H9V19l-1 2-6-3 4-9z"/>',
+		tasse: '<path d="M7 8h20v22c0 3-3 5-10 5S7 33 7 30z"/><path d="M27 13c7-1 7 11 0 10"/>'
+	};
+	/** Zur Suche oben springen */
+	function zurSuche() {
+		document.getElementById('landing')?.scrollTo({ top: 0, behavior: 'smooth' });
+		setTimeout(() => document.getElementById('lq')?.focus({ preventScroll: true }), 350);
+	}
+	/** Anlass vormerken (wie die Knöpfe oben) und zur Suche */
+	function anlass(k: string) {
+		const b = document.querySelector<HTMLButtonElement>(`.occ-landing button[data-k="${k}"]`);
+		if (b && !b.classList.contains('on')) b.click();
+		zurSuche();
+	}
+	/** Ein Beispiel aus der Galerie öffnen */
+	function beispiel(id: string) {
+		document.querySelector<HTMLButtonElement>(`#bspStrip [data-id="${id}"]`)?.click();
+	}
 
 	onMount(async () => {
 		const { start } = await import('#lib/editor/start.js');
@@ -12,13 +66,13 @@
 </script>
 
 <svelte:head>
-	<title>Kartenstudio</title>
-	<meta name="description" content="Deinen Ort als Poster- oder T-Shirt-Motiv gestalten." />
+	<title>Kartenstudio – deine Heimat als Poster</title>
+	<meta name="description" content="Deine Heimat als Kartenposter, Shirt oder Tasse – Ort eintippen, Poster steht sofort. Über 25 Designs, Sternenhimmel, Wortwolke, Koordinaten." />
 	<meta name="theme-color" content="#262c3a" />
 </svelte:head>
 
 <header>
-<div class="brand"><div class="logo"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.6"><rect x="1.5" y="1.5" width="13" height="13" rx="2.5"/><path d="M1.5 10.5 6 7l3 2.5 5.5-4"/></svg></div>Kartenstudio<small>Prototyp</small></div>
+<div class="brand"><div class="logo"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.6"><rect x="1.5" y="1.5" width="13" height="13" rx="2.5"/><path d="M1.5 10.5 6 7l3 2.5 5.5-4"/></svg></div>Kartenstudio<small>Beta</small></div>
 <div class="hsp"></div>
 <button class="ibtn chat-btn" id="chatBtn" aria-controls="chat" aria-expanded="false" title="Fragen? Hilfe-Chat öffnen"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.3 2.4c-.5.2-.8.6-.8 1.1v.5"/><circle cx="12" cy="16.3" r=".6" fill="currentColor"/></svg><span>Hilfe</span></button>
 <span id="hdrEdit" class="hidden" style="display:flex;align-items:center;gap:4px">
@@ -297,23 +351,87 @@
 <div class="toast" id="msg"></div>
 <div id="marq"></div>
 
-<div class="landing" id="landing">
-<div class="hero">
-<span class="eyebrow">Karten als Poster- & Shirt-Motiv</span>
-<h2>Welchen Ort willst du verewigen?</h2>
-<p>Ort eintippen – dein Poster steht sofort. Dann nach Lust gestalten und herunterladen.</p>
+<div class="landing lp" id="landing">
+<section class="lp-hero">
+<div class="lp-hero-txt">
+<span class="lp-eyebrow">Personalisierte Kartenposter · Shirts · Tassen</span>
+<h1>Deine Heimat als Poster – in Sekunden gestaltet.</h1>
+<p class="lp-lead">Ort eintippen, und dein Kartenposter steht sofort. Dann Stil, Design und Text wählen und direkt an Wand, Shirt oder Tasse ansehen.</p>
 <div class="occ occ-landing" data-occ aria-label="Anlass (optional)"></div>
-<div class="search"><input id="lq" placeholder="Dorf, Stadt oder Adresse, z. B. Siegritz" autocomplete="off"><button class="btn primary" id="lgo">Suchen</button><div class="results hidden" id="lresults"></div></div>
+<div class="search lp-search"><input id="lq" placeholder="Dorf, Stadt oder Adresse" autocomplete="off" enterkeyhint="search" aria-label="Ort suchen"><button class="btn primary" id="lgo">Poster gestalten</button><div class="results hidden" id="lresults"></div></div>
 <button class="demo resume hidden" id="resumeBtn"><span class="dpin">↺</span><span><b>Weiter mit deinem Entwurf</b><small></small></span></button>
-<button class="demo" id="demoBtn"><span class="dpin">▶</span><span><b>Beispiel öffnen: Siegritz</b><small>Sofort ausprobieren – funktioniert auch ohne Internet</small></span></button>
-<div class="orsep">oder Beispiel-Ort suchen</div>
-<div class="examples" style="margin-top:8px"><button class="chip" data-q="Siegritz Heiligenstadt">Siegritz</button><button class="chip" data-q="Bamberg">Bamberg</button><button class="chip" data-q="Rothenburg ob der Tauber">Rothenburg</button><button class="chip" data-q="Nördlingen">Nördlingen</button></div>
-<div class="bsp-box"><div class="bsp-head"><b>Beispiele zum Ausprobieren</b><small>Antippen – das Poster öffnet sich fertig gestaltet</small></div>
-<div class="bsp-strip" id="bspStrip"></div></div>
+<ul class="lp-trust"><li>Ohne Anmeldung</li><li>Vorschau sofort</li><li>Poster ab {ab('poster')}</li></ul>
+</div>
+<div class="lp-collage" aria-hidden="true">
+<img class="c1" src={asset('beispiele/bamberg-typo.jpg')} alt="" />
+<img class="c2" src={asset('beispiele/nuernberg-nacht.jpg')} alt="" />
+<img class="c3" src={asset('beispiele/bamberg-sterne.jpg')} alt="" />
+</div>
+</section>
+
+<section class="lp-band" aria-label="Vorteile">
+<div><b>Jeder Ort der Welt</b><span>vom Dorf bis zur Großstadt</span></div>
+<div><b>Über 25 Designs</b><span>und mehr als 20 Farbwelten</span></div>
+<div><b>Echte Vorschau</b><span>maßstäblich im Raum</span></div>
+<div><b>Druckfertige Datei</b><span>Vektor-PDF mit Beschnitt</span></div>
+</section>
+
+<section class="lp-sec">
+<div class="lp-head"><h2>Beliebte Designs</h2><p>Antippen – das Poster öffnet sich fertig gestaltet. Danach ist alles änderbar.</p></div>
+<div class="bsp-strip" id="bspStrip"></div>
+</section>
+
+<section class="lp-sec">
+<div class="lp-head"><h2>Für jeden Anlass</h2><p>Wähle einen Anlass, und Stil, Herz-Markierung und Widmung sind schon passend gesetzt.</p></div>
+<div class="lp-anl">
+{#each ANL as [k, titel, text] (k)}<button type="button" onclick={() => anlass(k)}><b>{titel}</b><span>{text}</span></button>{/each}
+</div>
+</section>
+
+<section class="lp-sec">
+<div class="lp-head"><h2>Mehr als eine Karte</h2><p>Sechs Motive, alle im gleichen Editor.</p></div>
+<div class="lp-motive">
+{#each MOTIVE as [id, titel, text] (id)}<button type="button" onclick={() => beispiel(id)}><img src={asset(`beispiele/${id}.jpg` as any)} alt="" loading="lazy" /><b>{titel}</b><span>{text}</span></button>{/each}
+</div>
+</section>
+
+<section class="lp-sec">
+<div class="lp-head"><h2>Dein Motiv auf …</h2><p>Sieh dein Design vor dem Kauf an der Wand, auf dem Shirt oder auf der Tasse.</p></div>
+<div class="lp-prod">
+{#each PROD as [k, name, d] (k)}<div><svg viewBox="0 0 40 40" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">{@html PICON[k]}</svg><b>{name}</b><span>{d}</span><em>ab {ab(k)}</em></div>{/each}
+</div>
+<p class="lp-note">Beispielpreise inkl. MwSt. – die Bestellung startet in Kürze. Die Druckdatei kannst du schon heute herunterladen.</p>
+</section>
+
+<section class="lp-sec lp-how">
+<div class="lp-head"><h2>So einfach geht's</h2></div>
+<ol>
+<li><b>Ort eintippen</b><span>Das Poster ist sofort fertig eingestellt: Ortskern, Name, Region.</span></li>
+<li><b>Gestalten</b><span>Stil, Design, Schrift, Herz-Markierung und Datum wählen.</span></li>
+<li><b>Ansehen</b><span>Als Poster, im Rahmen, auf Leinwand, Shirt oder Tasse.</span></li>
+<li><b>Herunterladen</b><span>Druckfertige Datei, bald auch direkt bestellen.</span></li>
+</ol>
+</section>
+
+<section class="lp-sec lp-faq">
+<div class="lp-head"><h2>Häufige Fragen</h2></div>
+<details><summary>Kann ich wirklich jeden Ort wählen?</summary><p>Ja – jedes Dorf, jede Stadt und jede Adresse weltweit. Die Kartendaten stammen aus OpenStreetMap und sind sehr detailliert, gerade auch auf dem Land.</p></details>
+<details><summary>Brauche ich ein Konto?</summary><p>Nein. Dein Entwurf wird automatisch in deinem Browser gemerkt, und per Link kannst du ihn auf einem anderen Gerät öffnen oder teilen.</p></details>
+<details><summary>Welche Dateien bekomme ich?</summary><p>Ein druckfertiges PDF mit Beschnitt für die Druckerei, ein hochaufgelöstes PNG mit transparentem Hintergrund (ideal für Shirts) und eine SVG-Vektordatei.</p></details>
+<details><summary>Kann ich direkt bestellen?</summary><p>Die Bestellung von Postern, Rahmen, Leinwand, Shirts und Tassen kommt in Kürze. Bis dahin kannst du die Druckdatei herunterladen und selbst drucken lassen.</p></details>
+<button type="button" class="lp-link" onclick={() => document.getElementById('chatBtn')?.click()}>Weitere Fragen? Frag unseren Hilfe-Chat ›</button>
+</section>
+
+<section class="lp-cta">
+<h2>Welchen Ort willst du verewigen?</h2>
+<button type="button" class="btn" onclick={zurSuche}>Jetzt Poster gestalten</button>
+</section>
+
+<footer class="lp-foot">
 <a class="orte-link" href={resolve('/poster')} data-sveltekit-reload>Ortsposter aus Franken und Bayern ›</a>
 <div class="legal"><a href={resolve('/impressum')} data-sveltekit-reload>Impressum</a> · <a href={resolve('/datenschutz')} data-sveltekit-reload>Datenschutz</a> · <a href={resolve('/agb')} data-sveltekit-reload>AGB</a> · <a href={resolve('/lizenzen')} data-sveltekit-reload>Lizenzen</a></div>
-<div class="steps"><span><b>1</b> Ort suchen</span><span><b>2</b> Gestalten</span><span><b>3</b> Vorschau</span><span><b>4</b> Herunterladen</span></div>
-</div>
+<small>Kartendaten © OpenStreetMap-Mitwirkende</small>
+</footer>
 </div>
 </section>
 </div>

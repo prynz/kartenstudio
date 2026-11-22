@@ -278,16 +278,17 @@ export function wizardAfterLoad() {
 		app.S.sky = { ...app.S.sky, lat: +lat.toFixed(4), lon: +lon.toFixed(4) };
 	}
 	setTool(advOpen ? 'sel' : 'move');
-	// Beispiel aus der Galerie geöffnet → dessen Look anwenden
-	if (beispielNachLaden()) return;
 	// Anlass vor der Suche gewählt → jetzt anwenden und direkt zum Text (Datum eintragen)
 	if (app.occasionPending) {
+		app.beispielPending = '';
 		const k = app.occasionPending;
 		app.occasionPending = '';
 		applyOccasion(k, false);
 		if (!advOpen) goStep(ANLAESSE[k].note ? 'text' : 'stil', false);
 		return;
 	}
+	// Beispiel aus der Galerie geöffnet → dessen Look anwenden
+	if (beispielNachLaden()) return;
 	// Wer gerade am Ausschnitt arbeitet (z. B. „Größere Gegend laden“), bleibt dort
 	if (!advOpen) goStep(step === 'ausschnitt' ? 'ausschnitt' : 'stil', false);
 }

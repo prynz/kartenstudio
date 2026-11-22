@@ -35,6 +35,7 @@ export function initEditorBeispiel() {
   setTool('sel');
   /* ---------- Beispiel-Ausschnitt (funktioniert ohne Internet) ---------- */
   
-  $('demoBtn').onclick = () => loadDemo();
+  // Kein Knopf mehr auf der Startseite – die Offline-Daten nutzen die Galerie und die automatischen Tests
+  window.addEventListener('ks-demo', () => loadDemo());
 }
 

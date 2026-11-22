@@ -1,0 +1,500 @@
+/* Startseite (Verkaufsseite) – klar, modern, viel Weißraum, Navy als Akzent.
+   Liegt über dem Editor (#landing) und scrollt selbst. */
+.app:has(#landing:not(.hidden)) {
+	grid-template-columns: minmax(0, 1fr);
+}
+.app:has(#landing:not(.hidden)) > aside {
+	display: none;
+}
+.landing.lp {
+	display: block;
+	padding: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	-webkit-overflow-scrolling: touch;
+	background: #f7f6f3;
+	scroll-behavior: smooth;
+	--lp-navy: #262c3a;
+	--lp-ink: #1c1f26;
+	--lp-muted: #5d6475;
+	--lp-line: #e6e3dc;
+	--lp-card: #ffffff;
+	--lp-gold: #b07d2b;
+}
+.lp > section,
+.lp > footer {
+	max-width: 1120px;
+	margin: 0 auto;
+	padding-left: max(20px, env(safe-area-inset-left, 0px));
+	padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+
+/* ---------- Hero ---------- */
+.lp-hero {
+	display: grid;
+	grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+	gap: 48px;
+	align-items: center;
+	padding-block: 56px 40px;
+}
+.lp-eyebrow {
+	display: inline-block;
+	font-size: 12.5px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	color: var(--lp-navy);
+	background: #e9ebf1;
+	border-radius: 999px;
+	padding: 5px 12px;
+}
+.lp-hero h1 {
+	font-family: SgXB, Inter, system-ui, sans-serif;
+	font-weight: 800;
+	font-size: clamp(34px, 4.6vw, 56px);
+	line-height: 1.04;
+	letter-spacing: -0.03em;
+	color: var(--lp-navy);
+	margin: 16px 0 14px;
+	text-wrap: balance;
+}
+.lp-lead {
+	font-size: 17.5px;
+	line-height: 1.55;
+	color: var(--lp-muted);
+	margin: 0 0 22px;
+	max-width: 52ch;
+}
+.lp .occ-landing {
+	justify-content: flex-start;
+	margin: 0 0 12px;
+}
+.lp-search {
+	max-width: 560px;
+	box-shadow: 0 10px 30px rgba(38, 44, 58, 0.12);
+	border-radius: 14px;
+}
+.lp-search input {
+	height: 56px;
+	font-size: 17px;
+	padding-left: 18px;
+}
+.lp-search .btn {
+	height: 44px;
+	padding: 0 18px;
+	font-size: 15px;
+	font-weight: 600;
+}
+.lp .resume {
+	margin: 14px 0 0;
+}
+.lp-trust {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 18px;
+	padding: 0;
+	margin: 16px 0 0;
+	font-size: 13.5px;
+	color: var(--lp-muted);
+}
+.lp-trust li::before {
+	content: '✓';
+	color: #2e8b57;
+	font-weight: 700;
+	margin-right: 6px;
+}
+
+/* Poster-Collage aus echten Beispielen */
+.lp-collage {
+	position: relative;
+	aspect-ratio: 1 / 0.8;
+	max-width: 520px;
+	justify-self: center;
+	width: 100%;
+}
+.lp-collage img {
+	position: absolute;
+	width: 46%;
+	background: #fff;
+	padding: 7px;
+	border-radius: 4px;
+	box-shadow:
+		0 22px 44px rgba(20, 24, 35, 0.22),
+		0 3px 8px rgba(20, 24, 35, 0.12);
+}
+.lp-collage .c1 {
+	left: 2%;
+	top: 10%;
+	transform: rotate(-5deg);
+}
+.lp-collage .c2 {
+	left: 27%;
+	top: 0;
+	z-index: 2;
+	width: 50%;
+}
+.lp-collage .c3 {
+	right: 0;
+	top: 14%;
+	transform: rotate(5deg);
+}
+
+/* ---------- Vorteile ---------- */
+.lp-band {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 12px;
+	padding-block: 8px 20px;
+}
+.lp-band div {
+	background: var(--lp-card);
+	border: 1px solid var(--lp-line);
+	border-radius: 14px;
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.lp-band b {
+	color: var(--lp-navy);
+	font-size: 15px;
+}
+.lp-band span {
+	color: var(--lp-muted);
+	font-size: 13px;
+}
+
+/* ---------- Abschnitte ---------- */
+.lp-sec {
+	padding-block: 44px 8px;
+}
+.lp-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 6px 24px;
+	margin-bottom: 18px;
+}
+.lp-head h2,
+.lp-cta h2 {
+	font-family: SgXB, Inter, system-ui, sans-serif;
+	font-size: clamp(24px, 3vw, 32px);
+	letter-spacing: -0.02em;
+	color: var(--lp-navy);
+	margin: 0;
+	text-wrap: balance;
+}
+.lp-head p {
+	margin: 0;
+	color: var(--lp-muted);
+	font-size: 15px;
+	max-width: 56ch;
+}
+.lp .bsp-strip .bsp {
+	flex: 0 0 172px;
+}
+.lp .bsp b {
+	font-size: 14px;
+}
+
+/* Anlässe */
+.lp-anl {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 12px;
+}
+.lp-anl button,
+.lp-motive button {
+	all: unset;
+	box-sizing: border-box;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	background: var(--lp-card);
+	border: 1.5px solid var(--lp-line);
+	border-radius: 14px;
+	padding: 16px 18px;
+	transition:
+		border-color 0.2s,
+		transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+		box-shadow 0.25s;
+}
+.lp-anl button:hover,
+.lp-motive button:hover {
+	border-color: var(--lp-navy);
+	transform: translateY(-2px);
+	box-shadow: 0 10px 22px rgba(20, 24, 35, 0.1);
+}
+.lp-anl button:focus-visible,
+.lp-motive button:focus-visible,
+.lp-link:focus-visible {
+	outline: 2px solid #2f6fe4;
+	outline-offset: 3px;
+}
+.lp-anl b,
+.lp-motive b {
+	font-size: 16px;
+	color: var(--lp-navy);
+}
+.lp-anl span,
+.lp-motive span {
+	font-size: 13.5px;
+	color: var(--lp-muted);
+}
+
+/* Motive */
+.lp-motive {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 14px;
+}
+.lp-motive button {
+	padding: 10px 10px 14px;
+}
+.lp-motive img {
+	display: block;
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+	object-position: center 35%;
+	border-radius: 9px;
+	margin-bottom: 8px;
+	background: #eceae4;
+}
+.lp-motive b,
+.lp-motive span {
+	padding: 0 6px;
+}
+
+/* Produkte */
+.lp-prod {
+	display: grid;
+	grid-template-columns: repeat(6, minmax(0, 1fr));
+	gap: 12px;
+}
+.lp-prod div {
+	background: var(--lp-card);
+	border: 1px solid var(--lp-line);
+	border-radius: 14px;
+	padding: 16px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	color: var(--lp-navy);
+}
+.lp-prod b {
+	font-size: 15px;
+	margin-top: 6px;
+}
+.lp-prod span {
+	font-size: 12.5px;
+	color: var(--lp-muted);
+	flex: 1;
+}
+.lp-prod em {
+	font-style: normal;
+	font-weight: 700;
+	font-size: 15px;
+	color: var(--lp-ink);
+	font-variant-numeric: tabular-nums;
+}
+.lp-note {
+	font-size: 12.5px;
+	color: var(--lp-muted);
+	margin: 12px 0 0;
+}
+
+/* So geht's */
+.lp-how ol {
+	list-style: none;
+	counter-reset: s;
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 14px;
+	padding: 0;
+	margin: 0;
+}
+.lp-how li {
+	counter-increment: s;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding-top: 14px;
+	border-top: 2px solid var(--lp-navy);
+}
+.lp-how li::before {
+	content: counter(s);
+	font-family: SgXB, Inter, sans-serif;
+	font-size: 26px;
+	color: var(--lp-navy);
+	line-height: 1;
+	margin-bottom: 6px;
+}
+.lp-how b {
+	color: var(--lp-navy);
+	font-size: 16px;
+}
+.lp-how span {
+	color: var(--lp-muted);
+	font-size: 14px;
+}
+
+/* Fragen */
+.lp-faq details {
+	background: var(--lp-card);
+	border: 1px solid var(--lp-line);
+	border-radius: 12px;
+	padding: 14px 18px;
+	margin-bottom: 8px;
+	max-width: 760px;
+}
+.lp-faq summary {
+	cursor: pointer;
+	font-weight: 600;
+	color: var(--lp-navy);
+}
+.lp-faq p {
+	margin: 8px 0 0;
+	color: var(--lp-muted);
+	font-size: 14.5px;
+	line-height: 1.55;
+}
+.lp-link {
+	all: unset;
+	cursor: pointer;
+	margin-top: 8px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--lp-navy);
+}
+
+/* Abschluss-Aufruf */
+.lp-cta {
+	margin-top: 56px !important;
+	padding-block: 44px !important;
+	background: var(--lp-navy);
+	border-radius: 22px;
+	text-align: center;
+	max-width: 1080px !important;
+}
+.lp-cta h2 {
+	color: #fff;
+	margin-bottom: 18px;
+}
+.lp-cta .btn {
+	background: #fff;
+	color: var(--lp-navy);
+	height: 50px;
+	padding: 0 26px;
+	font-size: 16px;
+	font-weight: 700;
+	border: 0;
+	border-radius: 12px;
+}
+.lp-foot {
+	padding-block: 28px 40px;
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	align-items: center;
+	color: var(--lp-muted);
+	font-size: 12.5px;
+}
+.lp-foot .legal {
+	margin: 0;
+}
+
+/* ---------- Bewegung beim ersten Anzeigen ---------- */
+.lp-hero-txt > *,
+.lp-collage img {
+	animation: lp-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+.lp-hero-txt > :nth-child(2) {
+	animation-delay: 0.05s;
+}
+.lp-hero-txt > :nth-child(3) {
+	animation-delay: 0.1s;
+}
+.lp-hero-txt > :nth-child(n + 4) {
+	animation-delay: 0.15s;
+}
+.lp-collage .c1 {
+	animation-delay: 0.15s;
+}
+.lp-collage .c2 {
+	animation-delay: 0.05s;
+}
+.lp-collage .c3 {
+	animation-delay: 0.25s;
+}
+@keyframes lp-in {
+	from {
+		opacity: 0;
+		translate: 0 14px;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.lp-hero-txt > *,
+	.lp-collage img {
+		animation: none;
+	}
+	.landing.lp {
+		scroll-behavior: auto;
+	}
+}
+
+/* ---------- Tablet & Handy ---------- */
+@media (max-width: 960px) {
+	.lp-prod {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+	.lp-band {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (max-width: 780px) {
+	.lp-hero {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 28px;
+		padding-block: 28px 20px;
+	}
+	.lp-collage {
+		max-width: 340px;
+	}
+	.lp-anl,
+	.lp-motive {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.lp-how ol {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.lp-lead {
+		font-size: 16px;
+	}
+	.lp .bsp-strip .bsp {
+		flex-basis: 140px;
+	}
+	.lp-cta {
+		border-radius: 0;
+	}
+}
+@media (max-width: 480px) {
+	.lp-prod {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.lp-anl,
+	.lp-motive,
+	.lp-how ol {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.lp-search .btn {
+		padding: 0 12px;
+		font-size: 14px;
+	}
+	.lp-collage {
+		max-width: 300px;
+	}
+}
