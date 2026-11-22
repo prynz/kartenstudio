@@ -21,6 +21,7 @@ import { msg, zoom } from './ansicht.js';
 import { SIZES, fitPrint, paperOrFree, quality, exportDpi } from './druck.js';
 import { PIN_SHAPES } from './zeichnen.js';
 import { shareLink } from './entwurf.js';
+import { ANLAESSE } from '../themen/anlaesse.js';
 import { esc } from './basis.js';
 import { saveDraftSoon } from './entwurf.js';
 
@@ -203,6 +204,9 @@ export function syncWizard() {
 	const n = /** @type {HTMLInputElement} */ ($('wzNote'));
 	if (document.activeElement !== n) n.value = (S.note && S.note.text) || '';
 	syncPins();
+	/** @type {HTMLInputElement} */ ($('fxPaper')).checked = !!(S.fx && S.fx.paper);
+	/** @type {HTMLInputElement} */ ($('fxVig')).checked = !!(S.fx && S.fx.vig);
+	all('[data-occ] button').forEach((b) => b.classList.toggle('on', b.dataset.k === S.occasion));
 	if (step === 'design') scheduleDesignThumbs();
 	if (step === 'fertig') syncFinish();
 	syncProduct();
@@ -212,8 +216,51 @@ export function syncWizard() {
 /** Nach dem Laden eines Orts: im Assistenten beim Stil weitermachen. */
 export function wizardAfterLoad() {
 	thumbKey = '';
-	if (!advOpen) goStep('stil', false);
 	setTool(advOpen ? 'sel' : 'move');
+	// Anlass vor der Suche gewählt → jetzt anwenden und direkt zum Text (Datum eintragen)
+	if (app.occasionPending) {
+		const k = app.occasionPending;
+		app.occasionPending = '';
+		applyOccasion(k, false);
+		if (!advOpen) goStep(ANLAESSE[k].note ? 'text' : 'stil', false);
+		return;
+	}
+	if (!advOpen) goStep('stil', false);
+}
+
+/**
+ * Anlass-Vorlage anwenden: Stil, Design, Markierung in der Mitte, Widmung.
+ * @param {string} k @param {boolean} [anim]
+ */
+export function applyOccasion(k, anim = true) {
+	const A = ANLAESSE[k];
+	if (!A || !app.S) return;
+	const run = () =>
+		change(() => {
+			const keep = app.S;
+			app.S = newState(PRESETS[A.preset] ? A.preset : 'umriss', keep);
+			app.S.mode = 'art';
+			pickDesign(app.S, A.design);
+			app.S.note = { on: true, text: A.note };
+			app.S.pins = A.pin ? [{ i: A.pin, x: +app.S.view.cx.toFixed(2), y: +app.S.view.cy.toFixed(2) }] : [];
+			app.S.pinColor = A.pinColor;
+			app.S.fx = { paper: false, vig: false, ...(A.fx || {}) };
+			if (A.bg) app.S.bg = A.bg;
+			app.S.occasion = k;
+		});
+	anim ? smooth(run) : run();
+	syncOccasion();
+	if (A.pin) msg(`Vorlage „${A.name}“ – Markierung im Poster an die richtige Stelle ziehen`, 'ok');
+	else msg(`Vorlage „${A.name}“ angewendet`, 'ok');
+}
+
+/** Auswahlzustand der Anlass-Knöpfe (Startseite + Assistent) */
+function syncOccasion() {
+	const cur = app.DATA ? app.S && app.S.occasion : app.occasionPending;
+	all('[data-occ] button').forEach((b) => b.classList.toggle('on', b.dataset.k === cur));
+	const A = ANLAESSE[app.occasionPending || ''];
+	const lq = /** @type {HTMLInputElement|null} */ (document.getElementById('lq'));
+	if (lq) lq.placeholder = A ? A.ask : 'Dorf, Stadt oder Adresse, z. B. Siegritz';
 }
 
 /**
@@ -481,6 +528,36 @@ export function initWizard() {
 			)
 		)
 	);
+
+	// Anlass-Vorlagen (Startseite und Schritt „Ort“)
+	all('[data-occ]').forEach((box) =>
+		Object.entries(ANLAESSE).forEach(([k, A]) => {
+			const b = document.createElement('button');
+			b.type = 'button';
+			b.dataset.k = k;
+			b.title = A.desc;
+			b.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${A.icon}</svg><span>${A.name}</span>`;
+			b.onclick = () => {
+				if (app.DATA) applyOccasion(k);
+				else {
+					// Noch kein Ort: merken und nach der Suche anwenden
+					app.occasionPending = app.occasionPending === k ? '' : k;
+					syncOccasion();
+					const lq = /** @type {HTMLInputElement|null} */ (document.getElementById('lq'));
+					if (lq && app.occasionPending) lq.focus();
+				}
+			};
+			box.appendChild(b);
+		})
+	);
+
+	// Effekte (Design-Schritt)
+	/** @param {string} id @param {'paper'|'vig'} key */
+	const fxToggle = (id, key) =>
+		$(id).addEventListener('change', (e) => change(() => (app.S.fx = { ...(app.S.fx || {}), [key]: /** @type {HTMLInputElement} */ (e.target).checked })));
+	fxToggle('fxPaper', 'paper');
+	fxToggle('fxVig', 'vig');
+	$('softproof').addEventListener('change', (e) => document.body.classList.toggle('softproof', /** @type {HTMLInputElement} */ (e.target).checked));
 
 	// Widmung / Datum
 	textInput('wzNote', (v) => (app.S.note = { ...(app.S.note || {}), on: true, text: v }));

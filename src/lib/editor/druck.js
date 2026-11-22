@@ -109,6 +109,8 @@ export function quality() {
 			else items.push({ level: 'ok', text: `Linien ab ${t} mm – gut druckbar.` });
 		}
 	}
+	const neon = neonColors(S);
+	if (neon.length) items.push({ level: 'warn', text: `Leuchtende Farben (${neon.slice(0, 3).join(', ')}) wirken im Druck etwas matter als am Bildschirm. Mit „Druckfarben simulieren“ siehst du es vorab.` });
 	const small = S.attr && S.attr.on ? 11 * mmPerUnit : 99;
 	if (small < 1.6) items.push({ level: 'warn', text: 'Die Quellenangabe wird sehr klein gedruckt.' });
 	const dpi = exportDpi(P);
@@ -216,4 +218,28 @@ export async function buildPDF() {
 /** Text für PDF-Metadaten (nur einfache Zeichen) @param {string} s */
 function pdfStr(s) {
 	return s.replace(/[^\x20-\x7e]/g, (c) => ({ ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue', ß: 'ss' })[c] || '').replace(/[()\\]/g, '');
+}
+
+/** Sehr kräftige Bildschirmfarben, die im Druck (CMYK) nicht ganz erreicht werden @param {any} S */
+export function neonColors(S) {
+	/** @type {Set<string>} */
+	const cols = new Set();
+	const add = (/** @type {any} */ c) => typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c) && cols.add(c.toLowerCase());
+	add(S.bg);
+	add(S.bar && S.bar.on && S.bar.color);
+	add(S.frame && S.frame.w > 0 && S.frame.color);
+	add(S.title && S.title.color);
+	if (S.mode !== 'std') Object.values(S.cls || {}).forEach((/** @type {any} */ c) => c && !c.h && (add(c.s), add(c.f)));
+	(S.pop && S.pop.pal ? S.pop.pal : []).forEach(add);
+	return [...cols].filter((c) => {
+		const r = parseInt(c.slice(1, 3), 16) / 255,
+			g = parseInt(c.slice(3, 5), 16) / 255,
+			b = parseInt(c.slice(5, 7), 16) / 255;
+		const mx = Math.max(r, g, b),
+			mn = Math.min(r, g, b),
+			l = (mx + mn) / 2,
+			s = mx === mn ? 0 : (mx - mn) / (1 - Math.abs(2 * l - 1));
+		// Grob: sehr gesättigt + mittelhell (Neon-Grün/-Pink/-Cyan, reines RGB-Blau …)
+		return s > 0.85 && l > 0.38 && l < 0.72 && (g > 0.75 || (b > 0.8 && r < 0.4) || (r > 0.85 && b > 0.6));
+	});
 }

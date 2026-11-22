@@ -448,3 +448,18 @@ aside.nodata .wiz{opacity:.45;pointer-events:none}
   .wz-sizes::-webkit-scrollbar,.wz-pinadd::-webkit-scrollbar{display:none}
   .wz-sizes button,.wz-pinadd .btn{flex:0 0 auto}
 }
+/* Anlass-Vorlagen */
+.occ{display:flex;flex-wrap:wrap;gap:6px}
+.occ button{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 12px;border-radius:999px;border:1.5px solid var(--line,#e4e2dd);background:#fff;font-size:13px;font-weight:500;color:var(--ink,#1c1f26);cursor:pointer;transition:border-color .2s,background .2s,transform .2s cubic-bezier(.2,.8,.2,1)}
+.occ button:hover{border-color:var(--slate,#262c3a)}
+.occ button:active{transform:scale(.96)}
+.occ button.on{background:var(--slate,#262c3a);border-color:var(--slate,#262c3a);color:#fff}
+.occ button:focus-visible{outline:2px solid var(--accent,#2f6fe4);outline-offset:2px}
+.occ-landing{justify-content:center;margin:0 0 14px}
+@media(max-width:900px){
+  .occ{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-16px;margin-right:-16px;padding:2px 16px 4px}
+  .occ::-webkit-scrollbar{display:none}
+  .occ button{flex:0 0 auto}
+}
+.wz-proof{margin:-4px 0 14px}
+.softproof #poster{filter:saturate(.8) contrast(.95) brightness(.99)}

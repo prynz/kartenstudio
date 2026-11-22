@@ -54,6 +54,8 @@
 <div class="wz-place"><div class="pin">⌖</div><div><b id="wzPlace">–</b><span id="wzPlaceInfo"></span></div></div>
 <p class="wz-hint">Du kannst jederzeit einen anderen Ort suchen.</p>
 <div class="search wz-search"><input id="wq" type="search" placeholder="Dorf, Stadt oder Adresse" autocomplete="off" enterkeyhint="search"><button class="btn primary" id="wgo">Suchen</button><div class="results hidden" id="wresults"></div></div>
+<div class="lab">Vorlage für einen Anlass</div>
+<div class="occ" data-occ></div>
 </section>
 <section class="wz-pane" data-step="ausschnitt">
 <h3>Ausschnitt</h3>
@@ -77,6 +79,9 @@
 <div class="wz-head"><h3>Design</h3><button type="button" class="wz-dice" data-dice><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>Überrasch mich</button></div>
 <p class="wz-hint">Wie Rahmen, Karte und Text angeordnet sind. Die Farben kommen vom Stil.</p>
 <div class="wz-cards wz-designs" id="wzDesigns"></div>
+<div class="lab">Effekte</div>
+<label class="tog wz-tog"><input type="checkbox" id="fxPaper"><span>Papier-Struktur</span></label>
+<label class="tog wz-tog"><input type="checkbox" id="fxVig"><span>Vignette (Rand abdunkeln)</span></label>
 </section>
 <section class="wz-pane" data-step="text">
 <h3>Text</h3>
@@ -106,6 +111,7 @@
 <section class="wz-pane" data-step="fertig">
 <h3>Fertig – herunterladen</h3>
 <div class="qa" id="wzQa"></div>
+<label class="tog wz-tog wz-proof"><input type="checkbox" id="softproof"><span>Druckfarben simulieren</span></label>
 <div class="wz-dl">
 <button data-f="pdf"><b>PDF für die Druckerei</b><span id="wzPdfInfo">Endformat + 3 mm Beschnitt</span></button>
 <button data-f="png" data-w="3600"><b>PNG für den Druck</b><span>3600 px · ca. 30 cm bei 300 dpi</span></button>
@@ -238,6 +244,7 @@
 <span class="eyebrow">Karten als Poster- & Shirt-Motiv</span>
 <h2>Welchen Ort willst du verewigen?</h2>
 <p>Ort eintippen – dein Poster steht sofort. Dann nach Lust gestalten und herunterladen.</p>
+<div class="occ occ-landing" data-occ aria-label="Anlass (optional)"></div>
 <div class="search"><input id="lq" placeholder="Dorf, Stadt oder Adresse, z. B. Siegritz" autocomplete="off"><button class="btn primary" id="lgo">Suchen</button><div class="results hidden" id="lresults"></div></div>
 <button class="demo resume hidden" id="resumeBtn"><span class="dpin">↺</span><span><b>Weiter mit deinem Entwurf</b><small></small></span></button>
 <button class="demo" id="demoBtn"><span class="dpin">▶</span><span><b>Beispiel öffnen: Siegritz</b><small>Sofort ausprobieren – funktioniert auch ohne Internet</small></span></button>

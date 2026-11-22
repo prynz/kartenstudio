@@ -238,6 +238,51 @@ export function renderView() {
   clearTimeout(fullTimer);
   fullTimer = window.setTimeout(render, 140);
 }
+/* ---------- Effekte: Vignette und Papier-Struktur ---------- */
+let NOISE = '';
+/** Feines Papierkorn als kleines Kachelbild (einmal erzeugt, wird im Export eingebettet) */
+function noiseURL() {
+  if (NOISE) return NOISE;
+  const c = document.createElement('canvas');
+  c.width = c.height = 160;
+  const x = c.getContext('2d'),
+    d = x.createImageData(160, 160);
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < d.data.length; i += 4) {
+    const v = 120 + rnd() * 135;
+    d.data[i] = d.data[i + 1] = d.data[i + 2] = v;
+    d.data[i + 3] = 255;
+  }
+  x.putImageData(d, 0, 0);
+  // leichte Fasern
+  x.globalAlpha = 0.08;
+  x.strokeStyle = '#000';
+  for (let i = 0; i < 40; i++) {
+    x.beginPath();
+    const px = rnd() * 160, py = rnd() * 160;
+    x.moveTo(px, py);
+    x.lineTo(px + (rnd() - 0.5) * 30, py + (rnd() - 0.5) * 8);
+    x.stroke();
+  }
+  NOISE = c.toDataURL('image/png');
+  return NOISE;
+}
+function fxSVG(g) {
+  const fx = app.S.fx || {};
+  let o = '';
+  if (fx.vig) {
+    o += `<defs><radialGradient id="gVig" cx="50%" cy="50%" r="72%"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".42"/></radialGradient></defs>`;
+    o += `<g clip-path="url(#cIn)" pointer-events="none"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><rect id="vignette" width="${MW}" height="${g.MH.toFixed(1)}" fill="url(#gVig)"/></g></g></g>`;
+  }
+  // Papier-Struktur nur auf farbigem Grund (auf transparentem Grund, z. B. für Shirts, wäre sie Schmutz)
+  if (fx.paper && app.S.bg !== 'none') {
+    o += `<defs><pattern id="pPaper" width="160" height="160" patternUnits="userSpaceOnUse"><image href="${noiseURL()}" width="160" height="160"/></pattern></defs>`;
+    o += `<rect id="papier" x="0" y="0" width="${g.W.toFixed(1)}" height="${g.H.toFixed(1)}" fill="url(#pPaper)" opacity=".16" style="mix-blend-mode:multiply" clip-path="url(#cOut)" pointer-events="none"/>`;
+  }
+  return o;
+}
+
 /* ---------- Markierungen (Pins) ---------- */
 /** Formen, jeweils um (0,0) gezeichnet; Pin/Tropfen mit Spitze bei (0,0) */
 export const PIN_SHAPES = {
@@ -295,6 +340,7 @@ export function buildSVG(forExport) {
   o += forExport ? mapContent(true, visRect()) : '<g id="kartenInhalt"/>';
   o += '</g></g></g></g>';
   const ink = app.S.title.color;
+  o += fxSVG(g);
   o += pinsSVG(g, forExport);
   if (g.L.inner > 0) o += mapShape(g, g.L.innerGap + g.L.inner / 2, ` id="innenlinie" transform="translate(${g.mx},${g.my})" fill="none" stroke="${f.w > 0 ? f.color : ink}" stroke-width="${g.L.inner}"`);
   if (g.L.kind === 'over' && g.L.fade && g.block > 0) {

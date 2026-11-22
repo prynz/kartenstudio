@@ -311,6 +311,33 @@ await run('Desktop – Druck, Pins, Teilen, Merken', { viewport: { width: 1440, 
 	await ctx2.close();
 });
 
+await run('Desktop – Anlass-Vorlagen und Effekte', { viewport: { width: 1440, height: 900 } }, async (page) => {
+	await page.click('.occ-landing button[data-k="hochzeit"]');
+	ok((await page.getAttribute('#lq', 'placeholder')) === 'Wo habt ihr geheiratet?', 'Anlass „Hochzeit“ vorgemerkt (Suchfeld fragt passend)');
+	await page.click('#demoBtn');
+	await page.waitForTimeout(1200);
+	ok(await page.locator('.wz-pane[data-step="text"]').isVisible(), 'Nach dem Laden direkt beim Text (Datum eintragen)');
+	ok((await page.$$('#poster [data-pin]')).length === 1 && (await page.textContent('#widmung')) === 'Hier haben wir Ja gesagt', 'Herz und Widmung gesetzt');
+	ok((await page.$('#papier')) !== null, 'Papier-Struktur aktiv');
+	await page.screenshot({ path: `${OUT}/15-anlass-hochzeit.png` });
+	await page.click('#wzSteps button[data-step="ort"]');
+	await page.click('.wz-pane[data-step="ort"] [data-occ] button[data-k="geburt"]');
+	await page.waitForTimeout(700);
+	ok((await page.textContent('#widmung')) === 'Willkommen auf der Welt' && (await page.$('#papier')) === null, 'Anlass „Geburt“ im Assistenten gewechselt');
+	await page.screenshot({ path: `${OUT}/16-anlass-geburt.png` });
+	await page.click('#wzSteps button[data-step="design"]');
+	await page.check('#fxVig');
+	await page.waitForTimeout(300);
+	ok((await page.$('#vignette')) !== null, 'Vignette zuschaltbar');
+	await page.click('#wzSteps button[data-step="stil"]');
+	await page.click('#wzStyles button[data-p="cyber"]');
+	await page.click('#wzSteps button[data-step="fertig"]');
+	await page.waitForTimeout(400);
+	ok(/Leuchtende Farben/.test(await page.textContent('#wzQa')), 'Farbhinweis bei Neonfarben („Cyber Noir“)');
+	await page.check('#softproof');
+	ok(await page.evaluate(() => getComputedStyle(document.getElementById('poster')).filter !== 'none'), 'Druckfarben-Simulation schaltbar');
+});
+
 await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {
 	await page.tap('#demoBtn');
 	await page.waitForTimeout(900);

@@ -85,6 +85,8 @@ export function newState(presetKey, keep) {
     st.pinColor = keep.pinColor || st.pinColor;
     st.print = keep.print ? { ...keep.print } : null;
     if (keep.product) st.product = { ...keep.product };
+    if (keep.fx) st.fx = { ...keep.fx };
+    if (keep.occasion) st.occasion = keep.occasion;
   }
   // Design (Aufbau/Rahmen) bleibt beim Wechsel des Farbthemas erhalten
   applyDesign(st, keep && keep.design || 'siegritz', p, !keep);
