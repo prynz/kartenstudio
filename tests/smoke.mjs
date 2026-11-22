@@ -334,6 +334,17 @@ await run('Desktop – Anlass-Vorlagen und Effekte', { viewport: { width: 1440, 
 	await page.check('#fxVig');
 	await page.waitForTimeout(300);
 	ok((await page.$('#vignette')) !== null, 'Vignette zuschaltbar');
+	await page.click('#wzDesigns button[data-d="typo"]');
+	await page.waitForTimeout(500);
+	ok((await page.$$('#titel text')).length >= 2, 'Typografie-Design: Ortsname in großen Zeilen');
+	await page.click('#wzDesigns button[data-d="haus"]');
+	await page.waitForTimeout(400);
+	ok((await page.$$('#wzDesigns button')).length >= 24, 'Haus-Form und Typografie bei den Designs');
+	await page.click('#wzSteps button[data-step="text"]');
+	await page.click('#wzFonts button[data-t="SgSC"]');
+	await page.waitForTimeout(400);
+	ok((await page.getAttribute('#titel', 'font-family')) === 'SgSC' && (await page.textContent('#titel')) === 'Siegritz', 'Schreibschrift-Titel „Siegritz“');
+	await page.click('#wzSteps button[data-step="design"]');
 	await page.click('#wzSteps button[data-step="stil"]');
 	await page.click('#wzStyles button[data-p="cyber"]');
 	await page.click('#wzSteps button[data-step="fertig"]');
@@ -419,6 +430,39 @@ await run('Desktop – Preis, Geschenk, Rechtliches', { viewport: { width: 1440,
 	await p3.goto(URL.replace(/\/$/, '') + '/datenschutz');
 	await p3.screenshot({ path: `${OUT}/25-datenschutz.png` });
 	await p3.close();
+});
+
+await run('Desktop – Hilfe-Chat', { viewport: { width: 1440, height: 900 } }, async (page) => {
+	await page.click('#chatBtn');
+	await page.waitForSelector('#chat.on');
+	ok((await page.$$('.cm-bot')).length === 1, 'Chat öffnet mit Begrüßung und Vorschlägen');
+	await page.fill('#chatIn', 'Was kostet ein Poster mit Rahmen?');
+	await page.press('#chatIn', 'Enter');
+	await page.waitForTimeout(400);
+	ok((await page.textContent('.cm-bot:last-child')).includes('44,90'), 'Preisfrage richtig beantwortet');
+	await page.fill('#chatIn', 'kann ich eine gpx datei von meinem marathon nehmen');
+	await page.press('#chatIn', 'Enter');
+	await page.waitForTimeout(400);
+	ok((await page.textContent('.cm-bot:last-child')).includes('GPS-Datei'), 'Routen-Frage richtig beantwortet');
+	await page.fill('#chatIn', 'Wie wird das Wetter morgen?');
+	await page.press('#chatIn', 'Enter');
+	await page.waitForTimeout(400);
+	ok((await page.textContent('.cm-bot:last-child')).includes('weiß ich leider'), 'Unbekannte Frage: ehrliche Antwort mit Vorschlägen');
+	await page.fill('#chatIn', '<img src=x onerror=alert(1)>');
+	await page.press('#chatIn', 'Enter');
+	await page.waitForTimeout(300);
+	ok((await page.$('.chat-log img')) === null, 'Eingaben werden nie als HTML eingefügt');
+	await page.screenshot({ path: `${OUT}/28-chat.png` });
+	await page.keyboard.press('Escape');
+	await page.click('#demoBtn');
+	await page.waitForTimeout(900);
+	await page.click('#chatBtn');
+	await page.fill('#chatIn', 'Gibt es einen Sternenhimmel?');
+	await page.press('#chatIn', 'Enter');
+	await page.waitForTimeout(400);
+	await page.click('.cm-bot:last-child .cm-act');
+	await page.waitForTimeout(800);
+	ok(await page.locator('#wzSky').isVisible(), 'Knopf im Chat öffnet direkt den Sternenhimmel');
 });
 
 await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {

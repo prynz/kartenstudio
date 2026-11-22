@@ -232,6 +232,7 @@ export function syncWizard() {
 	if (document.activeElement !== n) n.value = (S.note && S.note.text) || '';
 	syncPins();
 	syncMulti();
+	all('#wzFonts button').forEach((b) => b.classList.toggle('on', b.dataset.t === S.title.font && b.dataset.s === S.sub.font));
 	syncRoute();
 	/** @type {HTMLInputElement} */ ($('fxPaper')).checked = !!(S.fx && S.fx.paper);
 	/** @type {HTMLInputElement} */ ($('fxVig')).checked = !!(S.fx && S.fx.vig);
@@ -673,6 +674,34 @@ export function initWizard() {
 	fxToggle('fxPaper', 'paper');
 	fxToggle('fxVig', 'vig');
 	$('softproof').addEventListener('change', (e) => document.body.classList.toggle('softproof', /** @type {HTMLInputElement} */ (e.target).checked));
+
+	// Schrift-Paare (Titel + Untertitel)
+	all('#wzFonts button').forEach(
+		(b) =>
+			(b.onclick = () =>
+				smooth(() =>
+					change(() => {
+						const S = app.S;
+						const tf = /** @type {string} */ (b.dataset.t),
+							sf = /** @type {string} */ (b.dataset.s);
+						const was = S.title.font;
+						S.title.font = tf;
+						S.sub.font = sf;
+						const t = S.title.text || '';
+						// Schreibschrift sieht nur in normaler Schreibweise gut aus, Blockschrift in Großbuchstaben
+						if (tf === 'SgSC' && was !== 'SgSC') {
+							if (t === t.toUpperCase()) S.title.text = t.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (/** @type {string} */ m, /** @type {string} */ a, /** @type {string} */ c) => a + c.toUpperCase());
+							S.title.lsPrev = S.title.ls;
+							S.title.ls = 0;
+							S.title.size = Math.round(S.title.size * 1.5);
+						} else if (tf !== 'SgSC' && was === 'SgSC') {
+							S.title.text = t.toUpperCase();
+							S.title.ls = S.title.lsPrev ?? 14;
+							S.title.size = Math.round(S.title.size / 1.5);
+						}
+					})
+				))
+	);
 
 	// Widmung / Datum
 	textInput('wzNote', (v) => (app.S.note = { ...(app.S.note || {}), on: true, text: v, auto: false }));

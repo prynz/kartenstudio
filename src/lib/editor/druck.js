@@ -313,7 +313,7 @@ export async function buildVectorPDF() {
 	const b64 = (/** @type {string} */ u) => u.slice(u.indexOf(',') + 1);
 	/** @type {Record<string,string>} */
 	const TT = { SgXB: b64(xb.default), SgMD: b64(md.default) };
-	for (const name of /** @type {const} */ (['SgXB', 'SgMD', 'SgFR'])) {
+	for (const name of /** @type {const} */ (['SgXB', 'SgMD', 'SgFR', 'SgSC'])) {
 		const data = TT[name] || toB64(await woffToTtf(Uint8Array.from(atob(FONTDATA[name]), (c) => c.charCodeAt(0))));
 		doc.addFileToVFS(name + '.ttf', data);
 		doc.addFont(name + '.ttf', name, 'normal');
@@ -326,8 +326,15 @@ export async function buildVectorPDF() {
 	// Papier-Struktur ist ein Pixelmuster mit Mischmodus – im Vektor-PDF weglassen
 	el.querySelectorAll('#papier').forEach((s) => s.remove());
 	// Laufweite (letter-spacing) kennt svg2pdf nicht → jeden Buchstaben einzeln positionieren
-	await Promise.all(['SgXB', 'SgMD', 'SgFR'].map((f) => document.fonts.load(`40px ${f}`)));
+	await Promise.all(['SgXB', 'SgMD', 'SgFR', 'SgSC'].map((f) => document.fonts.load(`40px ${f}`)));
 	const mc = /** @type {CanvasRenderingContext2D} */ (document.createElement('canvas').getContext('2d'));
+	// Angaben, die an einer Gruppe stehen (Typografie-Design), auf die Texte übertragen
+	el.querySelectorAll('g[letter-spacing] > text').forEach((t) => {
+		const p = /** @type {Element} */ (t.parentElement);
+		['font-family', 'font-size', 'letter-spacing', 'text-anchor'].forEach((a) => {
+			if (!t.hasAttribute(a) && p.hasAttribute(a)) t.setAttribute(a, /** @type {string} */ (p.getAttribute(a)));
+		});
+	});
 	el.querySelectorAll('text[letter-spacing]').forEach((t) => {
 		const ls = parseFloat(t.getAttribute('letter-spacing') || '0');
 		const txt = t.textContent || '';

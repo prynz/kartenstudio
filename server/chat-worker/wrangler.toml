@@ -1,0 +1,20 @@
+# Cloudflare Worker für den KI-Hilfe-Chat.
+# Einrichten (einmalig, mit kostenlosem Cloudflare-Konto):
+#   cd server/chat-worker && npm install
+#   npx wrangler login
+#   npx wrangler secret put ANTHROPIC_API_KEY      ← Schlüssel aus console.anthropic.com
+#   npx wrangler deploy                            ← gibt die Adresse aus, z. B. https://kartenstudio-chat.<name>.workers.dev
+# Danach die Website mit VITE_CHAT_API=<diese Adresse> bauen (siehe docs/chatbot.md).
+name = "kartenstudio-chat"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+# Nur Anfragen von diesen Seiten annehmen (kommagetrennt)
+ALLOWED_ORIGINS = "https://prynz.github.io,http://localhost:5173,http://localhost:4173"
+
+# Missbrauchsschutz: höchstens 20 Fragen pro Minute und Besucher
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 20, period = 60 }

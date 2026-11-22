@@ -12,6 +12,8 @@ export const KONFIG = {
 	geocoder: env.VITE_GEOCODER || 'https://photon.komoot.io/api/',
 	/** Höhenmodell (Terrarium-PNG-Kacheln). Selbst hostbar: gleiche Dateien auf eigenem Speicher. */
 	terrain: env.VITE_TERRAIN || 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+	/** KI-Hilfe-Chat: Adresse des Chat-Servers (server/chat-worker). Leer = eingebauter Antwort-Bot ohne KI. */
+	chatApi: env.VITE_CHAT_API || '',
 	/** Amtliches Luftbild Bayern (WMS, CC BY 4.0) */
 	luftbildBayern:
 		env.VITE_LUFTBILD ||

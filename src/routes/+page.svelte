@@ -20,6 +20,7 @@
 <header>
 <div class="brand"><div class="logo"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.6"><rect x="1.5" y="1.5" width="13" height="13" rx="2.5"/><path d="M1.5 10.5 6 7l3 2.5 5.5-4"/></svg></div>Kartenstudio<small>Prototyp</small></div>
 <div class="hsp"></div>
+<button class="ibtn chat-btn" id="chatBtn" aria-controls="chat" aria-expanded="false" title="Fragen? Hilfe-Chat öffnen"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.3 2.4c-.5.2-.8.6-.8 1.1v.5"/><circle cx="12" cy="16.3" r=".6" fill="currentColor"/></svg><span>Hilfe</span></button>
 <span id="hdrEdit" class="hidden" style="display:flex;align-items:center;gap:4px">
 <button class="ibtn" id="undo" title="Rückgängig (Strg+Z)">↶</button><button class="ibtn" id="redo" title="Wiederholen (Strg+Y)">↷</button>
 <span style="width:8px"></span>
@@ -116,6 +117,8 @@
 <h3>Text</h3>
 <label class="wz-field"><span>Titel</span><input id="wzTitle" class="inp" type="text" autocomplete="off"></label>
 <label class="wz-field"><span>Untertitel</span><input id="wzSub" class="inp" type="text" autocomplete="off"></label>
+<div class="lab">Schriften</div>
+<div class="wz-chips wz-fonts" id="wzFonts"><button type="button" data-t="SgXB" data-s="SgFR"><b style="font-family:SgXB">AB</b> <span style="font-family:SgFR">Fraktur</span></button><button type="button" data-t="SgXB" data-s="SgMD"><b style="font-family:SgXB">AB</b> <span style="font-family:SgMD">Modern</span></button><button type="button" data-t="SgXB" data-s="SgSC"><b style="font-family:SgXB">AB</b> <span style="font-family:SgSC;font-size:17px">Schrift</span></button><button type="button" data-t="SgSC" data-s="SgMD"><b style="font-family:SgSC;font-size:19px;font-weight:400">Schreibschrift</b></button></div>
 <label class="wz-field"><span>Datum oder Widmung <i>optional</i></span><input id="wzNote" class="inp" type="text" autocomplete="off" placeholder="z. B. 12.06.2021 · Hier hat alles begonnen"></label>
 <label class="tog wz-tog"><input type="checkbox" id="wzCoords"><span>Koordinaten anzeigen</span></label>
 <div class="lab">Orte markieren</div>
@@ -245,7 +248,7 @@
 <div class="sec" data-s="text"><button class="sh"><span class="num">05</span><span class="tt">Text</span><span class="sum" id="sumT"></span><span class="chev">▾</span></button><div class="sb">
 <div class="tabs2"><button id="tabTitle" class="on">Titel</button><button id="tabSub">Untertitel</button></div>
 <div class="row"><input type="text" class="inp" id="tText" placeholder="Text eingeben"><label class="tog" title="anzeigen"><input type="checkbox" id="tOn"></label></div>
-<div class="row"><span class="k">Schrift</span><select class="inp" id="tFont"><option value="SgXB">Inter Extra Bold</option><option value="SgMD">Inter Medium</option><option value="SgFR">Fraktur</option></select></div>
+<div class="row"><span class="k">Schrift</span><select class="inp" id="tFont"><option value="SgXB">Inter Extra Bold</option><option value="SgMD">Inter Medium</option><option value="SgFR">Fraktur</option><option value="SgSC">Schreibschrift</option></select></div>
 <div class="row"><span class="k">Größe</span><input type="range" id="tSize" min="10" max="160" step="1"><span class="v" id="tSizev"></span></div>
 <div class="row"><span class="k">Abstand</span><input type="range" id="tLs" min="-5" max="40" step="0.5"><span class="v" id="tLsv"></span></div>
 <div class="row"><span class="k">Farbe</span><div class="col"><input type="color" id="tColor"><div class="sw" data-for="tColor"></div></div></div>
@@ -294,6 +297,12 @@
 </div>
 </div>
 </section>
+</div>
+
+<div class="chat" id="chat" role="dialog" aria-label="Hilfe-Chat" aria-hidden="true">
+<div class="chat-h"><div><b>Kartenstudio-Hilfe</b><small id="chatMode">Antwortet sofort</small></div><button class="ibtn" id="chatX" aria-label="Chat schließen">✕</button></div>
+<div class="chat-log" id="chatLog" aria-live="polite"></div>
+<form class="chat-f" id="chatForm"><input id="chatIn" class="inp" type="text" autocomplete="off" maxlength="500" placeholder="Deine Frage …" enterkeyhint="send"><button class="btn primary" type="submit" aria-label="Senden">➤</button></form>
 </div>
 
 <div class="picker hidden" id="picker">

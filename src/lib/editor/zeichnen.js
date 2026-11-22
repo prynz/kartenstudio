@@ -9,7 +9,7 @@ import { fitPrint } from './druck.js';
 import { clampView } from './zustand.js';
 import { eff, vT, visRect } from './zustand.js';
 import { dms, panel, viewCenterLL } from './seitenleiste.js';
-import { LAY_DEFAULT } from '../themen/designs.js';
+import { LAY_DEFAULT, lum } from '../themen/designs.js';
 import { syncWizard } from './assistent.js';
 import { popDefs, popSymbols, popColor, popK } from '../themen/pop.js';
 import { loadSky, skyReady, skySVG } from '../themen/himmel.js';
@@ -66,7 +66,7 @@ export function geo() {
     my = sw + (barH > 0 ? barH - sw / 2 : 0) + p;
     H = my + MH + p + sw;
     top = sw / 2 + (barH - sw / 2 - block) / 2;
-  } else if (L.kind === 'over') {
+  } else if (L.kind === 'over' || L.kind === 'typo') {
     my = sw + p;
     barTop = my + MH;
     H = my + MH + p + sw;
@@ -112,6 +112,7 @@ function mapShape(g, grow, attrs) {
     const d = `M${P(.5, .97)} C${P(.18, .76)} ${P(0, .55)} ${P(0, .31)} C${P(0, .12)} ${P(.14, 0)} ${P(.29, 0)} C${P(.4, 0)} ${P(.47, .06)} ${P(.5, .15)} C${P(.53, .06)} ${P(.6, 0)} ${P(.71, 0)} C${P(.86, 0)} ${P(1, .12)} ${P(1, .31)} C${P(1, .55)} ${P(.82, .76)} ${P(.5, .97)} Z`;
     return `<path d="${d}"${attrs}/>`;
   }
+  if (sh === 'house') return `<path d="M${P(.5, 0)} L${P(1, .4)} L${P(1, 1)} L${P(0, 1)} L${P(0, .4)} Z"${attrs}/>`;
   if (sh === 'hex') return `<path d="M${P(.5, 0)} L${P(1, .25)} L${P(1, .75)} L${P(.5, 1)} L${P(0, .75)} L${P(0, .25)} Z"${attrs}/>`;
   if (sh === 'arch') {
     const r = w / 2;
@@ -271,6 +272,46 @@ export function renderView() {
   clearTimeout(fullTimer);
   fullTimer = window.setTimeout(render, 140);
 }
+/* ---------- Typografie-Design: riesige Buchstaben über der Karte ---------- */
+/** Ortsname in 2–4 Zeilen gleichmäßig aufteilen (BARCELONA → BAR/CEL/ONA) */
+export function typoLines(text) {
+  const t = [...String(text || '').replace(/\s+/g, '').toUpperCase()];
+  if (!t.length) return [];
+  const n = Math.max(1, Math.min(4, Math.ceil(t.length / 3)));
+  const out = [];
+  let i = 0;
+  for (let r = 0; r < n; r++) {
+    const k = Math.ceil((t.length - i) / (n - r));
+    out.push(t.slice(i, i + k).join(''));
+    i += k;
+  }
+  return out;
+}
+function typoSVG(g) {
+  const S = app.S;
+  if (!S.title.on || !S.title.text) return '';
+  const lines = typoLines(S.title.text);
+  const per = Math.max(...lines.map(l => [...l].length));
+  // Schriftgröße so, dass die Buchstaben die Karte füllen (Breite und Höhe)
+  const size = Math.min((MW * 0.84) / (per * 0.78), (g.MH * 0.78) / (lines.length * 0.98));
+  const lh = size * 0.98;
+  const ls = size * 0.06;
+  const paper = S.bg === 'none' ? '#ffffff' : S.bg;
+  const light = lum(paper) < 0.45;
+  const col = light ? '#ffffff' : S.cls.haupt.s;
+  const op = light ? 0.86 : 0.8;
+  const cap = size * CAP.SgXB;
+  const blockH = cap + lh * (lines.length - 1);
+  const y0 = g.my + (g.MH - blockH) / 2 + cap - g.MH * 0.03;
+  let o = `<g id="titel" font-family="SgXB" font-size="${size.toFixed(1)}" letter-spacing="${ls.toFixed(1)}" fill="${col}" fill-opacity="${op}" text-anchor="middle">`;
+  lines.forEach((l, i) => (o += `<text x="${(g.W / 2 + ls / 2).toFixed(1)}" y="${(y0 + i * lh).toFixed(1)}">${esc(l)}</text>`));
+  o += '</g>';
+  // Untertitel / Koordinaten klein am unteren Kartenrand
+  const bits = [S.sub.on && S.sub.text ? S.sub.text : '', g.L.coords ? coordText() : '', g.note || ''].filter(Boolean);
+  if (bits.length) o += `<text id="untertitel" x="${(g.W / 2 + 1.5).toFixed(1)}" y="${(g.my + g.MH - Math.max(26, g.MH * 0.035)).toFixed(1)}" text-anchor="middle" font-family="SgMD" font-size="${Math.round(Math.max(18, (S.sub.size || 30) * 0.8))}" letter-spacing="3" fill="${col}" fill-opacity="${op}">${esc(bits.join('  ·  '))}</text>`;
+  return o;
+}
+
 /* ---------- Effekte: Vignette und Papier-Struktur ---------- */
 let NOISE = '';
 /** Feines Papierkorn als kleines Kachelbild (einmal erzeugt, wird im Export eingebettet) */
@@ -355,6 +396,7 @@ export function buildSVG(forExport) {
     if (t.on && t.text) fonts.add(t.font);
   });
   if (multiOn()) ['SgXB', 'SgMD', app.S.sub.font].forEach(f => fonts.add(f));
+  if (g.L.kind === 'typo') fonts.add('SgXB');
   if (app.S.attr.on || g.L.coords || g.note || (app.S.motif === 'sterne' && app.S.sky && (app.S.sky.names || app.S.sky.grid))) fonts.add('SgMD');
   o += '<defs>';
   if (forExport && fonts.size) {
@@ -387,17 +429,20 @@ export function buildSVG(forExport) {
   if (g.L.kind === 'bartop' && g.barH > 0) o += `<rect id="balken" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.barH).toFixed(1)}" fill="${app.S.bar.color}" clip-path="url(#cOut)"/>`;
   if (g.L.kind === 'bar' && app.S.bar.on && g.barH > 0) o += `<rect id="balken" x="${f.w / 2}" y="${g.barTop.toFixed(1)}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - g.barTop).toFixed(1)}" fill="${app.S.bar.color}" clip-path="url(#cOut)"/>`;
   if (f.w > 0) o += `<rect id="rahmen" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="none" stroke="${f.color}" stroke-width="${f.w}"/>`;
+  const typo = g.L.kind === 'typo';
+  if (typo) o += typoSVG(g);
   [['title', g.yT], ['sub', g.yS]].forEach(([k, y]) => {
     const t = app.S[k];
+    if (typo) return;
     if (!t.on || !t.text) return;
     o += `<text id="${k === 'title' ? 'titel' : 'untertitel'}" x="${(g.W / 2 + t.ls / 2).toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" font-family="${t.font}" font-size="${t.size}" letter-spacing="${t.ls}" fill="${t.color}">${esc(t.text)}</text>`;
   });
-  if (g.L.rule && app.S.title.on && app.S.title.text && app.S.sub.on && app.S.sub.text) {
+  if (!typo && g.L.rule && app.S.title.on && app.S.title.text && app.S.sub.on && app.S.sub.text) {
     const yr = (g.yT + (g.yS - app.S.sub.size * CAP[app.S.sub.font])) / 2;
     o += `<line id="zierlinie" x1="${(g.W / 2 - 70).toFixed(1)}" x2="${(g.W / 2 + 70).toFixed(1)}" y1="${yr.toFixed(1)}" y2="${yr.toFixed(1)}" stroke="${app.S.title.color}" stroke-width="2.5" stroke-linecap="round"/>`;
   }
-  if (g.L.coords && app.DATA) o += `<text id="koordinaten" x="${(g.W / 2 + 1.5).toFixed(2)}" y="${g.yC.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.cSize}" letter-spacing="3" fill="${app.S.sub.color}" fill-opacity="0.85">${esc(coordText())}</text>`;
-  if (g.note) o += `<text id="widmung" x="${(g.W / 2 + 1).toFixed(2)}" y="${g.yN.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.nSize}" letter-spacing="2" fill="${app.S.sub.color}">${esc(g.note)}</text>`;
+  if (!typo && g.L.coords && app.DATA) o += `<text id="koordinaten" x="${(g.W / 2 + 1.5).toFixed(2)}" y="${g.yC.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.cSize}" letter-spacing="3" fill="${app.S.sub.color}" fill-opacity="0.85">${esc(coordText())}</text>`;
+  if (!typo && g.note) o += `<text id="widmung" x="${(g.W / 2 + 1).toFixed(2)}" y="${g.yN.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.nSize}" letter-spacing="2" fill="${app.S.sub.color}">${esc(g.note)}</text>`;
   if (app.S.attr.on && app.S.motif !== 'sterne') {
     const inBar = g.L.kind === 'bar' && app.S.bar.on && g.barH > 0;
     const onPaper = !inBar && g.L.kind !== 'top' && g.L.kind !== 'bartop';

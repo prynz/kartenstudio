@@ -14,6 +14,7 @@ import { initEditorBeispiel } from './beispiel.js';
 import { initSheet } from './sheet.js';
 import { initWizard } from './assistent.js';
 import { initRestore } from './wiederherstellen.js';
+import { initChat } from '../hilfe/chat.js';
 
 let started = false;
 export function start() {
@@ -32,4 +33,5 @@ export function start() {
   initSheet();
   initWizard();
   initRestore();
+  initChat();
 }

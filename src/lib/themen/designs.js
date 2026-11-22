@@ -3,14 +3,14 @@
 // wie Rahmen, Karte und Text angeordnet sind. Beides ist frei kombinierbar.
 
 /**
- * @typedef {'bar'|'bartop'|'below'|'top'|'over'} LayKind
+ * @typedef {'bar'|'bartop'|'below'|'top'|'over'|'typo'} LayKind
  * @typedef {{
  *   kind: LayKind,      // + bartop: Farbbalken oben
  *   rule?: boolean,     // Zierlinie zwischen Titel und Untertitel      // bar: Text im Farbbalken unten · below: Text frei unter der Karte · top: Text über der Karte · over: Text über der Karte gelegt
  *   textPad: number,    // Luft über und unter dem Textblock (below/top)
  *   inner: number,      // Stärke einer feinen Linie direkt um die Karte (0 = keine)
  *   innerGap: number,   // Abstand dieser Linie zur Karte
- *   shape: 'rect'|'circle'|'heart'|'hex'|'arch'|'rounded',
+ *   shape: 'rect'|'circle'|'heart'|'hex'|'arch'|'rounded'|'house',
  *   coords: boolean,    // zusätzliche Zeile mit Koordinaten
  *   fade: boolean       // (over) weicher Verlauf hinter dem Text
  * }} Lay
@@ -207,6 +207,24 @@ export const DESIGNS = {
 		title: { size: 62, ls: 18 },
 		sub: { size: 32, ls: 1 },
 		aspect: 1
+	},
+	haus: {
+		name: 'Haus',
+		desc: 'Karte in Hausform – ideal zum Einzug oder fürs Eigenheim.',
+		frame: { w: 0, r: 0, pad: 46 },
+		lay: { kind: 'below', textPad: 36, shape: 'house', inner: 3, innerGap: 12 },
+		title: { size: 64, ls: 18 },
+		sub: { size: 34, ls: 1 },
+		aspect: 1
+	},
+	typo: {
+		name: 'Typografie',
+		desc: 'Riesige Buchstaben über der ganzen Karte – modern und plakativ.',
+		frame: { w: 0, r: 0, pad: 34 },
+		lay: { kind: 'typo', coords: true },
+		title: { size: 72, ls: 0 },
+		sub: { size: 30, ls: 2 },
+		aspect: 1.33
 	},
 	bogenlinie: {
 		name: 'Bogen elegant',
