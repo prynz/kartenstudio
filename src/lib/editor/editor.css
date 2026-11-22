@@ -722,3 +722,66 @@ body:not(.wiz-on) .fav-btn,body.mk-on .fav-btn{display:none}
 #poster{box-shadow:0 1px 2px rgba(20,24,35,.06),0 6px 14px rgba(20,24,35,.07),0 26px 60px -12px rgba(20,24,35,.22)}
 .wiz-on .canvas{padding:48px 56px}
 @media(max-width:900px){.wiz-on .canvas{padding:18px 22px}}
+
+/* =========================================================
+   Ordnung & Übersicht (nach dem Vorbild Cartida / mapposter)
+   ========================================================= */
+/* Kopf je Bereich: Schritt x von 6 · Titel · ein Satz */
+.wz-kopf{display:flex;align-items:flex-start;gap:12px;padding:18px 0 6px}
+.wz-kopf small{display:block;font-size:11.5px;font-weight:600;color:var(--accent);letter-spacing:.02em;margin-bottom:2px}
+.wz-kopf h2{margin:0;font-size:22px;letter-spacing:-.02em;color:var(--ink)}
+.wz-kopf p{margin:4px 0 0;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.wz-kopf > div{flex:1;min-width:0}
+.wz-zu{display:none}
+/* Bereichs-Titel der Panes doppeln den Kopf → weg; zweiter Bereich im Schritt wird Abschnitt */
+.wz-pane h3{display:none}
+.wz-pane .wz-head h3{display:none}
+.wz-pane .wz-head{justify-content:flex-start;margin:6px 0 2px}
+/* Abschnitte: echte Überschrift + Trennlinie statt blasser Mini-Großbuchstaben */
+.wz-pane .lab,.wz-pane.on + .wz-pane.on h3{display:block;font-size:14.5px;font-weight:650;letter-spacing:-.005em;text-transform:none;color:var(--ink);margin:22px 0 10px;padding-top:18px;border-top:1px solid var(--line)}
+.wz-pane .lab i{font-style:normal;font-weight:400;color:var(--soft);font-size:12.5px;margin-left:6px}
+.wz-pane > .lab:first-child,.wz-pane > :first-child .lab:first-child,.wz-pane .fav-box .lab,.wz-pane .mk-opt .lab,.wz-pane .wz-free .lab,.wz-pane details .lab,.wz-pane .wz-sky .lab,.wz-pane .wz-koord .lab,.wz-pane .wz-wolke .lab{border-top:0;padding-top:0;margin-top:16px}
+.wz-pane.on + .wz-pane.on{margin-top:0;padding-top:0;border-top:0}
+.wz-pane.on + .wz-pane.on h3{font-size:16px}
+.wz-pane > .wz-hint:first-child{margin-top:12px}
+.wz-pane .wz-more{margin-top:18px}
+
+@media(min-width:901px){
+  /* PC: senkrechte Werkzeugleiste links, Einstellungen rechts daneben (wie Cartida) */
+  .app{grid-template-columns:432px minmax(0,1fr)}
+  .wiz{display:grid;grid-template-columns:78px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;min-height:100%}
+  .wz-steps{grid-column:1;grid-row:1 / span 2;flex-direction:column;justify-content:flex-start;gap:4px;padding:12px 8px;position:sticky;top:0;align-self:start;height:calc(100vh - 56px);border-bottom:0;border-right:1px solid var(--line)}
+  .wz-steps button{flex:0 0 auto;padding:10px 0 8px}
+  .wz-panes{grid-column:2;padding:4px 22px 12px}
+  .wz-foot{grid-column:2}
+  .wz-steps button span{font-size:11px}
+}
+@media(max-width:900px){
+  /* Handy: Einstellungen nur auf Antippen, mit Titel und Schließen-Pfeil */
+  body.sheet-zu aside{flex:0 0 0px!important;overflow:hidden;box-shadow:none}
+  body.sheet-zu .wz-panes,body.sheet-zu .sheet-grip{display:none}
+  .wz-kopf{position:sticky;top:24px;z-index:3;background:var(--panel);padding:6px 0 10px;margin:0 -16px;padding-left:16px;padding-right:12px;border-bottom:1px solid var(--line)}
+  .wz-kopf h2{font-size:18px}
+  .wz-kopf p{font-size:12.5px;margin-top:2px}
+  .wz-kopf small{font-size:11px}
+  .wz-zu{display:grid;place-items:center;flex:0 0 40px;height:40px;border:0;border-radius:12px;background:var(--hover);color:var(--ink);cursor:pointer}
+  .wz-pane .lab,.wz-pane.on + .wz-pane.on h3{font-size:14px;margin:18px 0 8px;padding-top:14px}
+}
+@media(max-width:900px){
+  /* Handy: Kopf kompakt in einer Zeile – Platz gehört den Auswahlen */
+  .wz-kopf{align-items:center;padding:4px 12px 8px 16px}
+  .wz-kopf > div{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .wz-kopf h2{order:1;font-size:17px}
+  .wz-kopf small{order:2;margin:0}
+  .wz-kopf p{display:none}
+  .wz-zu{flex-basis:36px;height:36px}
+  .wz-pane .wz-head{margin:10px 0 0;gap:8px}
+}
+@media(min-width:901px){.wz-prod{grid-template-columns:repeat(4,minmax(0,1fr))}.wz-prod .wz-card .nm{font-size:11px;white-space:nowrap}}
+@media(min-width:901px){
+  /* PC: nur die Einstellungen scrollen, Fußleiste sitzt fest darunter (verdeckt nie Inhalte) */
+  body.wiz-on aside{overflow:hidden}
+  body.wiz-on .wiz{height:100%;min-height:0}
+  .wz-panes{overflow-y:auto;min-height:0;overscroll-behavior:contain}
+  .wz-foot{position:static}
+}

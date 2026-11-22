@@ -106,6 +106,7 @@
 <button data-step="fertig"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.2 12.4l2.6 2.6 5-5.6"/></svg><span>Fertig</span></button>
 </nav>
 <div class="wz-panes">
+<div class="wz-kopf" id="wzKopf"><div><small id="wzKopfNr">Schritt 1 von 6</small><h2 id="wzKopfT">Ort</h2><p id="wzKopfD"></p></div><button type="button" class="wz-zu" id="wzZu" aria-label="Einstellungen schließen"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button></div>
 <section class="wz-pane" data-step="ort">
 <h3>Welcher Ort?</h3>
 <div class="wz-place"><div class="pin">⌖</div><div><b id="wzPlace">–</b><span id="wzPlaceInfo"></span></div></div>

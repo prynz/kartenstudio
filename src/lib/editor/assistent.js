@@ -1,6 +1,7 @@
 // Geführter Ablauf („Assistent“): Ort → Ausschnitt → Stil → Design → Text → Fertig.
 // Es ist immer nur ein Schritt sichtbar. Alle Detailregler aus dem Prototyp
 // bleiben unter „Erweiterte Einstellungen“ erreichbar.
+import { sheetZeigen, sheetOffen } from './sheet.js';
 import { textImPoster, einfuehrung, favoritenZeichnen } from './direkt.js';
 import { app as appUntyped } from './app.js';
 import { alsBild, buildSVG, render, vorschauSVG } from './zeichnen.js';
@@ -56,6 +57,16 @@ const GRUPPE = { ort: ['ort', 'ausschnitt'], stil: ['stil'], design: ['design'],
 export const schrittVon = (n) => (n === 'gestalten' ? 'stil' : GRUPPE[n] ? n : Object.keys(GRUPPE).find((g) => GRUPPE[g].includes(n)) || '');
 /** @type {Record<string,string>} */
 const LABEL = { ort: 'Ort', stil: 'Stil', design: 'Design', text: 'Text', extras: 'Extras', fertig: 'Fertig' };
+/** Ein Satz je Bereich: was man hier tut */
+/** @type {Record<string,string>} */
+const SATZ = {
+	ort: 'Wo spielt dein Poster? Ort suchen und festlegen, wie viel man sieht.',
+	stil: 'Wie soll deine Karte aussehen? Fertigen Look antippen oder Farben wählen.',
+	design: 'Rahmen, Form und wo der Text steht.',
+	text: 'Was soll auf dem Poster stehen?',
+	extras: 'Markierungen und besondere Effekte – alles optional.',
+	fertig: 'Produkt wählen, herunterladen oder teilen.'
+};
 /** Welcher Abschnitt der erweiterten Einstellungen passt zu welchem Schritt */
 /** @type {Record<string,string>} */
 const ADV_FOR = { ort: 'ausschnitt', stil: 'stil', design: 'rahmen', text: 'text', extras: 'elemente', fertig: 'farben' };
@@ -87,6 +98,9 @@ export function goStep(ziel, animate = true) {
 		b.setAttribute('aria-current', i === idx ? 'step' : 'false');
 	});
 	/** @type {HTMLButtonElement} */ ($('wzBack')).disabled = idx === 0;
+	$('wzKopfNr').textContent = `Schritt ${idx + 1} von ${STEPS.length}`;
+	$('wzKopfT').textContent = LABEL[next];
+	$('wzKopfD').textContent = SATZ[next];
 	const letzter = idx === STEPS.length - 1;
 	$('wiz').classList.toggle('wz-last', letzter);
 	$('wzNextLabel').textContent = letzter ? 'Download' : LABEL[STEPS[idx + 1]];
@@ -106,7 +120,10 @@ export function goStep(ziel, animate = true) {
 	if (next === 'fertig') fertigReiter(ziel === 'produkt' ? 'produkt' : $('wiz').dataset.fz || 'produkt');
 	const unten = next !== 'fertig' && ziel !== next && GRUPPE[next].indexOf(ziel) > 0 ? /** @type {HTMLElement|null} */ (document.querySelector(`.wz-pane[data-step="${ziel}"]`)) : null;
 	if (unten) requestAnimationFrame(() => unten.scrollIntoView({ block: 'start', behavior: reducedMotion() || !animate ? 'auto' : 'smooth' }));
-	else if (side) side.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
+	else {
+		if (side) side.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
+		document.querySelector('.wz-panes')?.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
+	}
 	if (next === 'design') scheduleDesignThumbs(0);
 	setMockup(next === 'fertig' && !advOpen);
 	syncWizard();
@@ -168,6 +185,7 @@ function showAdvanced(on) {
 	// Im Assistenten lässt sich die Karte direkt im Poster verschieben; Auswählen gibt es in den erweiterten Einstellungen
 	setTool(on ? 'sel' : 'move');
 	if (on) {
+		sheetZeigen(true);
 		openSec(ADV_FOR[step] || 'stil');
 		$('side').scrollTo({ top: 0 });
 	}
@@ -626,8 +644,12 @@ export function initWizard() {
 	all('#wzSteps button').forEach(
 		(b) =>
 			(b.onclick = () => {
+				const t = /** @type {string} */ (b.dataset.step);
 				if (advOpen) showAdvanced(false);
-				goStep(/** @type {string} */ (b.dataset.step));
+				// Handy: aktives Werkzeug nochmal antippen schließt die Einstellungen (Poster wieder groß)
+				else if (t === step && sheetOffen() && matchMedia('(max-width: 900px)').matches) return sheetZeigen(false);
+				goStep(t);
+				sheetZeigen(true);
 			})
 	);
 	$('wzBack').onclick = () => goStep(STEPS[Math.max(0, STEPS.indexOf(step) - 1)]);
@@ -644,7 +666,9 @@ export function initWizard() {
 	$('hdrFertig').onclick = () => {
 		if (advOpen) showAdvanced(false);
 		goStep('fertig');
+		sheetZeigen(true);
 	};
+	$('wzZu').onclick = () => sheetZeigen(false);
 	$('advBack').onclick = () => showAdvanced(false);
 	all('[data-dice]').forEach((b) => (b.onclick = surprise));
 	$('wzPick').onclick = () => {

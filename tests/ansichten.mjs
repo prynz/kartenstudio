@@ -13,6 +13,7 @@ for (const [n, o] of [['pc', { viewport: { width: 1440, height: 900 } }], ['ip',
 	await p.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await p.waitForSelector('#landing', { state: 'hidden' });
 	await p.waitForTimeout(2500);
+	await p.screenshot({ path: `${OUT}-${n}-00editor.png` });
 	for (const s of ['ort', 'stil', 'design', 'text', 'extras', 'fertig']) {
 		await p.click(`#wzSteps button[data-step="${s}"]`);
 		await p.waitForTimeout(1500);

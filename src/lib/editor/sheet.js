@@ -34,6 +34,22 @@ function setSnap(i, animate = true) {
 	apply(SNAPS[snap] * avail(), animate);
 }
 
+/**
+ * Einstellungen am Handy öffnen/schließen. Geschlossen: Das Poster füllt den Bildschirm,
+ * unten bleibt nur die Werkzeugleiste (wie bei Foto-Apps und Cartida/mapposter).
+ * @param {boolean} on
+ */
+export function sheetZeigen(on) {
+	if (!isMobile()) return;
+	const zu = document.body.classList.contains('sheet-zu');
+	if (on === !zu) return;
+	const side = document.getElementById('side');
+	if (side) side.classList.toggle('sheet-anim', !reducedMotion());
+	document.body.classList.toggle('sheet-zu', !on);
+	if (on) setSnap(Math.max(1, snap), true);
+}
+export const sheetOffen = () => !isMobile() || !document.body.classList.contains('sheet-zu');
+
 /** Abschnitt in der Leiste nach oben holen, damit man seinen Inhalt sieht. */
 /** @param {Element | null} sec */
 export function revealSection(sec) {
@@ -61,6 +77,8 @@ export function initSheet() {
 	if (!side || !grip || !canvas) return;
 
 	setSnap(snap, false);
+	// Start am Handy: Poster groß, Einstellungen zu – ein Tipp auf ein Werkzeug öffnet sie
+	if (isMobile()) document.body.classList.add('sheet-zu');
 
 	// Poster an den freien Platz anpassen, sobald sich die Fläche ändert
 	new ResizeObserver(() => zoom()).observe(canvas);
@@ -108,6 +126,8 @@ export function initSheet() {
 			// schnell nach unten gewischt → nächste kleinere Stufe
 			let i = -1;
 			SNAPS.forEach((s, k) => { if (s < h - 0.02) i = k; });
+			// ganz unten schnell nach unten gewischt → Einstellungen schließen
+			if (i < 0 && h < SNAPS[0] + 0.04) return sheetZeigen(false);
 			setSnap(i < 0 ? 0 : i);
 		} else setSnap(nearest);
 	};
