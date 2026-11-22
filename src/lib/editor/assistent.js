@@ -23,7 +23,7 @@ import { SIZES, fitPrint, paperOrFree, quality, exportDpi } from './druck.js';
 import { PIN_SHAPES } from './zeichnen.js';
 import { shareLink } from './entwurf.js';
 import { ANLAESSE } from '../themen/anlaesse.js';
-import { initMulti, syncMulti } from './mehrere.js';
+import { initMulti, multiOn, syncMulti } from './mehrere.js';
 import { beispielNachLaden, vorschlaegeZeichnen } from '../beispiele/galerie.js';
 import { meinStandort } from '../karte/suche.js';
 import { defView, vLimits } from './zustand.js';
@@ -277,6 +277,13 @@ export function syncWizard() {
 	syncRoute();
 	/** @type {HTMLInputElement} */ ($('fxPaper')).checked = !!(S.fx && S.fx.paper);
 	/** @type {HTMLInputElement} */ ($('fxVig')).checked = !!(S.fx && S.fx.vig);
+	/** @type {HTMLInputElement} */ ($('fxSchatten')).checked = !!(S.fx && S.fx.schatten);
+	/** @type {HTMLInputElement} */ ($('fxRelief')).checked = !!(S.fx && S.fx.relief);
+	const kp = (S.fx && +S.fx.kipp) || 0;
+	if (document.activeElement !== $('fxKipp')) /** @type {HTMLInputElement} */ ($('fxKipp')).value = String(kp);
+	$('fxKippV').textContent = kp ? kp + '°' : 'aus';
+	const nur2d = S.mode === 'std' || (S.motif && S.motif !== 'karte') || multiOn();
+	$('wz3d').classList.toggle('aus', !!nur2d);
 	all('[data-occ] button').forEach((b) => b.classList.toggle('on', b.dataset.k === S.occasion));
 	if (step === 'gestalten') {
 		scheduleDesignThumbs();
@@ -895,11 +902,20 @@ export function initWizard() {
 	);
 
 	// Effekte (Design-Schritt)
-	/** @param {string} id @param {'paper'|'vig'} key */
+	/** @param {string} id @param {'paper'|'vig'|'schatten'|'relief'} key */
 	const fxToggle = (id, key) =>
 		$(id).addEventListener('change', (e) => change(() => (app.S.fx = { ...(app.S.fx || {}), [key]: /** @type {HTMLInputElement} */ (e.target).checked })));
 	fxToggle('fxPaper', 'paper');
 	fxToggle('fxVig', 'vig');
+	fxToggle('fxSchatten', 'schatten');
+	fxToggle('fxRelief', 'relief');
+	const kipp = /** @type {HTMLInputElement} */ ($('fxKipp'));
+	kipp.addEventListener('input', () => {
+		begin();
+		app.S.fx = { ...(app.S.fx || {}), kipp: +kipp.value };
+		render();
+	});
+	kipp.addEventListener('change', () => commit());
 	$('softproof').addEventListener('change', (e) => document.body.classList.toggle('softproof', /** @type {HTMLInputElement} */ (e.target).checked));
 
 	// Schrift-Paare (Titel + Untertitel)

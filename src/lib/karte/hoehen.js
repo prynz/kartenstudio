@@ -33,7 +33,7 @@ async function tile(z, x, y) {
 /**
  * Höhenlinien für die geladenen Kartendaten berechnen (Ergebnis wird an DATA gemerkt).
  * @param {any} DATA
- * @returns {Promise<{interval:number, min:number, max:number, minor:string, major:string}>}
+ * @returns {Promise<{interval:number, min:number, max:number, minor:string, major:string, G:Float32Array, nx:number, ny:number, step:number}>}
  */
 export async function contours(DATA) {
 	if (DATA._contours) return DATA._contours;
@@ -129,7 +129,7 @@ export async function contours(DATA) {
 			if (Math.round(lv / interval) % 5 === 0) major += d;
 			else minor += d;
 		}
-		const res = { interval, min: Math.round(min), max: Math.round(max), minor, major };
+		const res = { interval, min: Math.round(min), max: Math.round(max), minor, major, G, nx, ny, step };
 		DATA._contours = res;
 		return res;
 	})();
@@ -197,4 +197,61 @@ function isoline(G, nx, ny, lv, ox, oy, step) {
 		out += 'M' + line.map(P).join('L');
 	}
 	return out;
+}
+
+/**
+ * Relief-Schattierung („Hillshade“): Licht von Nordwesten, Hänge zur Sonne heller, abgewandte dunkler.
+ * Ergebnis als halbtransparentes Bild über dem Kartenbereich (wird zwischengespeichert).
+ * @param {any} DATA
+ * @returns {{url:string, x:number, y:number, w:number, h:number}|null}
+ */
+export function reliefBild(DATA) {
+	const C = DATA._contours;
+	if (!C || !C.G) return null;
+	if (DATA._relief) return DATA._relief;
+	const { G, nx, ny, step } = C;
+	const E = DATA.ext,
+		P = DATA.proj;
+	// Meter je Kartenpunkt (Mercator wird zum Pol hin gestreckt)
+	const my = P.y0 + (E.y0 + E.y1) / 2 / P.sc;
+	const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * my)));
+	const mpu = (40075016.686 * Math.cos(lat)) / P.sc;
+	// Flaches Land überhöhen, damit sanfte Hügel sichtbar werden
+	const range = Math.max(1, C.max - C.min);
+	const ueber = range < 60 ? 3 : range < 200 ? 1.5 : 1;
+	// Licht aus Nordwesten (315°), 45° hoch – in mathematischer Richtung 135°
+	const azm = (135 * Math.PI) / 180,
+		alt = (45 * Math.PI) / 180;
+	const flach = Math.sin(alt);
+	const cv = document.createElement('canvas');
+	cv.width = nx;
+	cv.height = ny;
+	const x = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+	const img = x.createImageData(nx, ny);
+	/** @param {number} i @param {number} j */
+	const h = (i, j) => {
+		const v = G[Math.min(ny - 1, Math.max(0, j)) * nx + Math.min(nx - 1, Math.max(0, i))];
+		return Number.isFinite(v) ? v : NaN;
+	};
+	const d = 2 * step * mpu;
+	for (let j = 0; j < ny; j++)
+		for (let i = 0; i < nx; i++) {
+			const dzdx = ((h(i + 1, j) - h(i - 1, j)) / d) * ueber,
+				dzdy = ((h(i, j + 1) - h(i, j - 1)) / d) * ueber;
+			const o = (j * nx + i) * 4;
+			if (!Number.isFinite(dzdx) || !Number.isFinite(dzdy)) continue;
+			const slope = Math.atan(Math.hypot(dzdx, dzdy));
+			const aspect = Math.atan2(dzdy, -dzdx);
+			const hs = Math.cos(Math.PI / 2 - alt) * Math.cos(slope) + Math.sin(Math.PI / 2 - alt) * Math.sin(slope) * Math.cos(azm - aspect);
+			const diff = hs - flach;
+			if (diff < 0) {
+				img.data[o + 3] = Math.min(85, Math.round(-diff * 170));
+			} else {
+				img.data[o] = img.data[o + 1] = img.data[o + 2] = 255;
+				img.data[o + 3] = Math.min(55, Math.round(diff * 150));
+			}
+		}
+	x.putImageData(img, 0, 0);
+	DATA._relief = { url: cv.toDataURL('image/png'), x: E.x0 - step / 2, y: E.y0 - step / 2, w: nx * step, h: ny * step };
+	return DATA._relief;
 }

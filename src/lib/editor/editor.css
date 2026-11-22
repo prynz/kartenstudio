@@ -646,3 +646,12 @@ body:not(.wiz-on) .fav-btn,body.mk-on .fav-btn{display:none}
 .fc span{font-size:13px;font-weight:600;color:#262c3a;padding:7px 14px;border-radius:999px;background:#f1efe9}
 @media(max-width:600px){.fav-cmpgrid{grid-template-columns:repeat(2,1fr);gap:12px;padding:14px}}
 .wz-share{display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+
+/* 3D-Effekte */
+.wz-kipp{display:flex;align-items:center;gap:10px;margin:6px 0 4px}
+.wz-kipp .k{font-size:13.5px;min-width:86px}
+.wz-kipp input{flex:1}
+.wz-kipp output{min-width:34px;text-align:right;font-size:12.5px;color:var(--muted,#6b7080);font-variant-numeric:tabular-nums}
+#wz3dHint{display:none}
+.wz-3d.aus label,.wz-3d.aus .wz-kipp{opacity:.4;pointer-events:none}
+.wz-3d.aus #wz3dHint{display:block}

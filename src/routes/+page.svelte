@@ -189,6 +189,11 @@
 <div class="lab">Effekte</div>
 <label class="tog wz-tog"><input type="checkbox" id="fxPaper"><span>Papier-Struktur</span></label>
 <label class="tog wz-tog"><input type="checkbox" id="fxVig"><span>Vignette (Rand abdunkeln)</span></label>
+<div class="wz-3d" id="wz3d"><div class="lab">3D-Effekte</div>
+<label class="tog wz-tog"><input type="checkbox" id="fxSchatten"><span>Häuser mit Schatten</span></label>
+<label class="tog wz-tog"><input type="checkbox" id="fxRelief"><span>Relief – Berge &amp; Täler schattiert</span></label>
+<div class="row wz-kipp"><span class="k">Perspektive</span><input type="range" id="fxKipp" min="0" max="55" step="5" aria-label="Perspektive kippen"><output id="fxKippV">aus</output></div>
+<p class="wz-hint" id="wz3dHint">Für gezeichnete Karten – bei Landkarten-Stilen nicht verfügbar.</p></div>
 </section>
 <section class="wz-pane" data-step="text">
 <h3>Text</h3>

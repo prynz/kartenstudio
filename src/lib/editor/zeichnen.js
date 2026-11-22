@@ -18,7 +18,7 @@ import { wolkeSVG } from '../themen/wolke.js';
 import { inkColor } from '../themen/designs.js';
 import { multiKey, multiOn, multiSVG } from './mehrere.js';
 import { routeSVG } from './route.js';
-import { contours } from '../karte/hoehen.js';
+import { contours, reliefBild } from '../karte/hoehen.js';
 import { syncTools } from './bedienung.js';
 import { msg, zoom } from './ansicht.js';
 
@@ -134,6 +134,87 @@ function mapShape(g, grow, attrs) {
  * @param {boolean} forExport
  * @param {number[]} vr Kartenbereich, der gezeichnet wird [x0,y0,x1,y1]
  */
+/* ---------- 3D-Effekte ---------- */
+/** Kippwinkel der Perspektive in Grad (0 = von oben). Nur für gezeichnete Karten. */
+export function kippWinkel() {
+  const S = app.S;
+  const k = S && S.fx ? +S.fx.kipp || 0 : 0;
+  if (!k || S.mode === 'std' || (S.motif && S.motif !== 'karte') || multiOn()) return 0;
+  return Math.min(60, Math.max(0, k));
+}
+/**
+ * Perspektive: Die Karte liegt wie ein Tisch vor dem Betrachter und wird nach hinten gekippt.
+ * f(x,y) → Punkt im Kartenfeld (0…MW, 0…MH) und Vergrößerung s; rect = sichtbarer Boden in Kartenkoordinaten.
+ */
+function kippProj(deg) {
+  const v = app.S.view, z = v.z, MH = MW * v.a;
+  const t = deg * Math.PI / 180, st = Math.sin(t), ct = Math.cos(t);
+  const D = 1.25 * Math.max(MW, MH);
+  const f = (x, y) => {
+    const X = (x - v.cx) * z, Y = (y - v.cy) * z;
+    const s = D / Math.max(0.25 * D, D - Y * st);
+    return [X * s + MW / 2, Y * ct * s + MH / 2, s];
+  };
+  const inv = (X, Y) => {
+    X -= MW / 2; Y -= MH / 2;
+    const Yg = Y * D / (D * ct + Y * st);
+    const s = D / (D - Yg * st);
+    return [X / s / z + v.cx, Yg / z + v.cy];
+  };
+  const E = app.DATA.ext, m = 20;
+  const c = [inv(-m, -m), inv(MW + m, -m), inv(-m, MH + m), inv(MW + m, MH + m)];
+  const rect = [Math.max(E.x0, Math.min(...c.map(q => q[0]))), Math.max(E.y0, Math.min(...c.map(q => q[1]))), Math.min(E.x1, Math.max(...c.map(q => q[0]))), Math.min(E.y1, Math.max(...c.map(q => q[1])))];
+  return { f, rect, z };
+}
+const PAAR = /(-?\d+(?:\.\d+)?)[ ,](-?\d+(?:\.\d+)?)/g;
+/** Fertigen Karteninhalt in die Perspektive umrechnen (Pfade, Linienstärken, Kachel-Ausschnitte) */
+function kippen(o, P) {
+  const v = app.S.view;
+  const pd = (d) => d.replace(PAAR, (m, a, b) => {
+    const q = P.f(+a, +b);
+    return q[0].toFixed(1) + ' ' + q[1].toFixed(1);
+  });
+  o = o.replace(/<path\b[^>]*>/g, el => {
+    let sm = 1;
+    el = el.replace(/ d="([^"]*)"/, (m, d) => {
+      let n = 0, acc = 0;
+      const nd = d.replace(PAAR, (mm, a, b) => {
+        const q = P.f(+a, +b);
+        acc += q[2]; n++;
+        return q[0].toFixed(1) + ' ' + q[1].toFixed(1);
+      });
+      if (n) sm = acc / n;
+      return ` d="${nd}"`;
+    });
+    // Linien hinten dünner, vorne kräftiger
+    return el.replace(/stroke-width="([\d.]+)"/, (m, w) => `stroke-width="${(+w * P.z * sm).toFixed(3)}"`);
+  });
+  // Kachel-Ausschnitte mitkippen
+  const used = new Set();
+  o = o.replace(/clip-path="url\(#tc(\d+)\)"/g, (m, i) => {
+    used.add(+i);
+    return `clip-path="url(#tk${i})"`;
+  });
+  let defs = '';
+  used.forEach(i => {
+    const r = app.DATA.tiles[i];
+    if (!r) return;
+    defs += `<clipPath id="tk${i}"><path d="${pd(`M${r[0]} ${r[1]}L${r[0] + r[2]} ${r[1]}L${r[0] + r[2]} ${r[1] + r[2]}L${r[0]} ${r[1] + r[2]}Z`)}"/></clipPath>`;
+  });
+  return `<g id="perspektive" transform="translate(${(v.cx - MW / 2 / v.z).toFixed(3)},${(v.cy - MW * v.a / 2 / v.z).toFixed(3)}) scale(${(1 / v.z).toFixed(6)})">` + (defs ? `<defs>${defs}</defs>` : '') + o + '</g>';
+}
+/** Höhendaten laden (für Höhenlinien und Relief) – liefert sie, sobald sie da sind */
+function hoehenDaten() {
+  const D = app.DATA;
+  if (D._contours) return D._contours;
+  if (!D._contoursErr && !D._contoursP) contours(D).then(() => render()).catch(e => {
+    D._contoursErr = true;
+    console.warn('Höhendaten', e);
+    msg('Höhendaten konnten nicht geladen werden', 'err');
+  });
+  return null;
+}
+
 export function mapContent(forExport, vr) {
   let o = '';
   // Mehrere Orte: Kreise nebeneinander (TCP.p ≠ 'tc' heißt: wir zeichnen gerade einen der Orte)
@@ -174,6 +255,17 @@ export function mapContent(forExport, vr) {
       o += `<image href="${D.url}" x="${r[0].toFixed(2)}" y="${r[1].toFixed(2)}" width="${(r[2] - r[0]).toFixed(2)}" height="${(r[3] - r[1]).toFixed(2)}" preserveAspectRatio="none"/>`;
     }
   } else {
+  const fx = app.S.fx || {};
+  const kw = kippWinkel();
+  const P = kw ? kippProj(kw) : null;
+  if (P) vr = P.rect;
+  // Relief (Berge schattiert): über Wiesen/Wasser, unter Wegen, Straßen und Häusern
+  let relief = '';
+  if (fx.relief && !P) {
+    const C = hoehenDaten();
+    const R = C && reliefBild(app.DATA);
+    if (R) relief = `<image id="relief" href="${R.url}" x="${R.x.toFixed(2)}" y="${R.y.toFixed(2)}" width="${R.w.toFixed(2)}" height="${R.h.toFixed(2)}" preserveAspectRatio="none"/>`;
+  }
   const pop = app.S.pop && app.S.pop.pal;
   if (pop) o += `<defs>${popDefs()}</defs>` + popSymbols(app.DATA, app.S, vr, pop);
   // Pop-Art: Straßen/Wasser im selben Maßstab wie die Symbole
@@ -181,21 +273,18 @@ export function mapContent(forExport, vr) {
   // Höhenlinien als unterste Ebene (Hauptlinien jede 5. Linie kräftiger)
   const HO = app.S.hoehen;
   if (HO && HO.on) {
-    const C = app.DATA._contours;
+    const C = hoehenDaten();
     if (C) {
       const col = HO.c || app.S.cls.haupt.s;
       const w = (HO.w || 1) * app.S.scale / app.S.view.z;
       o += `<g id="hoehenlinien" fill="none" stroke="${col}" stroke-linejoin="round" stroke-linecap="round"><path d="${C.minor}" stroke-width="${(0.55 * w).toFixed(3)}" stroke-opacity=".42"/><path d="${C.major}" stroke-width="${(1.15 * w).toFixed(3)}" stroke-opacity=".62"/></g>`;
-    } else if (!app.DATA._contoursErr) {
-      const D = app.DATA;
-      contours(D).then(() => render()).catch(e => {
-        D._contoursErr = true;
-        console.warn('Höhenlinien', e);
-        msg('Höhendaten konnten nicht geladen werden', 'err');
-      });
     }
   }
+  // Schatten der Häuser: Licht von links oben, Schatten fällt nach rechts unten
+  const schatten = fx.schatten ? new Map() : null;
+  const su = (P ? app.S.scale : app.S.scale / app.S.view.z) * 2.6;
   ORDER.forEach(k => {
+    if (k === 'weg') o += relief;
     const groups = new Map();
     app.DATA.feats.forEach(ft => {
       if (ft.k !== k) return;
@@ -207,15 +296,30 @@ export function mapContent(forExport, vr) {
       let fill = ft.a ? e.f : 'none';
       // Pop-Art: jedes Haus bekommt eine feste Zufallsfarbe (außer es wurde einzeln umgefärbt)
       if (pop && k === 'haus' && !(app.S.ov[ft.id] && app.S.ov[ft.id].f)) fill = popColor(ft.id, pop);
+      // Mit Schatten: leere Häuser mit Papierfarbe füllen, sonst scheint der Schatten durch
+      if (schatten && k === 'haus' && ft.a && fill === 'none') fill = app.S.bg !== 'none' ? app.S.bg : '#ffffff';
       const p = `<path id="${ft.fid}" d="${ft.d}" fill="${fill}" fill-rule="evenodd" stroke="${e.s}" stroke-width="${+(e.w * sc * pk).toFixed(3)}" ${lc}${forExport ? '' : ' data-k="' + k + '" data-g="' + ft.id + '"'}/>`;
       const t = ft.t ?? -1;
       if (!groups.has(t)) groups.set(t, []);
       groups.get(t).push(p);
+      if (schatten && k === 'haus' && ft.a) {
+        if (!schatten.has(t)) schatten.set(t, []);
+        schatten.get(t).push(`<path d="${ft.d}"/>`);
+      }
     });
+    if (schatten && k === 'haus' && schatten.size) {
+      const dunkel = app.S.bg !== 'none' && lum(app.S.bg) < 0.35;
+      o += `<g id="schatten" fill="#000" fill-opacity="${dunkel ? 0.55 : 0.22}" fill-rule="evenodd" transform="translate(${su.toFixed(3)},${(su * 1.25).toFixed(3)})">`;
+      schatten.forEach((arr, t) => {
+        o += t >= 0 ? `<g clip-path="url(#${TCP.p}${t})">${arr.join('')}</g>` : arr.join('');
+      });
+      o += '</g>';
+    }
     groups.forEach((arr, t) => {
       o += t >= 0 ? `<g clip-path="url(#${TCP.p}${t})">${arr.join('')}</g>` : arr.join('');
     });
   });
+  if (P) o = kippen(o, P);
   }
   return o;
 }
@@ -229,7 +333,7 @@ export const TCP = { p: 'tc' };
 const MC = { key: '', node: null, hits: null, rect: null, z: 0 };
 function mapKey() {
   const S = app.S;
-  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, S.hoehen, !!(app.DATA && app.DATA._contours), multiKey(), multiOn() ? [S.view.cx, S.view.cy, S.view.a, S.bg, S.title.color, S.sub.font] : 0, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.motif === 'wolke' || S.motif === 'koord' ? schriftenBereit() : 0, S.motif === 'wolke' ? [S.wolke, S.bg, S.cls.haupt.s, S.bar.color, S.frame.color, S.view.cx, S.view.cy, S.view.a] : 0, S.motif === 'koord' ? [S.koord, S.title.text, S.bg, S.view.cx, S.view.cy, S.view.a, S.cls.haupt.s, S.bar.color, S.frame.color] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0]);
+  return JSON.stringify([app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, app.DATA && app.DATA.ext, S.cls, S.ov, S.scale, S.mode, S.base, S.labels, S.pop, S.view.z, S.motif, S.hoehen, !!(app.DATA && app.DATA._contours), multiKey(), multiOn() ? [S.view.cx, S.view.cy, S.view.a, S.bg, S.title.color, S.sub.font] : 0, S.motif === 'sterne' ? [S.sky, S.view.cx, S.view.cy, S.view.a, skyReady()] : 0, S.motif === 'wolke' || S.motif === 'koord' ? schriftenBereit() : 0, S.motif === 'wolke' ? [S.wolke, S.bg, S.cls.haupt.s, S.bar.color, S.frame.color, S.view.cx, S.view.cy, S.view.a] : 0, S.motif === 'koord' ? [S.koord, S.title.text, S.bg, S.view.cx, S.view.cy, S.view.a, S.cls.haupt.s, S.bar.color, S.frame.color] : 0, S.mode === 'std' ? [!!RASTER.get(rasterKey()), detailRaster() ? detailRaster().url.length + detailRaster().rect.join() : 0] : 0, S.fx ? [S.fx.schatten, S.fx.relief, S.fx.kipp] : 0, kippWinkel() ? [S.view.cx, S.view.cy, S.view.a] : 0, !!(app.DATA && app.DATA._relief)]);
 }
 /** Sichtbarer Bereich plus großzügiger Rand, damit Verschieben ohne Neuzeichnen geht */
 function cullRect() {
@@ -251,7 +355,8 @@ function mapNodes() {
   // Klickflächen: breite unsichtbare Linien, damit man dünne Straßen gut trifft
   const hits = document.createElementNS(NS, 'g');
   const hw = (12 / app.S.view.z).toFixed(2);
-  node.querySelectorAll('path[data-k]').forEach(p => {
+  // In der Perspektive passen die Klickflächen nicht zur Ansicht → dann keine
+  if (!kippWinkel()) node.querySelectorAll('path[data-k]').forEach(p => {
     if (p.getAttribute('fill') !== 'none' || p.dataset.k === 'haus') {
       p.setAttribute('pointer-events', 'all');
       p.style.cursor = 'pointer';
@@ -278,7 +383,8 @@ let fullTimer = 0;
 export function renderView() {
   if (!app.DATA) return;
   const inner = app.poster.querySelector('#kartenAnsicht');
-  if (!inner || !MC.node || !cacheCovers()) {
+  // Perspektive: Verschieben ändert die Verzerrung → jedes Mal neu zeichnen
+  if (!inner || !MC.node || !cacheCovers() || kippWinkel()) {
     render();
     return;
   }
@@ -391,6 +497,11 @@ function noiseURL() {
 function fxSVG(g) {
   const fx = app.S.fx || {};
   let o = '';
+  if (kippWinkel() && app.S.bg !== 'none') {
+    const h = g.MH * (0.12 + kippWinkel() / 60 * 0.16);
+    o += `<defs><linearGradient id="gDunst" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${app.S.bg}" stop-opacity=".95"/><stop offset="1" stop-color="${app.S.bg}" stop-opacity="0"/></linearGradient></defs>`;
+    o += `<g clip-path="url(#cIn)" pointer-events="none"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><rect id="dunst" width="${MW}" height="${h.toFixed(1)}" fill="url(#gDunst)"/></g></g></g>`;
+  }
   if (fx.vig) {
     o += `<defs><radialGradient id="gVig" cx="50%" cy="50%" r="72%"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".42"/></radialGradient></defs>`;
     o += `<g clip-path="url(#cIn)" pointer-events="none"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><rect id="vignette" width="${MW}" height="${g.MH.toFixed(1)}" fill="url(#gVig)"/></g></g></g>`;
@@ -501,7 +612,7 @@ export function buildSVG(forExport) {
     const x = g.W - g.sw - g.p - 4;
     const y = inBar ? g.H - g.sw - 8 : g.L.kind === 'below' ? g.H - g.sw - Math.min(14, g.p / 2 + 4) : g.my + g.MH - 6;
     let at = app.S.mode === 'std' ? BASES[app.S.base].sat ? 'Luftbild © Bayer. Vermessungsverwaltung (CC BY 4.0) · © OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenStreetMap-Mitwirkende';
-    if (app.S.hoehen && app.S.hoehen.on && app.S.mode !== 'std') at += ' · Höhen © EU-DEM';
+    if (((app.S.hoehen && app.S.hoehen.on) || (app.S.fx && app.S.fx.relief && !kippWinkel())) && app.S.mode !== 'std') at += ' · Höhen © EU-DEM';
     o += `<text id="quelle" x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" font-family="SgMD" font-size="11" fill="${col}" fill-opacity="0.75">${at}</text>`;
   }
   return o + '</svg>';

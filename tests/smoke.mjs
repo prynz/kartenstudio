@@ -656,6 +656,38 @@ await run('Bedienung im Poster: Einführung, Text im Poster, Gespeichert, Favori
 	ok(/vorschau\.jpg$/.test(dl.suggestedFilename()), `Vorschaubild: ${dl.suggestedFilename()}`);
 });
 
+await run('3D: Schatten und Perspektive', { viewport: { width: 1440, height: 900 } }, async (page) => {
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.click('#wzStyles button[data-p="dunkel"]');
+	await page.locator('#fxSchatten').scrollIntoViewIfNeeded();
+	await page.check('#fxSchatten');
+	await page.waitForTimeout(400);
+	ok((await page.$$('#schatten path')).length > 50, 'Häuser werfen Schatten');
+	await page.fill('#fxKipp', '45');
+	await page.dispatchEvent('#fxKipp', 'change');
+	await page.waitForTimeout(600);
+	ok(!!(await page.$('#perspektive')) && !!(await page.$('#dunst')), 'Perspektive gekippt, Dunst am Horizont');
+	const t0 = await page.getAttribute('#perspektive path[data-k="haupt"]', 'd');
+	const box = await page.locator('#poster').boundingBox();
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 3);
+	await page.mouse.down();
+	await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 3 + 60, { steps: 6 });
+	await page.mouse.up();
+	await page.waitForTimeout(400);
+	ok(t0 !== (await page.getAttribute('#perspektive path[data-k="haupt"]', 'd')), 'Verschieben in der Perspektive');
+	await page.screenshot({ path: `${OUT}/50-perspektive.png` });
+	await page.click('#wzSteps button[data-step="fertig"]');
+	const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.click('.wz-dl button[data-f="svg"]')]);
+	const f = `${OUT}/3d-${dl.suggestedFilename()}`;
+	await dl.saveAs(f);
+	const svg = fs.readFileSync(f, 'utf8');
+	ok(svg.includes('id="perspektive"') && svg.includes('id="schatten"'), 'SVG-Export enthält Perspektive und Schatten');
+	for (let i = 0; i < 3; i++) await page.click('#undo'); // Verschieben, Perspektive, Schatten
+	await page.waitForTimeout(400);
+	ok(!(await page.$('#perspektive')) && !(await page.$('#schatten')), 'Rückgängig nimmt 3D-Effekte zurück');
+});
+
 await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {
 	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
@@ -698,6 +730,18 @@ if (ONLINE)
 		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });
 		await page.waitForTimeout(2000);
 		ok((await page.textContent('#widmung')) === '21. Juni 2019 · 22:30 Uhr' && (await page.textContent('#poster')).includes('BAMBERG'), 'Beispiel öffnet Bamberg mit Sternenhimmel vom 21.06.2019');
+	});
+
+if (ONLINE)
+	await run('3D: Relief aus dem Höhenmodell', { viewport: { width: 1280, height: 860 } }, async (page) => {
+		await page.goto(URL + '#ort=pottenstein');
+		await page.reload();
+		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });
+		await page.locator('#fxRelief').scrollIntoViewIfNeeded();
+		await page.check('#fxRelief');
+		await page.waitForSelector('#relief', { timeout: 40000 }).catch(() => {});
+		ok(!!(await page.$('#relief')), 'Relief-Schattierung erscheint');
+		ok((await page.textContent('#quelle')).includes('EU-DEM'), 'Quellenangabe Höhendaten');
 	});
 
 if (ONLINE)

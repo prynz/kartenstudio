@@ -39,7 +39,7 @@ export function lookZustand(B, keep, mitOrt) {
 	S.motif = B.motif || 'karte';
 	if (S.multi) S.multi.on = false;
 	pickDesign(S, B.design);
-	S.fx = { paper: false, vig: false, ...(B.fx || {}) };
+	S.fx = { ...(S.fx || {}), paper: false, vig: false, ...(B.fx || {}) };
 	S.hoehen = B.hoehen ? { ...(S.hoehen || {}), on: true } : S.hoehen ? { ...S.hoehen, on: false } : S.hoehen;
 	if (B.motif === 'sterne') {
 		S.sky = { ...defaultSky(lat, lon), ...(B.sky || {}) };
