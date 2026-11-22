@@ -483,3 +483,28 @@ aside.nodata .wiz{opacity:.45;pointer-events:none}
 .rt .row{margin-top:8px}
 #routeBtn{width:100%;justify-content:center}
 .wz-hoehe{margin-top:12px}.wz-hoehe.hidden{display:none}.wz-hoehe .wz-hint{margin-top:4px}
+.wz-card:disabled{opacity:.4;cursor:not-allowed}
+/* Preis, Bestellen, Geschenk */
+.price{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:12px 0 4px;padding:12px 14px;border-radius:12px;background:var(--hover,#f3f2ef)}
+.price b{font-size:22px;font-weight:700;color:var(--ink,#1c1f26);letter-spacing:-.3px}
+.price span{font-size:12px;color:var(--muted,#6b7180)}
+.price i{font-style:normal;color:#b07d2b;font-weight:600}
+.price small{flex-basis:100%;font-size:12px;color:var(--muted,#6b7180)}
+.price small:empty{display:none}
+.wz-order{width:100%;justify-content:space-between;opacity:.6}
+.wz-order small{font-size:11.5px;color:var(--muted,#6b7180)}
+.wz-gift{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wz-gift .btn{justify-content:center}
+textarea.inp{width:100%;box-sizing:border-box;resize:vertical;font:inherit;min-height:70px;padding:10px 12px}
+.gift-ov{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgba(20,24,35,.45);backdrop-filter:blur(4px);animation:gfade .3s cubic-bezier(.2,.8,.2,1)}
+.gift-box{background:#fff;border-radius:18px;padding:28px 26px;max-width:420px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.25);animation:gpop .35s cubic-bezier(.2,.8,.2,1)}
+.gift-box h3{font-family:SgFR,serif;font-size:30px;margin:0 0 12px;color:var(--slate,#262c3a)}
+.gift-box p{font-size:16px;line-height:1.5;margin:0 0 8px;white-space:pre-wrap}
+.gift-box .gift-from{color:var(--muted,#6b7180);margin-bottom:18px}
+@keyframes gfade{from{opacity:0}}
+@keyframes gpop{from{opacity:0;transform:translateY(12px) scale(.97)}}
+@media (prefers-reduced-motion:reduce){.gift-ov,.gift-box{animation:none}}
+.legal{order:99;margin-top:22px;font-size:12px;color:var(--soft,#9aa0aa)}
+.legal a,.wz-legal a{color:inherit;text-decoration:none}
+.legal a:hover,.wz-legal a:hover{text-decoration:underline}
+.wz-legal{font-size:12px;color:var(--soft,#9aa0aa);margin:14px 0 0}

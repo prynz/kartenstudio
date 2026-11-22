@@ -11,6 +11,7 @@ import { goStep } from './assistent.js';
 import { ensureRaster } from '../karte/raster.js';
 import { ago, draftFromHash, savedDraft } from './entwurf.js';
 import { msg } from './ansicht.js';
+import { showGift } from '../shop/geschenk.js';
 
 /** @type {any} */
 const app = appUntyped;
@@ -49,7 +50,10 @@ export async function initRestore() {
 	const shared = await draftFromHash();
 	if (location.hash.startsWith('#e=')) history.replaceState(null, '', location.pathname + location.search);
 	if (shared) {
-		if (await restoreDraft(shared)) msg('Geteilter Entwurf geöffnet', 'ok');
+		if (await restoreDraft(shared)) {
+			if (shared.gift) showGift(shared.gift);
+			else msg('Geteilter Entwurf geöffnet', 'ok');
+		}
 		return;
 	}
 	const d = savedDraft();

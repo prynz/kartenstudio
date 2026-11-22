@@ -374,6 +374,48 @@ await run('Desktop – Sternenhimmel', { viewport: { width: 1440, height: 900 },
 	ok((await page.$$('#poster path[data-k]')).length > 100, 'Zurück zur Karte');
 });
 
+await run('Desktop – Preis, Geschenk, Rechtliches', { viewport: { width: 1440, height: 900 }, acceptDownloads: true }, async (page) => {
+	await page.click('#demoBtn');
+	await page.waitForTimeout(900);
+	await page.click('#wzSteps button[data-step="produkt"]');
+	await page.click('#wzProd button[data-t="gerahmt"]');
+	await page.click('.wz-pane[data-step="produkt"] [data-sizes] button[data-k="50x70"]');
+	await page.waitForTimeout(400);
+	const p1 = await page.textContent('#priceVal');
+	await page.click('#mkFrameSw button[data-k="gold"]');
+	await page.waitForTimeout(300);
+	const p2 = await page.textContent('#priceVal');
+	ok(/\d+,\d\d €/.test(p1) && p1 !== p2, `Preis passt sich an (${p1} → ${p2} mit Goldrahmen)`);
+	await page.click('#wzProd button[data-t="shirt"]');
+	await page.waitForTimeout(300);
+	ok((await page.textContent('#priceVal')) === '29,90 €', 'Shirt-Preis 29,90 €');
+	await page.click('#wzSteps button[data-step="fertig"]');
+	await page.fill('#giftMsg', 'Damit du deine Heimat immer bei dir hast.');
+	await page.fill('#giftFrom', 'Anna & Tom');
+	const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.click('#giftCard')]);
+	const f = `${OUT}/${dl.suggestedFilename()}`;
+	await dl.saveAs(f);
+	ok(fs.statSync(f).size > 50000, 'Geschenkkarte als Bild');
+	await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+	await page.click('#giftLink');
+	await page.waitForTimeout(500);
+	const link = await page.evaluate(() => navigator.clipboard.readText());
+	const p3 = await page.context().newPage();
+	await p3.goto(link);
+	await p3.waitForSelector('.gift-ov', { timeout: 15000 }).catch(() => {});
+	ok((await p3.textContent('.gift-box').catch(() => '')).includes('Anna & Tom'), 'Geschenk-Link zeigt die Botschaft');
+	await p3.screenshot({ path: `${OUT}/24-geschenk.png` });
+	await p3.click('.gift-box button');
+	ok((await p3.$('.gift-ov')) === null, 'Botschaft lässt sich schließen');
+	for (const r of ['impressum', 'datenschutz', 'agb']) {
+		const res = await p3.goto(URL.replace(/\/$/, '') + '/' + r);
+		ok(res.ok() && (await p3.textContent('h1')).length > 3, `Seite „${r}“ erreichbar`);
+	}
+	await p3.goto(URL.replace(/\/$/, '') + '/datenschutz');
+	await p3.screenshot({ path: `${OUT}/25-datenschutz.png` });
+	await p3.close();
+});
+
 await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (page) => {
 	await page.tap('#demoBtn');
 	await page.waitForTimeout(900);

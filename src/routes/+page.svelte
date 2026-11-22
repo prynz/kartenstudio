@@ -3,6 +3,7 @@
 	// Das HTML-Gerüst stammt aus dem Prototyp; die Logik liegt in #lib/editor, #lib/karte, #lib/themen, #lib/export.
 	import '#lib/editor/editor.css';
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 
 	onMount(async () => {
 		const { start } = await import('#lib/editor/start.js');
@@ -126,6 +127,7 @@
 <h3>Produkt &amp; Vorschau</h3>
 <p class="wz-hint">So sieht dein Motiv als fertiges Produkt aus.</p>
 <div class="wz-prod" id="wzProd"></div>
+<div class="price" id="wzPrice"><b id="priceVal">–</b><span>inkl. MwSt., zzgl. Versand · <i>Beispielpreis</i></span><small id="priceDet"></small></div>
 <div class="mk-opt" data-for="poster gerahmt leinwand"><div class="lab">Größe</div><div class="wz-chips wz-sizes" data-sizes></div>
 <label class="tog wz-tog wz-quer"><input type="checkbox" data-quer><span>Querformat</span></label></div>
 <div class="mk-opt" data-for="poster gerahmt leinwand"><div class="lab">Raum</div><div class="mk-sw mk-rooms" id="mkRoomSw"></div></div>
@@ -134,7 +136,7 @@
 <div class="mk-opt" data-for="shirt"><div class="lab">Shirtfarbe</div><div class="mk-sw" id="mkShirtSw"></div>
 <label class="tog wz-tog"><input type="checkbox" id="mkModel"><span>Am Model zeigen</span></label></div>
 <div class="mk-opt" data-for="poster gerahmt leinwand"><div class="lab">Wandfarbe</div><div class="mk-sw" id="mkWallSw"></div></div>
-<p class="wz-hint mk-note">Bestellen kommt in einem der nächsten Schritte. Die Druckdatei kannst du im nächsten Schritt schon herunterladen.</p>
+<p class="wz-hint mk-note">Bestellen kommt bald. Die Druckdatei kannst du im nächsten Schritt schon herunterladen.</p>
 </section>
 <section class="wz-pane" data-step="fertig">
 <h3>Fertig – herunterladen</h3>
@@ -147,8 +149,16 @@
 <button data-f="svg"><b>SVG (Vektor)</b><span>beliebig skalierbar · für Druckereien</span></button>
 </div>
 <p class="wz-hint">PNG und SVG haben einen transparenten Hintergrund – ideal für T-Shirts.</p>
+<div class="lab">Bestellen</div>
+<button type="button" class="btn wz-order" disabled title="Kommt bald"><span id="orderLabel">Bestellen</span><small>bald verfügbar</small></button>
+<div class="lab">Verschenken</div>
+<label class="wz-field"><span>Deine Botschaft</span><textarea id="giftMsg" class="inp" rows="3" maxlength="280" placeholder="z. B. Damit du deine Heimat immer bei dir hast."></textarea></label>
+<label class="wz-field"><span>Von</span><input id="giftFrom" class="inp" type="text" maxlength="60" placeholder="z. B. Anna &amp; Tom"></label>
+<div class="wz-gift"><button type="button" class="btn" id="giftLink">Geschenk-Link kopieren</button><button type="button" class="btn" id="giftCard">Geschenkkarte (Bild)</button></div>
+<p class="wz-hint">Der Link öffnet das Poster mit deiner Botschaft – der Beschenkte kann es dann selbst anpassen oder herunterladen.</p>
 <div class="lab">Teilen</div>
 <button type="button" class="btn wz-share" id="wzShare"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4L12 5.6"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/></svg>Link zum Entwurf kopieren</button>
+<p class="wz-legal"><a href={resolve('/impressum')} data-sveltekit-reload>Impressum</a> · <a href={resolve('/datenschutz')} data-sveltekit-reload>Datenschutz</a> · <a href={resolve('/agb')} data-sveltekit-reload>AGB</a></p>
 <p class="wz-hint">Dein Entwurf wird automatisch in diesem Browser gemerkt. Mit dem Link kannst du ihn auf einem anderen Gerät öffnen oder jemandem zeigen.</p>
 </section>
 </div>
@@ -190,7 +200,7 @@
 <div class="row"><input type="range" id="gScale" min="0.4" max="2.5" step="0.05"><span class="v" id="gScalev"></span></div>
 </div>
 <div id="stdBox" class="hidden">
-<div class="hint" style="margin:8px 0 10px">Fertig gezeichnete Straßenkarte oder Satellitenbild – wie bei Online-Karten.</div>
+<div class="hint" style="margin:8px 0 10px">Fertig gezeichnete Straßenkarte oder Luftbild (Bayern) – wie bei Online-Karten.</div>
 <div class="bases" id="bases"></div>
 <div class="row" style="margin-top:12px"><label class="tog"><input type="checkbox" id="labelsOn"> Ortsnamen & Beschriftungen</label></div>
 <div class="hint">Diese Stile sind Bilder: Einzelne Häuser oder Straßen lassen sich hier nicht umfärben. Beim starken Hineinzoomen wird das Bild unschärfer.</div>
@@ -278,6 +288,7 @@
 <button class="demo" id="demoBtn"><span class="dpin">▶</span><span><b>Beispiel öffnen: Siegritz</b><small>Sofort ausprobieren – funktioniert auch ohne Internet</small></span></button>
 <div class="orsep">oder Beispiel-Ort suchen</div>
 <div class="examples" style="margin-top:8px"><button class="chip" data-q="Siegritz Heiligenstadt">Siegritz</button><button class="chip" data-q="Bamberg">Bamberg</button><button class="chip" data-q="Rothenburg ob der Tauber">Rothenburg</button><button class="chip" data-q="Nördlingen">Nördlingen</button></div>
+<div class="legal"><a href={resolve('/impressum')} data-sveltekit-reload>Impressum</a> · <a href={resolve('/datenschutz')} data-sveltekit-reload>Datenschutz</a> · <a href={resolve('/agb')} data-sveltekit-reload>AGB</a></div>
 <div class="steps"><span><b>1</b> Ort suchen</span><span><b>2</b> Gestalten</span><span><b>3</b> Vorschau</span><span><b>4</b> Herunterladen</span></div>
 </div>
 </div>

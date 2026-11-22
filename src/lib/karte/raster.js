@@ -33,9 +33,10 @@ async function styleFor(B, labels) {
   if (B.sat) {
     st.sources.sat = {
       type: 'raster',
-      tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+      // Amtliches Luftbild Bayern (WMS, 40 cm), Datenquelle: Bayerische Vermessungsverwaltung, CC BY 4.0
+      tiles: ['https://geoservices.bayern.de/od/wms/dop/v1/dop40?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=by_dop40c&STYLES=&SRS=EPSG:3857&BBOX={bbox-epsg-3857}&WIDTH=256&HEIGHT=256&FORMAT=image/jpeg'],
       tileSize: 256,
-      maxzoom: 19
+      maxzoom: 20
     };
     const bi = st.layers.findIndex(l => l.type === 'background');
     st.layers.splice(bi + 1, 0, { id: 'sat', type: 'raster', source: 'sat' });

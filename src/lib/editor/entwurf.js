@@ -7,7 +7,7 @@ import { app as appUntyped } from './app.js';
 const app = appUntyped;
 const KEY = 'kartenstudio.entwurf.v1';
 
-/** @typedef {{v:number, b:any, place:any, demo:boolean, step?:string, S:any, t?:number}} Draft */
+/** @typedef {{v:number, b:any, place:any, demo:boolean, step?:string, S:any, t?:number, gift?:{msg?:string, from?:string}}} Draft */
 
 /** Aktueller Stand als speicherbares Objekt */
 export function draftPayload() {
@@ -78,6 +78,7 @@ export function validDraft(d) {
 		if (b.e - b.w <= 0 || b.e - b.w > 0.2 || b.n - b.s <= 0 || b.n - b.s > 0.2) return false;
 	}
 	if (d.place && (typeof d.place !== 'object' || !safeVal(d.place.lon ?? 0, 'lon'))) return false;
+	if (d.gift && (typeof d.gift !== 'object' || String(d.gift.msg || '').length > 400 || String(d.gift.from || '').length > 100)) return false;
 	return safeVal(d.S, '');
 }
 
@@ -98,8 +99,9 @@ async function pipe(data, stream) {
 }
 
 /** Kompakter Link, der den aktuellen Entwurf enthält */
-export async function shareLink() {
-	const json = new TextEncoder().encode(JSON.stringify(draftPayload()));
+/** @param {{msg?:string, from?:string}} [gift] Grußbotschaft für Geschenk-Links */
+export async function shareLink(gift) {
+	const json = new TextEncoder().encode(JSON.stringify(gift ? { ...draftPayload(), gift } : draftPayload()));
 	let code = 'j' + b64u(json);
 	if (typeof CompressionStream !== 'undefined') code = 'z' + b64u(await pipe(json, new CompressionStream('deflate-raw')));
 	return location.origin + location.pathname + '#e=' + code;

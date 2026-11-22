@@ -8,7 +8,7 @@ import { openSec } from './seitenleiste.js';
 import { setTool } from './bedienung.js';
 import { dotsHTML } from './seitenleiste.js';
 import { PRESETS as PRESETS_UNTYPED } from '../themen/vorlagen.js';
-import { BASES } from '../themen/standard.js';
+import { BASES, inBayern } from '../themen/standard.js';
 import { DESIGNS, applyDesign } from '../themen/designs.js';
 import { ensureRaster } from '../karte/raster.js';
 import { attachSearch } from '../karte/suche.js';
@@ -24,6 +24,8 @@ import { shareLink } from './entwurf.js';
 import { ANLAESSE } from '../themen/anlaesse.js';
 import { initMulti, syncMulti } from './mehrere.js';
 import { initRoute, syncRoute } from './route.js';
+import { preis } from '../shop/preise.js';
+import { initGift } from '../shop/geschenk.js';
 import { SKY_THEMES, defaultSky, loadSky, skyLabel } from '../themen/himmel.js';
 import { viewCenterLL } from './seitenleiste.js';
 import { esc } from './basis.js';
@@ -114,6 +116,10 @@ function syncProduct() {
 	all('.mk-opt').forEach((o) => o.classList.toggle('hidden', !(o.dataset.for || '').split(' ').includes(P.type)));
 	/** @type {HTMLInputElement} */ ($('mkMat')).checked = !!P.mat;
 	/** @type {HTMLInputElement} */ ($('mkModel')).checked = !!P.model;
+	const pr = preis(P, app.S.print);
+	$('priceVal').textContent = pr.text;
+	$('priceDet').textContent = pr.details.join(' · ');
+	$('orderLabel').textContent = `Bestellen · ${pr.text}`;
 }
 
 /** Assistent ↔ erweiterte Einstellungen umschalten. @param {boolean} on */
@@ -193,6 +199,15 @@ export function syncWizard() {
 	if (sky && S.sky) syncSky(S.sky);
 	all('#wzStyles button').forEach((b) => b.classList.toggle('on', !std && b.dataset.p === S.preset));
 	all('#wzBases button').forEach((b) => b.classList.toggle('on', std && b.dataset.b === S.base));
+	// Luftbilder gibt es bisher nur für Bayern
+	if (app.DATA) {
+		const [lon, lat] = viewCenterLL();
+		const ok = inBayern(lon, lat);
+		all('[data-b="satellit"]').forEach((b) => {
+			/** @type {HTMLButtonElement} */ (b).disabled = !ok;
+			b.title = ok ? 'Amtliches Luftbild (40 cm) – Bayerische Vermessungsverwaltung' : 'Luftbilder gibt es bisher nur für Orte in Bayern';
+		});
+	}
 	all('#wzDesigns button').forEach((b) => b.classList.toggle('on', b.dataset.d === (S.design || 'siegritz')));
 	all('#wzFmt button').forEach((b) => b.classList.toggle('on', Math.abs(+(b.dataset.a || 0) - S.view.a) < 0.01));
 	const t = /** @type {HTMLInputElement} */ ($('wzTitle')),
@@ -627,6 +642,7 @@ export function initWizard() {
 
 	initMulti();
 	initRoute();
+	initGift();
 
 	// Anlass-Vorlagen (Startseite und Schritt „Ort“)
 	all('[data-occ]').forEach((box) =>
