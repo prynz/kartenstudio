@@ -96,7 +96,7 @@ export function multiSVG(forExport) {
 				const vr = [iv.cx - half, iv.cy - half, iv.cx + half, iv.cy + half];
 				let defs = '';
 				(it.data.tiles || []).forEach((/** @type {number[]} */ t, /** @type {number} */ j) => {
-					defs += `<clipPath id="m${i}t${j}"><rect x="${t[0].toFixed(2)}" y="${t[1].toFixed(2)}" width="${t[2].toFixed(2)}" height="${t[2].toFixed(2)}"/></clipPath>`;
+					defs += `<clipPath id="m${i}t${j}"><rect x="${(t[0] - 0.3).toFixed(2)}" y="${(t[1] - 0.3).toFixed(2)}" width="${(t[2] + 0.6).toFixed(2)}" height="${(t[2] + 0.6).toFixed(2)}"/></clipPath>`;
 				});
 				const k = d / (2 * half);
 				o += `<defs>${defs}</defs><g clip-path="url(#mo${i})"><g transform="translate(${cx.toFixed(1)},${cy.toFixed(1)}) scale(${k.toFixed(5)}) translate(${(-iv.cx).toFixed(2)},${(-iv.cy).toFixed(2)})">${mapContent(true, vr)}</g></g>`;
@@ -167,7 +167,7 @@ function rasterSVG(items, forExport) {
 				const vr = [iv.cx - half, iv.cy - half * iv.a, iv.cx + half, iv.cy + half * iv.a];
 				let defs = '';
 				(it.data.tiles || []).forEach((/** @type {number[]} */ t, /** @type {number} */ j) => {
-					defs += `<clipPath id="m${i}t${j}"><rect x="${t[0].toFixed(2)}" y="${t[1].toFixed(2)}" width="${t[2].toFixed(2)}" height="${t[2].toFixed(2)}"/></clipPath>`;
+					defs += `<clipPath id="m${i}t${j}"><rect x="${(t[0] - 0.3).toFixed(2)}" y="${(t[1] - 0.3).toFixed(2)}" width="${(t[2] + 0.6).toFixed(2)}" height="${(t[2] + 0.6).toFixed(2)}"/></clipPath>`;
 				});
 				const k = w / (2 * half);
 				o += `<defs>${defs}</defs><g clip-path="url(#mo${i})"><g transform="translate(${cx.toFixed(1)},${cy.toFixed(1)}) scale(${k.toFixed(5)}) translate(${(-iv.cx).toFixed(2)},${(-iv.cy).toFixed(2)})">${mapContent(true, vr)}</g></g>`;

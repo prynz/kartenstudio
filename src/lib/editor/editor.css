@@ -1011,3 +1011,24 @@ body:not(.wiz-on) .poster-tools,body.mk-on .poster-tools{display:none}
 .wz-field span i{color:#646979}
 .wz-link,.wz-alle{color:#2f56d6}
 .wz-dice{color:#2a4fc4}
+
+/* =========================================================
+   Kerbe: nahtlos ins Einstellungsfeld, Hover mit mitlaufender Kerbe, Ring exakt
+   ========================================================= */
+@media(min-width:901px){
+  /* kein Schatten der Leiste auf dem Einstellungsfeld – sonst wirkt die Kerbe grau statt weiß */
+  .wz-steps{box-shadow:none}
+  /* Rundungen 1 px in die Blase hineinragen lassen → keine haarfeine Lücke („Striche“) */
+  .wz-ind::before{top:-21px;height:22px;background:radial-gradient(circle at 0 0,transparent 21px,var(--panel) 21.6px)}
+  .wz-ind::after{bottom:-21px;height:22px;background:radial-gradient(circle at 0 100%,transparent 21px,var(--panel) 21.6px)}
+  .wz-ind{width:66px!important;box-shadow:none}
+  /* Kerbe unter einem überfahrenen Knopf: Symbol dunkel, leicht größer */
+  .wz-steps button.unter{color:var(--slate)!important}
+  .wz-steps button.unter svg{transform:scale(1.1)!important;filter:none!important}
+  .wz-steps button.unter::before{opacity:0!important}
+  /* aktiver Knopf, während die Kerbe woanders ist: bleibt als Navy-Kreis erkennbar */
+  .wz-steps button.on:not(.wz-fertig):not(.unter){transition:color .2s}
+  /* Fortschrittsring exakt mittig um den 48-px-Knopf */
+  .wz-ring{inset:-4px;width:56px;height:56px}
+  .wz-ind{transition:transform .38s cubic-bezier(.2,.8,.2,1),opacity .2s}
+}

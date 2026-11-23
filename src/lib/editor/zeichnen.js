@@ -926,7 +926,9 @@ export function buildSVG(forExport) {
   o += `<clipPath id="cMap">${mapShape(g, 0, '')}</clipPath>`;
   o += `<clipPath id="cIn"><rect x="${f.w}" y="${f.w}" width="${(g.W - 2 * f.w).toFixed(1)}" height="${(g.H - 2 * f.w).toFixed(1)}" rx="${ri}" ry="${ri}"/></clipPath>`;
   (app.DATA.tiles || []).forEach((r, i) => {
-    o += `<clipPath id="tc${i}"><rect x="${r[0].toFixed(2)}" y="${r[1].toFixed(2)}" width="${r[2].toFixed(2)}" height="${r[2].toFixed(2)}"/></clipPath>`;
+    // Kacheln überlappen minimal (Kachelpuffer liegt darunter) – sonst bleibt an der Kante eine helle Naht
+    const ue = Math.max(0.25, r[2] * 0.0015);
+    o += `<clipPath id="tc${i}"><rect x="${(r[0] - ue).toFixed(2)}" y="${(r[1] - ue).toFixed(2)}" width="${(r[2] + 2 * ue).toFixed(2)}" height="${(r[2] + 2 * ue).toFixed(2)}"/></clipPath>`;
   });
   o += `<clipPath id="cOut"><rect x="0" y="0" width="${g.W.toFixed(1)}" height="${g.H.toFixed(1)}" rx="${R + f.w / 2}" ry="${R + f.w / 2}"/></clipPath></defs>`;
   const papierF = g.L.papier || app.S.bg;

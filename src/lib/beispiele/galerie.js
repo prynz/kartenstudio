@@ -156,7 +156,7 @@ export function beispielNachLaden() {
 function karte(B) {
 	const P = /** @type {Record<string, any>} */ (PRESETS)[B.preset];
 	const farbe = P && P.bg && P.bg !== 'none' ? P.bg : '#ffffff';
-	const bild = asset(/** @type {any} */ (`beispiele/${B.id}.jpg`));
+	const bild = asset(/** @type {any} */ (`beispiele/${B.id}.webp`));
 	const ort = B.ort === 'demo' ? 'Siegritz' : (ORTE.find((o) => o.slug === B.ort) || { name: '' }).name;
 	return `<button type="button" class="bsp" data-id="${B.id}" title="${esc(B.text)}"><span class="bsp-img" style="background:${farbe}"><img src="${bild}" alt="" loading="lazy" decoding="async" onerror="this.remove()"></span><b>${esc(B.titel)}</b><small>${esc(ort)}</small></button>`;
 }

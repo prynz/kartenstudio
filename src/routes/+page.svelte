@@ -59,9 +59,61 @@
 		document.querySelector<HTMLButtonElement>(`#bspStrip [data-id="${id}"]`)?.click();
 	}
 
-	onMount(async () => {
-		const { start } = await import('#lib/editor/start.js');
-		start();
+	/**
+	 * Den Editor erst laden, wenn er gebraucht wird – die Startseite ist so schneller bedienbar.
+	 * Auslöser: erste Bedienung (Tippen, Klicken, Tastatur), Beispiel-Streifen kommt in Sicht,
+	 * Link mit Entwurf/Ort, gespeicherter Entwurf (für „Weiter mit …“) – spätestens kurz nach dem Laden.
+	 */
+	onMount(() => {
+		let bereit = false;
+		let laedt: Promise<void> | null = null;
+		let warteKlick: HTMLElement | null = null;
+		const EREIGNISSE = ['pointerdown', 'keydown', 'focusin', 'touchstart'];
+		const los = () =>
+			(laedt ||= import('#lib/editor/start.js').then(({ start }) => {
+				start();
+				bereit = true;
+				EREIGNISSE.forEach((e) => removeEventListener(e, los, true));
+				removeEventListener('click', klick, true);
+				// schon getippt, bevor der Editor da war → Vorschläge jetzt zeigen
+				const q = document.getElementById('lq') as HTMLInputElement | null;
+				if (q && q.value.trim()) q.dispatchEvent(new Event('input'));
+				// Klick, der vor dem Laden kam, nachholen
+				if (warteKlick) setTimeout(() => warteKlick?.click(), 0);
+			}));
+		// Klicks auf Knöpfe der Startseite, bevor der Editor da ist: merken und danach ausführen
+		const klick = (e: MouseEvent) => {
+			if (bereit) return;
+			const t = e.target as HTMLElement;
+			const el = t.closest('#landing button, #resumeBtn') as HTMLElement | null;
+			if (!el || t.closest('a[href]')) return;
+			e.preventDefault();
+			e.stopPropagation();
+			warteKlick = el;
+			los();
+		};
+		addEventListener('click', klick, true);
+		EREIGNISSE.forEach((e) => addEventListener(e, los, { capture: true, passive: true }));
+		let entwurf = false;
+		try {
+			entwurf = !!localStorage.getItem('kartenstudio.entwurf.v1');
+		} catch (e) {}
+		if (location.hash.length > 1 || entwurf) los();
+		else {
+			// Beispiel-Streifen braucht den Editor-Code → laden, bevor er in Sicht kommt
+			const strip = document.getElementById('bspStrip');
+			if (strip && 'IntersectionObserver' in window) {
+				const io = new IntersectionObserver((x) => x.some((y) => y.isIntersecting) && (io.disconnect(), los()), { rootMargin: '600px 0px' });
+				io.observe(strip);
+			}
+			const spaeter = () => setTimeout(los, 1500);
+			if (document.readyState === 'complete') spaeter();
+			else addEventListener('load', spaeter, { once: true });
+		}
+		return () => {
+			EREIGNISSE.forEach((e) => removeEventListener(e, los, true));
+			removeEventListener('click', klick, true);
+		};
 	});
 </script>
 
@@ -450,9 +502,9 @@
 <ul class="lp-trust"><li>Ohne Anmeldung</li><li>Vorschau sofort</li><li>Poster ab {ab('poster')}</li></ul>
 </div>
 <div class="lp-collage" aria-hidden="true">
-<img class="c1" src={asset('beispiele/bamberg-typo.jpg')} alt="" />
-<img class="c2" src={asset('beispiele/nuernberg-nacht.jpg')} alt="" />
-<img class="c3" src={asset('beispiele/bamberg-sterne.jpg')} alt="" />
+<img class="c1" src={asset('beispiele/bamberg-typo.webp')} alt="" />
+<img class="c2" src={asset('beispiele/nuernberg-nacht.webp')} alt="" />
+<img class="c3" src={asset('beispiele/bamberg-sterne.webp')} alt="" />
 </div>
 </section>
 
@@ -478,7 +530,7 @@
 <section class="lp-sec">
 <div class="lp-head"><h2>Mehr als eine Karte</h2><p>Sechs Motive, alle im gleichen Editor.</p></div>
 <div class="lp-motive">
-{#each MOTIVE as [id, titel, text] (id)}<button type="button" onclick={() => beispiel(id)}><img src={asset(`beispiele/${id}.jpg` as any)} alt="" loading="lazy" /><b>{titel}</b><span>{text}</span></button>{/each}
+{#each MOTIVE as [id, titel, text] (id)}<button type="button" onclick={() => beispiel(id)}><img src={asset(`beispiele/${id}.webp` as any)} alt="" loading="lazy" /><b>{titel}</b><span>{text}</span></button>{/each}
 </div>
 </section>
 

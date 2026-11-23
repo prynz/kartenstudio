@@ -1,6 +1,6 @@
 // Beispiel-Galerie: fertige Designs zur Inspiration.
 // Jedes Beispiel = Ort (aus seo/orte.js, oder 'demo' = Offline-Beispiel Siegritz) + Look (Stil, Design, Motiv …).
-// Vorschaubilder liegen in static/beispiele/<id>.jpg und werden mit `node tests/beispielbilder.mjs <url>` neu erzeugt.
+// Vorschaubilder liegen in static/beispiele/<id>.webp und werden mit `node tests/beispielbilder.mjs <url>` neu erzeugt.
 
 /**
  * @typedef {{

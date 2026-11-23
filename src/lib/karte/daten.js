@@ -5,6 +5,36 @@ import { MW } from '../editor/basis.js';
 import { classify, merc } from './overpass.js';
 import { classifyTile } from './kacheln.js';
 
+/**
+ * Fluss-Mittellinien, die mitten in einer Wasserfläche liegen (z. B. der Rhein quer durch den
+ * Bodensee), weglassen – die Fläche zeigt das Wasser schon; die Linie wirkte wie ein Strich im See.
+ * Geprüft an drei Stellen der Linie (20 %, 50 %, 80 %): nur wenn alle im Wasser liegen, fällt sie weg.
+ */
+function ohneSeeLinien(feats) {
+  const flaechen = feats.filter(f => f.k === 'wasser' && f.a && f.d);
+  if (!flaechen.length) return feats;
+  const poly = flaechen.map(f => ({
+    bx: f.bx,
+    ringe: f.d.split('M').filter(Boolean).map(r => (r.match(/-?\d+(?:\.\d+)?/g) || []).map(Number))
+  }));
+  const imRing = (r, x, y) => {
+    let c = false;
+    for (let i = 0, j = r.length - 2; i < r.length; j = i, i += 2) {
+      const xi = r[i], yi = r[i + 1], xj = r[j], yj = r[j + 1];
+      if (yi > y !== yj > y && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+    }
+    return c;
+  };
+  const imWasser = (x, y) => poly.some(P => x >= P.bx[0] && x <= P.bx[2] && y >= P.bx[1] && y <= P.bx[3] && P.ringe.reduce((c, r) => (imRing(r, x, y) ? !c : c), false));
+  return feats.filter(f => {
+    if (f.k !== 'wasser' || f.a || !f.pts || f.pts.length < 4) return true;
+    const n = f.pts.length / 2;
+    return ![0.2, 0.5, 0.8].every(q => {
+      const j = Math.floor(q * (n - 1)) * 2;
+      return imWasser(f.pts[j], f.pts[j + 1]);
+    });
+  });
+}
 export function buildDataTiles(tiles, b, big, place) {
   const [x0, y0] = merc(b.w, b.n),
     [x1, y1] = merc(b.e, b.s);
@@ -59,7 +89,7 @@ export function buildDataTiles(tiles, b, big, place) {
   });
   const E = [(ex0 - x0) * sc, (ey0 - y0) * sc, (ex1 - x0) * sc, (ey1 - y0) * sc];
   return {
-    feats,
+    feats: ohneSeeLinien(feats),
     tiles: tileRects,
     MH0: MH,
     ext: {

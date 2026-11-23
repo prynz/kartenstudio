@@ -813,10 +813,15 @@ function card(b, html) {
  * Gleitende Markierung in der Werkzeugleiste: ein Element, das nur verschoben wird
  * (transform – kein Neu-Vermessen der Seite), PC senkrecht, Handy waagrecht.
  */
-function markierung() {
+/** @param {HTMLElement|null} [ziel] Knopf, zu dem die Kerbe gleitet (Standard: aktives Werkzeug) */
+function markierung(ziel) {
 	const ind = document.getElementById('wzInd');
-	const b = /** @type {HTMLElement|null} */ (document.querySelector('#wzSteps button[data-step].on'));
+	const aktiv = /** @type {HTMLElement|null} */ (document.querySelector('#wzSteps button[data-step].on'));
+	const b = ziel || aktiv;
 	if (!ind || !b) return;
+	// Kerbe unter einem anderen Knopf (Überfahren): dessen Symbol wird dunkel auf hellem Grund
+	all('#wzSteps button.unter').forEach((x) => x !== b && x.classList.remove('unter'));
+	b.classList.toggle('unter', b !== aktiv);
 	const quer = matchMedia('(max-width: 900px)').matches;
 	// „Fertig“ hat am PC einen eigenen runden Knopf – dort keine Markierung
 	ind.classList.toggle('weg', !quer && b.classList.contains('wz-fertig'));
@@ -859,7 +864,25 @@ export function initWizard() {
 	$('railHilfe').onclick = () => $('chatBtn').click();
 	// … auch wenn die Leiste erst sichtbar wird (nach der Startseite) oder sich ihre Größe ändert
 	if ('ResizeObserver' in window) new ResizeObserver(() => markierung()).observe($('wzSteps'));
-	else addEventListener('resize', () => requestAnimationFrame(markierung));
+	else addEventListener('resize', () => requestAnimationFrame(() => markierung()));
+	// Überfahren (PC mit Maus): die Kerbe folgt flüssig der Maus und kehrt beim Verlassen zurück
+	const maus = matchMedia('(hover: hover) and (pointer: fine) and (min-width: 901px)');
+	let zurueck = 0;
+	all('#wzSteps button[data-step]:not(.wz-fertig)').forEach((b) =>
+		b.addEventListener('pointerenter', () => {
+			if (!maus.matches) return;
+			clearTimeout(zurueck);
+			markierung(b);
+		})
+	);
+	$('wzSteps').addEventListener('pointerleave', () => {
+		if (!maus.matches) return;
+		// kurze Pause: beim Wechsel zwischen zwei Knöpfen nicht erst zurückspringen
+		zurueck = window.setTimeout(() => markierung(), 90);
+	});
+	all('#wzSteps .wz-fertig, #wzSteps .wz-unten button').forEach((b) =>
+		b.addEventListener('pointerenter', () => maus.matches && markierung())
+	);
 	// Tasten 1–6 wechseln die Werkzeuge (nicht beim Tippen in Feldern)
 	document.addEventListener('keydown', (e) => {
 		const t = /** @type {HTMLElement} */ (e.target);
