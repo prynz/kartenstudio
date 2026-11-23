@@ -1,6 +1,9 @@
 // @ts-nocheck – aus dem Prototyp übernommen; Typen folgen bei der Überarbeitung.
 // Startet den Editor, sobald die Seite im Browser steht.
 // Reihenfolge wie im Prototyp.
+import { ladeSchriften } from './basis.js';
+import { app } from './app.js';
+import { render } from './zeichnen.js';
 import { initKarteOrtswahl } from '../karte/ortswahl.js';
 import { initKarteOrtswahlStart } from '../karte/ortswahl-start.js';
 import { initEditorLaden } from './laden.js';
@@ -22,6 +25,13 @@ let started = false;
 export function start() {
   if (started) return;
   started = true;
+  // Schriftdaten für Export/Vorschaubilder im Leerlauf nachladen (nicht beim ersten Anzeigen)
+  const w = window;
+  // (erst nach dem vollständigen Laden + Pause, damit es Startseite und Bilder nicht ausbremst)
+  const spaeter = () => setTimeout(() => (w.requestIdleCallback || ((f) => setTimeout(f, 200)))(() => ladeSchriften(), { timeout: 4000 }), 2500);
+  if (document.readyState === 'complete') spaeter();
+  else addEventListener('load', spaeter, { once: true });
+  window.addEventListener('ks-schriften', () => app.DATA && render());
   initKarteOrtswahl();
   initKarteOrtswahlStart();
   initEditorLaden();

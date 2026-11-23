@@ -1,6 +1,7 @@
 // @ts-nocheck – aus dem Prototyp übernommen; Typen folgen bei der Überarbeitung.
 // Ausschnitt laden (mit Ladeanzeige), Daten in den Editor übernehmen
 // Aus dem Prototyp übernommen (prototyp/src/script.js).
+import { ladeSchriften } from './basis.js';
 import { app } from './app.js';
 import { revealEditor } from './animation.js';
 import { wizardAfterLoad } from './assistent.js';
@@ -207,6 +208,8 @@ export function loadData(data) {
     btns.appendChild(b);
   });
   revealEditor();
+  // Editor offen → Schriftdaten für Vorschaubilder/Export jetzt holen (falls noch nicht da)
+  ladeSchriften();
   $('side').classList.remove('nodata');
   $('hdrEdit').classList.remove('hidden');
   $('hdrOrt').textContent = app.DATA.place || 'Mein Ort';

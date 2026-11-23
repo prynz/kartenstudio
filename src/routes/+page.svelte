@@ -259,7 +259,7 @@
 <p class="wz-hint nur-std" id="wz3dStd">Echte 3D-Ansicht: Kamera kippen und drehen, Gebäude und Berge in 3D. Markierungen lassen sich dabei nicht verschieben.</p></div>
 </section>
 <section class="wz-pane" data-step="produkt">
-<div class="tabs2 fz-tabs" id="fertigTabs" role="tablist"><button type="button" data-t="produkt">Produkt</button><button type="button" data-t="laden">Herunterladen</button><button type="button" data-t="teilen">Teilen</button></div>
+<div class="tabs2 fz-tabs" id="fertigTabs" role="tablist" aria-label="Fertig"><button type="button" role="tab" data-t="produkt">Produkt</button><button type="button" role="tab" data-t="laden">Herunterladen</button><button type="button" role="tab" data-t="teilen">Teilen</button></div>
 <div data-fsub="produkt">
 <div class="wz-prod" id="wzProd"></div>
 <div class="price" id="wzPrice"><b id="priceVal">–</b><span>inkl. MwSt. · <i>Beispielpreis</i></span><small id="priceDet"></small><small class="ship" id="priceShip"></small></div>
@@ -293,8 +293,6 @@
 <button data-f="svg"><b>SVG (Vektor)</b><span>beliebig skalierbar · für Druckereien</span></button>
 </div>
 <p class="wz-hint">PNG und SVG haben einen transparenten Hintergrund – ideal für T-Shirts.</p>
-<div class="lab">Bestellen</div>
-<button type="button" class="btn wz-order" disabled title="Kommt bald"><span id="orderLabel">Bestellen</span><small>bald verfügbar</small></button>
 </div>
 <div data-fsub="teilen">
 <div class="lab">Meinung einholen</div>
@@ -414,7 +412,8 @@
 </aside>
 
 <section class="stage">
-<div class="canvas checker" id="canvas"><svg id="poster" xmlns="http://www.w3.org/2000/svg"></svg></div>
+<!-- svelte-ignore a11y_no_noninteractive_tabindex (scrollbare Fläche muss per Tastatur erreichbar sein) -->
+<div class="canvas checker" id="canvas" role="region" tabindex="0" aria-label="Poster-Vorschau"><svg id="poster" xmlns="http://www.w3.org/2000/svg"></svg></div>
 <div class="poster-tools" id="posterTools" role="toolbar" aria-label="Vorschau">
 <button type="button" class="pt" id="ptOut" title="Vorschau verkleinern" aria-label="Vorschau verkleinern"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h12"/></svg></button>
 <button type="button" class="pt pt-proz" id="ptProz" title="Auf Fenstergröße einpassen">100 %</button>

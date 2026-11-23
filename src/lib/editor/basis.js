@@ -1,24 +1,19 @@
 // @ts-nocheck – aus dem Prototyp übernommen; Typen folgen bei der Überarbeitung.
 // Grundlagen: Konstanten, Schriften, kleine Hilfsfunktionen
 // Aus dem Prototyp übernommen (prototyp/src/script.js).
-import FONT_XB_URL from '../assets/fonts/inter-xb.woff?inline';
-import FONT_MD_URL from '../assets/fonts/inter-md.woff?inline';
-import FONT_FR_URL from '../assets/fonts/frak.woff?inline';
-import FONT_SC_URL from '../assets/fonts/script.woff?inline';
-import FONT_BR_URL from '../assets/fonts/brush.woff?inline';
-import FONT_BE_URL from '../assets/fonts/bebas.woff?inline';
-const b64 = (u) => u.slice(u.indexOf(',') + 1);
-const FONT_XB = b64(FONT_XB_URL), FONT_MD = b64(FONT_MD_URL), FONT_FR = b64(FONT_FR_URL), FONT_SC = b64(FONT_SC_URL), FONT_BR = b64(FONT_BR_URL), FONT_BE = b64(FONT_BE_URL);
-
 export const NS = 'http://www.w3.org/2000/svg';
-export const FONTDATA = {
-  SgXB: FONT_XB,
-  SgMD: FONT_MD,
-  SgFR: FONT_FR,
-  SgSC: FONT_SC,
-  SgBR: FONT_BR,
-  SgBE: FONT_BE
-};
+/** Eingebettete Schriften (für Export/Vorschaubilder) – werden per ladeSchriften() nachgeladen */
+export const FONTDATA = {};
+let schriftLaden = null;
+/** Schriftdaten nachladen (einmal); löst danach das Ereignis „ks-schriften“ aus */
+export function ladeSchriften() {
+  if (!schriftLaden) schriftLaden = import('./schriftdaten.js').then(m => {
+    Object.assign(FONTDATA, m.DATEN);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('ks-schriften'));
+  });
+  return schriftLaden;
+}
+export const schriftenDa = () => !!FONTDATA.SgXB;
 export const CAP = {
   SgXB: 0.7275,
   SgMD: 0.7275,

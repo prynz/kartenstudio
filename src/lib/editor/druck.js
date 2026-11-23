@@ -1,5 +1,6 @@
 // Druckfertig: feste Druckgrößen, Qualitäts-Ampel und PDF mit Beschnittzugabe.
 // Das PDF wird komplett im Browser erzeugt (kein fremder Dienst, keine Bibliothek).
+import { ladeSchriften } from './basis.js';
 import { app as appUntyped } from './app.js';
 import { CLS, MW } from './basis.js';
 import { buildSVG, geo } from './zeichnen.js';
@@ -131,6 +132,7 @@ export function exportDpi(P) {
 /* ---------- PDF mit Beschnittzugabe ---------- */
 /** Poster-SVG als Bild laden */
 async function posterImage() {
+	await ladeSchriften();
 	const url = URL.createObjectURL(new Blob([buildSVG(true)], { type: 'image/svg+xml' }));
 	const img = new Image();
 	await new Promise((res, rej) => {
@@ -303,7 +305,8 @@ function toB64(u) {
 export async function buildVectorPDF() {
 	const S = app.S;
 	const P = paperOrFree(S);
-	const [{ jsPDF }, { svg2pdf }, { FONTDATA }] = await Promise.all([import('jspdf'), import('svg2pdf.js'), import('./basis.js')]);
+	const [{ jsPDF }, { svg2pdf }, { FONTDATA, ladeSchriften }] = await Promise.all([import('jspdf'), import('svg2pdf.js'), import('./basis.js')]);
+	await ladeSchriften();
 	const pw = P.w * 10 + 2 * BLEED,
 		ph = P.h * 10 + 2 * BLEED;
 	const doc = new jsPDF({ unit: 'mm', format: [pw, ph], orientation: pw > ph ? 'landscape' : 'portrait', compress: true });
@@ -314,7 +317,7 @@ export async function buildVectorPDF() {
 	/** @type {Record<string,string>} */
 	const TT = { SgXB: b64(xb.default), SgMD: b64(md.default) };
 	for (const name of /** @type {const} */ (['SgXB', 'SgMD', 'SgFR', 'SgSC', 'SgBR', 'SgBE'])) {
-		const data = TT[name] || toB64(await woffToTtf(Uint8Array.from(atob(FONTDATA[name]), (c) => c.charCodeAt(0))));
+		const data = TT[name] || toB64(await woffToTtf(Uint8Array.from(atob(/** @type {any} */ (FONTDATA)[name]), (c) => c.charCodeAt(0))));
 		doc.addFileToVFS(name + '.ttf', data);
 		doc.addFont(name + '.ttf', name, 'normal');
 	}

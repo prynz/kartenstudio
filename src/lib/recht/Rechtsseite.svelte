@@ -9,6 +9,7 @@
 <svelte:head>
 	<title>{title} – Kartenstudio</title>
 	<meta name="robots" content="noindex" />
+	<meta name="description" content="{title} von Kartenstudio – Karten-Poster deines Ortes gestalten." />
 </svelte:head>
 
 <div class="recht">

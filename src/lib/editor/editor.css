@@ -996,3 +996,18 @@ body:not(.wiz-on) .poster-tools,body.mk-on .poster-tools{display:none}
   .wz-steps button.naechst::before{background:#8fb0ff;box-shadow:0 0 0 2px #262c3a}
 }
 @media(prefers-reduced-motion:reduce){.wz-steps button::before,.wz-steps button svg,.wz-ind{transition:none!important}}
+
+/* =========================================================
+   Prüfrunde: Kontraste (WCAG AA) und Tastatur-Fokus
+   ========================================================= */
+.brand small{color:#6b7080;border-color:#d9d6cf}
+.wz-kopf small{color:#2f56d6}
+.tabs2 button,.fz-tabs button{color:#5b6070}
+.tabs2 button.on,.fz-tabs button.on{color:var(--ink)}
+#canvas:focus-visible{outline:3px solid rgba(59,94,227,.35);outline-offset:-3px}
+#canvas:focus{outline:none}
+.price span,.price small{color:#565b6a}
+.price i{color:#865813}
+.wz-field span i{color:#646979}
+.wz-link,.wz-alle{color:#2f56d6}
+.wz-dice{color:#2a4fc4}

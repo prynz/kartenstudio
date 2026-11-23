@@ -1,6 +1,7 @@
 // Geführter Ablauf („Assistent“): Ort → Ausschnitt → Stil → Design → Text → Fertig.
 // Es ist immer nur ein Schritt sichtbar. Alle Detailregler aus dem Prototyp
 // bleiben unter „Erweiterte Einstellungen“ erreichbar.
+import { schriftenDa } from './basis.js';
 import { fokusOpt, akzent } from '../themen/layouts.js';
 import { typoOpt, geo, aktuelleForm } from './zeichnen.js';
 import { sheetZeigen, sheetOffen } from './sheet.js';
@@ -237,7 +238,7 @@ function renderDesignThumbs() {
 	const D = /** @type {any} */ (DESIGNS)[S.design];
 	const aBasis = D && D.aspect ? S.aPrev || S.view.a : S.view.a;
 	const tt = S.title.klein ? String(S.title.text || '').toUpperCase() : S.title.text;
-	const key = JSON.stringify([app.DATA.place, app.DATA.feats.length, S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.motif, S.fx && [S.fx.paper, S.fx.vig], aBasis, tt, S.sub.text, S.title.fontDesign ? '' : S.title.font, S.sub.font, S.scale, S.form ? S.form.ringe.length + ':' + S.form.a : 0]);
+	const key = JSON.stringify([schriftenDa(), app.DATA.place, app.DATA.feats.length, S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.motif, S.fx && [S.fx.paper, S.fx.vig], aBasis, tt, S.sub.text, S.title.fontDesign ? '' : S.title.font, S.sub.font, S.scale, S.form ? S.form.ringe.length + ':' + S.form.a : 0]);
 	if (key === thumbKey) return;
 	thumbKey = key;
 	const lauf = ++thumbLauf;
@@ -726,7 +727,11 @@ export function weltWaehlen(id) {
 		['wzDesignKat', 'wzDesigns', 'd', W ? W.designs : []]
 	];
 	listen.forEach(([kat, box, attr, keys]) => {
-		all(`#${kat} button`).forEach((b) => b.classList.toggle('on', (b.dataset.w || '') === (W && keys.length ? id : '')));
+		all(`#${kat} button`).forEach((b) => {
+			const an = (b.dataset.w || '') === (W && keys.length ? id : '');
+			b.classList.toggle('on', an);
+			b.setAttribute('aria-selected', String(an));
+		});
 		const B = $(box);
 		const filter = !!(W && keys.length);
 		// in der Welt: alle zugehörigen Karten zeigen, in ihrer Reihenfolge vorne
@@ -986,9 +991,9 @@ export function initWizard() {
 	const welten = (/** @type {string} */ wo) => THEMENWELTEN.filter((w) => (wo === 'p' ? w.stile : w.designs).length);
 	[['wzStilKat', 'wzStyles', 'p'], ['wzDesignKat', 'wzDesigns', 'd']].forEach(([kat, box, attr]) => {
 		$(kat).innerHTML =
-			`<button type="button" data-w="" class="on">Alle</button>` +
+			`<button type="button" role="tab" aria-selected="true" data-w="" class="on">Alle</button>` +
 			welten(attr)
-				.map((w) => `<button type="button" data-w="${w.id}" title="${w.desc}">${w.name}${w.neu ? ' <i>Neu</i>' : ''}</button>`)
+				.map((w) => `<button type="button" role="tab" aria-selected="false" data-w="${w.id}" title="${w.desc}">${w.name}${w.neu ? ' <i>Neu</i>' : ''}</button>`)
 				.join('');
 	});
 	all('.wz-kat button').forEach((b) => (b.onclick = () => weltWaehlen(/** @type {string} */ (b.dataset.w))));

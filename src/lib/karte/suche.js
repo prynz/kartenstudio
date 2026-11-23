@@ -46,6 +46,28 @@ export async function holen(url) {
 	}
 }
 
+/** Für den Vergleich: klein, ohne Umlaute/Akzente @param {string} t */
+const norm = (t) => t.toLowerCase().replace(/ß/g, 'ss').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, ' ').trim();
+/**
+ * Rückfall, wenn der Suchdienst ausfällt: Orte aus der eigenen, geprüften Liste (seo/orte.js),
+ * im selben Format wie die Treffer des Suchdienstes.
+ * @param {string} q
+ */
+async function ortsliste(q) {
+	try {
+		const { ORTE } = await import('../seo/orte.js');
+		const n = norm(q);
+		return ORTE.filter((o) => norm(o.name).startsWith(n) || norm(o.name).includes(' ' + n) || norm(o.slug.replace(/-/g, ' ')).startsWith(n))
+			.slice(0, 6)
+			.map((o) => ({
+				properties: { name: o.name, county: o.landkreis || undefined, state: 'Bayern', country: 'Deutschland', osm_value: o.typ === 'dorf' ? 'village' : 'town', type: 'city' },
+				geometry: { type: 'Point', coordinates: [o.lon, o.lat] }
+			}));
+	} catch (e) {
+		return [];
+	}
+}
+
 /** Unterzeile eines Treffers @param {any} p */
 const zeile = (p) => [p.city && p.city !== p.name ? p.city : '', p.county, p.state, p.country].filter(Boolean).join(', ');
 
@@ -95,6 +117,10 @@ export function attachSearch(inp, btn, box, onPick) {
 			liste(j.features, q);
 		} catch (e) {
 			if (meine !== nr) return;
+			// Suchdienst nicht erreichbar → in unserer eigenen Liste geprüfter Orte suchen
+			const eigene = await ortsliste(q);
+			if (meine !== nr) return;
+			if (eigene.length) return liste(eigene, q, 'Suchdienst gerade nicht erreichbar – Treffer aus unserer Ortsliste');
 			r.classList.remove('hidden');
 			r.innerHTML = '<div class="info" style="color:var(--err)">Keine Verbindung zum Suchdienst. Ist das Internet da?</div>';
 		}

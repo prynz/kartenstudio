@@ -1,6 +1,7 @@
 // @ts-nocheck – aus dem Prototyp übernommen; Typen folgen bei der Überarbeitung.
 // Export als SVG und PNG
 // Aus dem Prototyp übernommen (prototyp/src/script.js).
+import { ladeSchriften } from '../editor/basis.js';
 import { app } from '../editor/app.js';
 import { $ } from '../editor/basis.js';
 import { buildSVG, geo } from '../editor/zeichnen.js';
@@ -27,6 +28,7 @@ export function dlPlain(name, blob) {
   }, 2000);
 }
 export async function renderPNG(W) {
+  await ladeSchriften();
   const svg = buildSVG(true),
     g = geo(),
     H = Math.round(W * g.H / g.W);
@@ -66,6 +68,7 @@ export function initExportExport() {
     $('dlSizeRow').classList.toggle('hidden', app.dlF !== 'png');
   });
   $('dlGo').onclick = async () => {
+    await ladeSchriften();
     if (app.dlF === 'svg') {
       if (await download(fileBase() + '.svg', new Blob([buildSVG(true)], {
         type: 'image/svg+xml'

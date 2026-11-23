@@ -17,7 +17,7 @@ const browser = await chromium.launch({ proxy, args: ['--ignore-certificate-erro
 
 for (const B of BEISPIELE) {
 	if (nur && B.id !== nur) continue;
-	const ctx = await browser.newContext({ viewport: { width: 900, height: 760 }, deviceScaleFactor: 1.5 });
+	const ctx = await browser.newContext({ viewport: { width: 900, height: 760 }, deviceScaleFactor: 1 }); // Bilder werden klein angezeigt – 1× reicht (ca. 500 px)
 	const page = await ctx.newPage();
 	await page.goto(URL);
 	await page.waitForFunction(() => document.querySelectorAll('#bspStrip [data-id]').length > 0, null, { timeout: 30000 });
@@ -30,7 +30,7 @@ for (const B of BEISPIELE) {
 	if (B.hoehen) await page.waitForSelector('#hoehenlinien', { timeout: 60000 }).catch(() => {});
 	if (B.motif === 'sterne') await page.waitForFunction(() => (document.querySelector('#kartenInhalt')?.innerHTML.length || 0) > 20000, null, { timeout: 30000 }).catch(() => {});
 	await page.waitForTimeout(2500);
-	const buf = await page.locator('#poster').screenshot({ type: 'jpeg', quality: 80 });
+	const buf = await page.locator('#poster').screenshot({ type: 'jpeg', quality: 76 });
 	fs.writeFileSync(ziel + B.id + '.jpg', buf);
 	console.log('✓', B.id, Math.round(buf.length / 1024), 'KB');
 	await ctx.close();

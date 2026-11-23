@@ -1,4 +1,5 @@
 // Verschenken: Geschenk-Link (öffnet das Poster mit Grußbotschaft) und Geschenkkarte als Bild.
+import { ladeSchriften } from '../editor/basis.js';
 import { app as appUntyped } from '../editor/app.js';
 import { buildSVG, geo } from '../editor/zeichnen.js';
 import { shareLink } from '../editor/entwurf.js';
@@ -38,6 +39,7 @@ function wrap(c, t, w) {
 export async function giftCard() {
 	const g = giftData();
 	await Promise.all(['SgXB', 'SgMD', 'SgFR'].map((f) => document.fonts.load(`40px ${f}`)));
+	await ladeSchriften();
 	const W = 2100,
 		H = 1400;
 	const cv = document.createElement('canvas');

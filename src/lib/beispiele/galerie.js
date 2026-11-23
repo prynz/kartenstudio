@@ -1,5 +1,6 @@
 // Beispiel-Galerie: auf der Startseite (öffnet das Beispiel mit Ort) und im Editor
 // (übernimmt nur den Look für den eigenen Ort).
+import { schriftenDa } from '../editor/basis.js';
 import { asset } from '$app/paths';
 import { app as appUntyped } from '../editor/app.js';
 import { BEISPIELE } from './liste.js';
@@ -76,7 +77,7 @@ let vorUrls = [];
 export function vorschlaegeZeichnen() {
 	const box = document.getElementById('wzVorschlaege');
 	if (!box || !app.DATA || !app.S) return;
-	const key = String(app.DATA.place) + app.DATA.feats.length + app.S.view.a;
+	const key = String(app.DATA.place) + app.DATA.feats.length + app.S.view.a + schriftenDa();
 	if (key === vorKey) return;
 	vorKey = key;
 	vorUrls.forEach((u) => URL.revokeObjectURL(u));
