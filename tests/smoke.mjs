@@ -755,6 +755,12 @@ await run('Designs nach Vorbildern: Fokus, Studie, Steckbrief, Kasten, Lupe, Dos
 	ok(!!(await page.$('#poster #kasten')), 'Kasten: Textraster in der Mitte');
 	await design('dossier');
 	ok((await page.$('#poster #lupe')) && (await page.$('#poster #gitter')) && (await page.$('#poster #kompass')), 'Dossier: Lupe, Gitter, Kompass');
+	// Werkzeuge am Poster + Fortschrittsring
+	await page.click('#ptIn');
+	ok((await page.textContent('#ptProz')).trim() === '125 %', 'Werkzeuge am Poster: Vorschau vergrößern');
+	await page.click('#ptFit');
+	ok((await page.textContent('#ptProz')).trim() === '100 %', 'Werkzeuge am Poster: einpassen');
+	ok((await page.getAttribute('#wzRing', 'stroke-dasharray')) !== '0 100', 'Fortschrittsring zeigt angesehene Bereiche');
 	// Fokus anpassen: Form, Größe
 	await design('fokus');
 	await page.click('#wzFokusForm [data-v="kreis"]');

@@ -94,6 +94,7 @@ export function goStep(ziel, animate = true) {
 	step = next;
 	app.wizStep = next;
 	saveDraftSoon();
+	besuchen(next);
 	all('.wz-pane').forEach((p) => p.classList.toggle('on', GRUPPE[next].includes(/** @type {string} */ (p.dataset.step))));
 	const idx = STEPS.indexOf(next);
 	all('#wzSteps button[data-step]').forEach((b, i) => {
@@ -111,13 +112,16 @@ export function goStep(ziel, animate = true) {
 	requestAnimationFrame(() => markierung());
 	if (!letzter) $('wzNextSmall').textContent = 'Weiter';
 	const pane = document.querySelector(`.wz-pane[data-step="${GRUPPE[next][0]}"]`);
+	// Weicher Übergang: Kopf und Abschnitte gleiten nacheinander herein (nur transform/opacity → flüssig)
 	if (animate && dir && pane && !reducedMotion()) {
-		pane.animate(
-			[
-				{ opacity: 0, transform: `translateX(${dir > 0 ? 28 : -28}px)` },
-				{ opacity: 1, transform: 'none' }
-			],
-			{ duration: 280, easing: EASE }
+		[$('wzKopf'), ...all('.wz-pane.on')].forEach((el, i) =>
+			el.animate(
+				[
+					{ opacity: 0, transform: 'translateY(10px)' },
+					{ opacity: 1, transform: 'none' }
+				],
+				{ duration: 240, delay: Math.min(i, 3) * 40, easing: EASE, fill: 'backwards' }
+			)
 		);
 	}
 	const side = $('side');
@@ -415,9 +419,58 @@ export function syncWizard() {
 	syncProduct();
 }
 
+/* ---------- Sanfte Führung: welche Bereiche wurden schon angesehen? ---------- */
+const BESUCHT_KEY = 'kartenstudio.besucht.v1';
+/** @type {Set<string>} */
+let besucht = new Set();
+let besuchtOrt = '';
+/** Angesehene Bereiche je Ort laden (beim Wechsel des Orts) */
+function besuchtLaden() {
+	const ort = (app.DATA && app.DATA.place) || '';
+	if (ort === besuchtOrt) return;
+	besuchtOrt = ort;
+	try {
+		const alle = JSON.parse(localStorage.getItem(BESUCHT_KEY) || '{}');
+		besucht = new Set(Array.isArray(alle[ort]) ? alle[ort] : []);
+	} catch (e) {
+		besucht = new Set();
+	}
+}
+/** @param {string} s */
+function besuchen(s) {
+	besuchtLaden();
+	if (!besucht.has(s)) {
+		besucht.add(s);
+		try {
+			const alle = JSON.parse(localStorage.getItem(BESUCHT_KEY) || '{}');
+			alle[besuchtOrt] = [...besucht];
+			// höchstens 30 Orte merken
+			const k = Object.keys(alle);
+			if (k.length > 30) delete alle[k[0]];
+			localStorage.setItem(BESUCHT_KEY, JSON.stringify(alle));
+		} catch (e) {}
+	}
+	fortschritt();
+}
+/** Ring um „Fertig“ füllen und den nächsten offenen Bereich mit einem Punkt zeigen */
+function fortschritt() {
+	const wege = STEPS.filter((s) => s !== 'fertig');
+	const n = wege.filter((s) => besucht.has(s)).length;
+	const ring = document.getElementById('wzRing');
+	if (ring) ring.setAttribute('stroke-dasharray', `${Math.round((n / wege.length) * 100)} 100`);
+	const f = /** @type {HTMLElement|null} */ (document.querySelector('#wzSteps .wz-fertig'));
+	if (f) f.dataset.tip = n < wege.length ? `Fertig · ${n} von ${wege.length} angesehen` : 'Fertig · alles angesehen';
+	const naechst = wege.find((s) => !besucht.has(s));
+	all('#wzSteps button[data-step]').forEach((b) => b.classList.toggle('naechst', b.dataset.step === naechst && b.dataset.step !== step));
+}
+
 /** Nach dem Laden eines Orts: im Assistenten beim Stil weitermachen. */
 export function wizardAfterLoad() {
 	thumbKey = '';
+	besuchtLaden();
+	// Ort ist mit der Suche schon gewählt
+	besuchen('ort');
+	besuchen(step);
 	// Neuer Ort: Himmel über dem neuen Ort berechnen
 	if (app.S && app.S.sky) {
 		const [lon, lat] = viewCenterLL();
@@ -818,6 +871,25 @@ export function initWizard() {
 		sheetZeigen(true);
 	};
 	$('wzZu').onclick = () => sheetZeigen(false);
+	// Werkzeuge am Poster: Vorschau-Größe (Regler #zoom, 40–300 %), Einpassen, Vergleichen
+	const zr = /** @type {HTMLInputElement} */ ($('zoom'));
+	const zSetz = (/** @type {number} */ v) => {
+		zr.value = String(Math.round(Math.min(300, Math.max(40, v))));
+		zr.dispatchEvent(new Event('input'));
+	};
+	const zText = () => ($('ptProz').textContent = zr.value + ' %');
+	zr.addEventListener('input', zText);
+	zText();
+	$('ptIn').onclick = () => zSetz(+zr.value * 1.25);
+	$('ptOut').onclick = () => zSetz(+zr.value / 1.25);
+	$('ptProz').onclick = $('ptFit').onclick = () => zSetz(100);
+	$('ptVgl').onclick = () => $('favCmp').click();
+	// Kopfzeile: Ortsname führt zum Bereich „Ort“
+	$('hdrProjekt').onclick = () => {
+		if (advOpen) showAdvanced(false);
+		goStep('ort');
+		sheetZeigen(true);
+	};
 	$('advBack').onclick = () => showAdvanced(false);
 	all('[data-dice]').forEach((b) => (b.onclick = surprise));
 	$('wzPick').onclick = () => {

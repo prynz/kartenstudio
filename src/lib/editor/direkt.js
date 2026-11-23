@@ -186,6 +186,8 @@ export function favoritenZeichnen() {
 	box.hidden = !l.length;
 	$('favN').textContent = String(l.length);
 	$('favCmp').hidden = l.length < 2;
+	const vgl = document.getElementById('ptVgl');
+	if (vgl) vgl.hidden = l.length < 2;
 	const grid = $('favGrid');
 	grid.innerHTML = l.map((f) => `<div class="fav" data-t="${f.t}"><button type="button" class="fav-img" data-t="${f.t}" aria-label="Favorit übernehmen"><img alt=""></button><button type="button" class="fav-x" data-x="${f.t}" aria-label="Favorit löschen">×</button></div>`).join('');
 	l.forEach((f, i) =>

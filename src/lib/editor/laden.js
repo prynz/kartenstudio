@@ -209,6 +209,7 @@ export function loadData(data) {
   revealEditor();
   $('side').classList.remove('nodata');
   $('hdrEdit').classList.remove('hidden');
+  $('hdrOrt').textContent = app.DATA.place || 'Mein Ort';
   $('placeName').textContent = app.DATA.place || 'Mein Ort';
   $('placeInfo').textContent = [app.DATA.region, `${new Set(app.DATA.feats.map(f => f.id)).size} Kartenelemente`].filter(Boolean).join(' · ');
   updUndo();

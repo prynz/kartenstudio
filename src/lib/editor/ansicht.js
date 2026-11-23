@@ -36,7 +36,7 @@ export function zoom() {
   const B = document.body.classList;
   const dock = !B.contains('wiz-on') && !(narrow && B.contains('sheet-big'));
   const padX = narrow ? 32 : 80,
-    padY = narrow ? (dock ? 78 : 26) : dock ? 136 : 80;
+    padY = narrow ? (dock ? 78 : 26) : dock ? 136 : 150; // PC: unten Platz für die Werkzeuge am Poster
   const base = Math.max(narrow ? 60 : 240, Math.min(F.w - padX, (F.h - padY) * g.W / g.H));
   app.poster.style.width = base * z + 'px';
   // Ecken des Schattens an die Rahmenrundung anpassen

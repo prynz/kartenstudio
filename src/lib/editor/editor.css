@@ -863,3 +863,80 @@ body:not(.wiz-on) .fav-btn,body.mk-on .fav-btn{display:none}
   .wz-steps button.on{background:transparent}
   .wz-fertig.on{color:var(--slate)}
 }
+
+/* =========================================================
+   Kopfzeile (neu): links Marke + Projekt, Mitte Verlauf, rechts ein Haupt-Knopf
+   ========================================================= */
+.hdr-edit{display:flex;align-items:center;flex:1 1 auto;min-width:0;gap:6px}
+.hdr-edit.hidden{display:none}
+.hdr-projekt{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:7px;min-width:0;height:34px;padding:0 10px 0 2px;border-radius:10px;color:var(--ink);font-size:14px;cursor:pointer;transition:background .2s cubic-bezier(.2,.8,.2,1)}
+.hdr-projekt:hover{background:var(--hover)}
+.hdr-projekt .hdr-sl{color:var(--line2,#d6d8de);font-size:18px;font-weight:300;margin-right:4px}
+.hdr-projekt svg{color:var(--soft);flex:0 0 auto}
+.hdr-projekt b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.hdr-mitte{display:flex;align-items:center;gap:2px;margin:0 auto;padding:3px;border-radius:12px;background:var(--hover)}
+.hdr-mitte .ibtn{width:32px;height:30px;border-radius:9px;color:#4b5563;transition:background .2s,color .2s}
+.hdr-mitte .ibtn:hover:not(:disabled){background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(20,24,35,.08)}
+.hdr-mitte .ibtn:disabled{opacity:.35}
+.hdr-mitte .gesp{margin:0 8px 0 4px}
+.hdr-rechts{display:flex;align-items:center;gap:6px}
+.hdr-dl{display:inline-flex;align-items:center;gap:7px}
+header:not(:has(#hdrEdit.hidden)) .hsp{flex:0 0 0}
+@media(max-width:900px){
+  .hdr-projekt,.hdr-mitte .gesp span{display:none}
+  .hdr-mitte{margin:0 0 0 auto;background:none;padding:0}
+}
+
+/* =========================================================
+   Einstellungsfeld einheitlich: Karten, Chips, Knöpfe, Fokus
+   ========================================================= */
+.wz-card{border-radius:14px;transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s cubic-bezier(.2,.8,.2,1),border-color .2s}
+.wz-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(20,24,35,.08)}
+.wz-card.on{box-shadow:0 0 0 2px var(--slate)}
+.wz-card:active{transform:translateY(0) scale(.98)}
+.wz-chips button,.wz-kat button,.tabs2 button{transition:background .2s cubic-bezier(.2,.8,.2,1),border-color .2s,color .2s,transform .15s}
+.wz-chips button:active,.wz-kat button:active{transform:scale(.96)}
+.wz-pane .wz-field .inp,.wz-pane textarea.inp{border-radius:12px;transition:border-color .2s,box-shadow .2s}
+.wz-pane .wz-field .inp:focus,.wz-pane textarea.inp:focus{border-color:var(--slate);box-shadow:0 0 0 3px rgba(38,44,58,.1);outline:none}
+.wz-pane button:focus-visible,.wz-kat button:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(59,94,227,.25)}
+.wz-pane .wz-hint{color:var(--muted);font-size:13px;line-height:1.5}
+@media(prefers-reduced-motion:reduce){.wz-card,.wz-card:hover{transition:none;transform:none}}
+
+/* =========================================================
+   Werkzeuge am Poster (schwebende Leiste)
+   ========================================================= */
+.canvas{justify-content:safe center;align-items:safe center}
+.poster-tools{position:absolute;left:50%;bottom:18px;z-index:6;display:flex;align-items:center;gap:2px;padding:4px;border-radius:14px;background:rgba(255,255,255,.94);border:1px solid rgba(20,24,35,.07);box-shadow:0 8px 24px rgba(20,24,35,.12);transform:translateX(-50%);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.poster-tools .pt{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;min-width:34px;padding:0 9px;border-radius:10px;color:#374151;font:550 13px Inter,system-ui,sans-serif;cursor:pointer;transition:background .2s cubic-bezier(.2,.8,.2,1),color .2s,transform .15s}
+.poster-tools .pt:hover{background:var(--hover);color:var(--ink)}
+.poster-tools .pt:active{transform:scale(.94)}
+.poster-tools .pt:focus-visible{box-shadow:0 0 0 3px rgba(59,94,227,.25)}
+.poster-tools .pt[hidden]{display:none}
+.poster-tools .pt-proz{min-width:58px;font-variant-numeric:tabular-nums}
+.poster-tools .pt-trenn{width:1px;height:20px;background:var(--line);margin:0 3px}
+/* Merken sitzt jetzt in der Leiste (gleiche ID, gleiche Logik) */
+.poster-tools .fav-btn{position:static;height:34px;padding:0 10px;border:0;border-radius:10px;background:none;box-shadow:none;font:550 13px Inter,system-ui,sans-serif}
+.poster-tools .fav-btn:hover{transform:none}
+body:not(.wiz-on) .poster-tools,body.mk-on .poster-tools{display:none}
+@media(max-width:900px){
+  .poster-tools{left:auto;right:8px;top:8px;bottom:auto;transform:none;padding:3px;border-radius:12px}
+  .poster-tools #ptProz,.poster-tools #ptFit,.poster-tools .pt-trenn,.poster-tools .pt span{display:none}
+  .poster-tools .pt{height:32px;min-width:32px;padding:0 7px}
+}
+
+/* =========================================================
+   Sanfte Führung: Fortschrittsring um „Fertig“, Punkt am nächsten Bereich
+   ========================================================= */
+.wz-ring{display:none}
+.wz-steps button.naechst::before{content:'';position:absolute;top:7px;right:calc(50% - 15px);width:7px;height:7px;border-radius:50%;background:#3b5ee3;box-shadow:0 0 0 2px #fff;animation:wzPunkt 2.4s cubic-bezier(.2,.8,.2,1) 2}
+@keyframes wzPunkt{0%,100%{transform:scale(1)}40%{transform:scale(1.5)}}
+@media(min-width:901px){
+  .wz-ring{display:block;position:absolute;inset:-5px;width:56px;height:56px;transform:rotate(-90deg);pointer-events:none;overflow:visible}
+  .wz-ring circle{fill:none;stroke-width:2.5}
+  .wz-ring-bg{stroke:var(--line)}
+  .wz-ring-fg{stroke:#3b5ee3;stroke-linecap:round;transition:stroke-dasharray .6s cubic-bezier(.2,.8,.2,1)}
+  .wz-fertig.on .wz-ring{display:none}
+  .wz-steps button.naechst::before{top:6px;right:6px}
+}
+@media(max-width:900px){.wz-steps button.naechst::before{top:4px}}
+@media(prefers-reduced-motion:reduce){.wz-steps button.naechst::before{animation:none}.wz-ring-fg{transition:none}}

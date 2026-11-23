@@ -75,12 +75,16 @@
 <div class="brand"><div class="logo"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.6"><rect x="1.5" y="1.5" width="13" height="13" rx="2.5"/><path d="M1.5 10.5 6 7l3 2.5 5.5-4"/></svg></div>Kartenstudio<small>Beta</small></div>
 <div class="hsp"></div>
 <button class="ibtn chat-btn" id="chatBtn" aria-controls="chat" aria-expanded="false" title="Fragen? Hilfe-Chat öffnen"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.3 2.4c-.5.2-.8.6-.8 1.1v.5"/><circle cx="12" cy="16.3" r=".6" fill="currentColor"/></svg><span>Hilfe</span></button>
-<span id="hdrEdit" class="hidden" style="display:flex;align-items:center;gap:4px">
+<span id="hdrEdit" class="hidden hdr-edit">
+<button type="button" class="hdr-projekt" id="hdrProjekt" title="Ort ändern"><span class="hdr-sl">/</span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21c-3.9-4-7-7.6-7-11.2a7 7 0 0 1 14 0C19 13.4 15.9 17 12 21z"/><circle cx="12" cy="9.8" r="2.6"/></svg><b id="hdrOrt">Mein Ort</b></button>
+<span class="hdr-mitte">
+<button class="ibtn" id="undo" title="Rückgängig (Strg+Z)" aria-label="Rückgängig"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4.5 9.5 9 5"/><path d="M4.5 9.5H15a4.5 4.5 0 0 1 0 9h-3"/></svg></button><button class="ibtn" id="redo" title="Wiederholen (Strg+Y)" aria-label="Wiederholen"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 4.5-4.5L15 5"/><path d="M19.5 9.5H9a4.5 4.5 0 0 0 0 9h3"/></svg></button>
 <span class="gesp" id="gespeichert" aria-live="polite"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Gespeichert</span></span>
-<button class="ibtn" id="undo" title="Rückgängig (Strg+Z)">↶</button><button class="ibtn" id="redo" title="Wiederholen (Strg+Y)">↷</button>
-<span style="width:8px"></span>
+</span>
+<span class="hdr-rechts">
 <button class="btn primary hdr-fertig" id="hdrFertig" type="button">Fertig</button>
-<button class="btn primary" id="dlBtn">Herunterladen <span style="opacity:.7">▾</span></button>
+<button class="btn primary hdr-dl" id="dlBtn"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></svg><span>Herunterladen</span></button>
+</span>
 </span>
 <div class="pop hidden" id="dlPop">
 <h4>Design herunterladen</h4>
@@ -105,7 +109,7 @@
 <button data-step="text" data-tip="Text" data-key="4" aria-label="Text"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 7.5V5h13v2.5M12 5v14M9.5 19h5"/></svg><span>Text</span></button>
 <button data-step="extras" data-tip="Extras" data-key="5" aria-label="Extras"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 4l1.6 4.2 4.2 1.6-4.2 1.6-1.6 4.2-1.6-4.2-4.2-1.6 4.2-1.6z"/><path d="M17.5 14.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg><span>Extras</span></button>
 <i class="wz-trenn" aria-hidden="true"></i>
-<button data-step="fertig" class="wz-fertig" data-tip="Fertig" data-key="6" aria-label="Fertig"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2 8.8-9.4"/></svg><span>Fertig</span></button>
+<button data-step="fertig" class="wz-fertig" data-tip="Fertig" data-key="6" aria-label="Fertig"><svg class="wz-ring" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="26" class="wz-ring-bg"/><circle cx="28" cy="28" r="26" class="wz-ring-fg" id="wzRing" pathLength="100" stroke-dasharray="0 100"/></svg><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2 8.8-9.4"/></svg><span>Fertig</span></button>
 <div class="wz-unten">
 <button type="button" class="wz-rail" data-bsp-open data-tip="Beispiele" aria-label="Beispiele ansehen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.8"/><rect x="13" y="4" width="7" height="7" rx="1.8"/><rect x="4" y="13" width="7" height="7" rx="1.8"/><rect x="13" y="13" width="7" height="7" rx="1.8"/></svg></button>
 <button type="button" class="wz-rail" data-adv-open data-tip="Alle Einstellungen" aria-label="Alle Einstellungen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
@@ -411,7 +415,16 @@
 
 <section class="stage">
 <div class="canvas checker" id="canvas"><svg id="poster" xmlns="http://www.w3.org/2000/svg"></svg></div>
-<button type="button" class="fav-btn" id="favBtn" title="Diesen Entwurf merken" aria-label="Entwurf merken"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/></svg><span>Merken</span></button>
+<div class="poster-tools" id="posterTools" role="toolbar" aria-label="Vorschau">
+<button type="button" class="pt" id="ptOut" title="Vorschau verkleinern" aria-label="Vorschau verkleinern"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+<button type="button" class="pt pt-proz" id="ptProz" title="Auf Fenstergröße einpassen">100 %</button>
+<button type="button" class="pt" id="ptIn" title="Vorschau vergrößern" aria-label="Vorschau vergrößern"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
+<i class="pt-trenn" aria-hidden="true"></i>
+<button type="button" class="pt" id="ptFit" title="Einpassen" aria-label="Poster einpassen"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/></svg></button>
+<i class="pt-trenn" aria-hidden="true"></i>
+<button type="button" class="pt fav-btn" id="favBtn" title="Diesen Entwurf merken" aria-label="Entwurf merken"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/></svg><span>Merken</span></button>
+<button type="button" class="pt" id="ptVgl" hidden title="Favoriten nebeneinander vergleichen"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="7" height="14" rx="1.5"/><rect x="13.5" y="5" width="7" height="14" rx="1.5"/></svg><span>Vergleichen</span></button>
+</div>
 <div class="mockup" id="mockup" aria-live="polite"><div class="mk-scene" id="mkScene"></div></div>
 <div class="toolhint" id="toolHint"></div>
 <div class="dock" id="dock">
