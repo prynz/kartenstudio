@@ -555,6 +555,11 @@ Object.assign(PRESETS, {
     bg: '#cdb8ea', haus: ['#b49bdc', 'none'], haupt: '#4b2d7a', neben: '#6e4fa3', weg: '#9a82c8',
     wasser: ['#8fb6f0', '#a9c6f5'], frame: '#4b2d7a', bar: '#4b2d7a', text: '#ffffff'
   }, { haus: 0.6, haupt: 3.6, neben: 1.5, weg: 0.8 }), { bg2: '#f7b9a6', ink: '#3d2266' }),
+  // Nur die 10 Farben des Album-Covers (siehe themen/sunset.js → ALBUM)
+  albumabend: mit(TH('Album-Abend', 'Exakt die Farben des Abend-Plattencovers: Taubenblau, Lavendel, Rosa, Pfirsich, Nachtviolett.', {
+    bg: '#6e74a0', haus: ['#8d769d', 'none'], haupt: '#fcf1f9', neben: '#ebc5b9', weg: '#db93a3',
+    wasser: ['#9b8bb2', '#5d4872'], gruen: ['#b17b9a', '#b17b9a'], bahn: '#2c1e3d', frame: '#2c1e3d', bar: '#2c1e3d', text: '#fcf1f9'
+  }, { haus: 0.6, haupt: 4.2, neben: 1.7, weg: 1, wasser: 1.6 }), { bg2: '#e4a9a4', bgV: true, ink: '#fcf1f9' }),
   wimmel: mit(POP('Wimmelbild', 'Illustrierter Stadtplan in Koralle, Türkis und Schieferblau.', '#ece2cc', ['#e8553e', '#e8553e', '#d9472f'], '#3d5a73', '#5cb4b6'), {}, (t) => {
     t.cls.haupt.s = '#3d5a73';
     t.cls.neben.s = '#3d5a73';

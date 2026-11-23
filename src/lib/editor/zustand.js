@@ -18,6 +18,7 @@ export function newState(presetKey, keep) {
     scale: 1,
     bg: p.bg,
     bg2: p.bg2 || '',
+    bgV: !!p.bgV,
     frame: {
       ...p.frame
     },

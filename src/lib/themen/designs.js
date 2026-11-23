@@ -19,7 +19,7 @@
  *   lupe?: number,      // hervorgehobener Kreis, außen gedämpft (Radius relativ zur Karte)
  *   lupeStrich?: boolean, gitter?: boolean, kompass?: boolean|'unten',
  *   fokusForm?: 'fleck'|'kreis'|'herz'|'raute', typoStil?: 'voll'|'umriss'|'schnitt', typoSchrift?: string, typoZeilen?: number,
- *   oben?: boolean, fadeFarbe?: string, titelFarbe?: string, subFarbe?: string, kontur?: string, himmel?: boolean,
+ *   oben?: boolean, fadeFarbe?: string, titelFarbe?: string, subFarbe?: string, kontur?: string, himmel?: boolean|'album',
  *   bezirk?: boolean, absatz?: boolean, ohneSub?: boolean, koordFarbe?: string
  * }} Lay
  * @typedef {{
@@ -415,6 +415,16 @@ export const DESIGNS = {
 		sub: { size: 44, ls: 6, font: 'SgBE' },
 		gap: 12,
 		aspect: 0.95
+	},
+	album: {
+		name: 'Album',
+		desc: 'Quadratisch wie ein Plattencover: Abendhimmel mit Skyline und Palmen, Titel in Pinselschrift – nur in den Farben des Covers.',
+		frame: { w: 0, r: 0, pad: 0 },
+		lay: { kind: 'top', textPad: 30, himmel: 'album', titelFarbe: '#fcf1f9', subFarbe: '#ebc5b9', kontur: '#5d4872' },
+		title: { size: 130, ls: 0, font: 'SgBR' },
+		sub: { size: 40, ls: 8, font: 'SgBE' },
+		gap: 10,
+		aspect: 0.58
 	},
 	bogenlinie: {
 		name: 'Bogen elegant',

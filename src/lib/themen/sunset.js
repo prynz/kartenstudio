@@ -105,8 +105,39 @@ function palme(x, y, h, neig, farbe) {
 	}
 	return o;
 }
+/** Die 10 Farben des Album-Covers (von dunkel nach hell) – das Design „Album“ nutzt nur diese */
+export const ALBUM = ['#2c1e3d', '#5d4872', '#6e74a0', '#8d769d', '#9b8bb2', '#b17b9a', '#db93a3', '#e4a9a4', '#ebc5b9', '#fcf1f9'];
+/** Skyline als Silhouette am Horizont (feste Abfolge, damit sie immer gleich aussieht) */
+function skyline(x0, x1, y, h, farbe) {
+	const B = [0.35, 0.62, 0.48, 0.9, 0.55, 0.72, 0.4, 1, 0.66, 0.5, 0.82, 0.38, 0.58, 0.7, 0.45];
+	const w = (x1 - x0) / B.length;
+	let d = `M${f1(x0)} ${f1(y)}`;
+	B.forEach((b, i) => {
+		const x = x0 + i * w,
+			t = y - h * b;
+		d += `L${f1(x)} ${f1(t)}L${f1(x + w * 0.86)} ${f1(t)}L${f1(x + w * 0.86)} ${f1(y - h * b * 0.55)}L${f1(x + w)} ${f1(y - h * b * 0.55)}`;
+	});
+	return `<path d="${d}L${f1(x1)} ${f1(y)}Z" fill="${farbe}"/>`;
+}
+/** Album-Abend: Himmel Taubenblau → Lavendel → Rosa → Pfirsich, Skyline, Palmen */
+function albumHimmel(g) {
+	const W = g.W,
+		hh = g.himmelH,
+		A = ALBUM;
+	let o = `<defs><linearGradient id="gHimmel" x1="0" y1="0" x2="0" y2="${f1(hh)}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${A[2]}"/><stop offset=".42" stop-color="${A[4]}"/><stop offset=".78" stop-color="${A[6]}"/><stop offset="1" stop-color="${A[7]}"/></linearGradient>`;
+	o += `<radialGradient id="gGlut" cx=".5" cy="1" r=".6"><stop offset="0" stop-color="${A[8]}" stop-opacity=".9"/><stop offset="1" stop-color="${A[8]}" stop-opacity="0"/></radialGradient>`;
+	// alles Himmlische bleibt über dem Horizont
+	o += `<clipPath id="cHimmel"><rect width="${f1(W)}" height="${f1(hh)}"/></clipPath></defs>`;
+	o += `<g id="himmel" clip-path="url(#cHimmel)" pointer-events="none"><rect width="${f1(W)}" height="${f1(hh)}" fill="url(#gHimmel)"/>`;
+	o += `<ellipse cx="${f1(W / 2)}" cy="${f1(hh)}" rx="${f1(W * 0.6)}" ry="${f1(hh * 0.45)}" fill="url(#gGlut)"/>`;
+	o += skyline(W * 0.2, W * 0.8, hh, hh * 0.32, A[3]) + skyline(W * 0.28, W * 0.7, hh, hh * 0.2, A[1]);
+	o += palme(W * 0.06, hh, hh * 0.86, 0.55, A[0]) + palme(W * 0.16, hh, hh * 0.6, 0.35, A[1]) + palme(W * 0.94, hh, hh * 0.78, -0.6, A[0]);
+	o += `<rect y="${f1(hh - 3)}" width="${f1(W)}" height="6" fill="${A[0]}"/></g>`;
+	return o;
+}
 export function himmelSVG(g) {
 	if (!g.L.himmel || !g.himmelH) return '';
+	if (g.L.himmel === 'album') return albumHimmel(g);
 	const W = g.W,
 		hh = g.himmelH;
 	const r = Math.min(W * 0.27, hh * 0.44),

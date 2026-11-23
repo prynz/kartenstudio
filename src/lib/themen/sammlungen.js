@@ -14,8 +14,8 @@ export const THEMENWELTEN = [
 		name: 'Sunset City',
 		desc: 'Spielkarten-Look und Miami-Abendstimmung: Neon, Palmen, Sonnenuntergang.',
 		neu: true,
-		stile: ['spielkarte', 'sunset', 'nachtfahrt', 'pastellabend', 'neon', 'puls'],
-		designs: ['guide', 'cover', 'plakette', 'sonnenuntergang', 'nachtstadt', 'randlos']
+		stile: ['albumabend', 'spielkarte', 'sunset', 'nachtfahrt', 'pastellabend', 'neon', 'puls'],
+		designs: ['album', 'guide', 'cover', 'plakette', 'sonnenuntergang', 'nachtstadt', 'randlos']
 	},
 	{
 		id: 'klassisch',

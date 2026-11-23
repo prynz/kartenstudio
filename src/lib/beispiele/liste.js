@@ -42,6 +42,7 @@ export const BEISPIELE = [
 	{ id: 'wuerzburg-typoschnitt', titel: 'Karte in Buchstaben', text: 'Der Ort erscheint nur im eigenen Namen', ort: 'wuerzburg', breite: 3200, preset: 'tanne', design: 'typoschnitt' },
 	{ id: 'erlangen-typopinsel', titel: 'Typo Pinsel', text: 'Großer Pinselschriftzug quer über der Stadt', ort: 'erlangen', breite: 2400, preset: 'schiefer', design: 'typopinsel' },
 	// Themenwelt „Sunset City“
+	{ id: 'regensburg-album', titel: 'Album-Abend', text: 'Exakt die Farben des Abend-Plattencovers', ort: 'regensburg', breite: 2400, preset: 'albumabend', design: 'album' },
 	{ id: 'lindau-spielkarte', titel: 'Spielkarte', text: 'Grünes Land, türkiser Küstensaum – wie eine Videospiel-Karte', ort: 'lindau', breite: 2600, preset: 'spielkarte', design: 'guide', sub: 'Bodensee' },
 	{ id: 'regensburg-sonnenuntergang', titel: 'Sonnenuntergang', text: 'Retro-Sonne und Palmen über der Stadt', ort: 'regensburg', breite: 2600, preset: 'sunset', design: 'sonnenuntergang' },
 	{ id: 'nuernberg-cover', titel: 'Cover-Raster', text: 'Panels und Titel-Plakette wie ein Spiele-Cover', ort: 'nuernberg', breite: 2600, preset: 'nachtfahrt', design: 'cover' },

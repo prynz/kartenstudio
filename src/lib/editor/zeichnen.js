@@ -67,7 +67,8 @@ export function geo() {
   } else if (L.kind === 'top' && L.himmel) {
     // Retro-Himmel über der Karte, Text unten im Himmel
     const tp = Math.max(L.textPad, p);
-    himmelH = Math.max(block + 2 * tp, MW * 0.55);
+    // Album: niedrigerer Himmel, damit das ganze Poster quadratisch wird
+    himmelH = Math.max(block + 2 * tp, MW * (L.himmel === 'album' ? 0.42 : 0.55));
     top = sw + himmelH - tp * 0.7 - block;
     my = sw + himmelH;
     barTop = my + MH;
@@ -930,7 +931,7 @@ export function buildSVG(forExport) {
   o += `<clipPath id="cOut"><rect x="0" y="0" width="${g.W.toFixed(1)}" height="${g.H.toFixed(1)}" rx="${R + f.w / 2}" ry="${R + f.w / 2}"/></clipPath></defs>`;
   const papierF = g.L.papier || app.S.bg;
   const verlauf = app.S.bg2 && /^#[0-9a-f]{3,8}$/i.test(app.S.bg2) && app.S.bg !== 'none';
-  if (verlauf) o += `<defs><linearGradient id="gBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${app.S.bg}"/><stop offset="1" stop-color="${app.S.bg2}"/></linearGradient></defs>`;
+  if (verlauf) o += `<defs><linearGradient id="gBg" x1="0" y1="0" x2="${app.S.bgV ? 0 : 1}" y2="1"><stop offset="0" stop-color="${app.S.bg}"/><stop offset="1" stop-color="${app.S.bg2}"/></linearGradient></defs>`;
  if (schnitt) {
     // Karte nur in den Buchstaben: Maske aus den Buchstaben, außen Papier
     const T = typoTexte(g);

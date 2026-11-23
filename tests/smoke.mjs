@@ -798,6 +798,25 @@ await run('Designs nach Vorbildern: Fokus, Studie, Steckbrief, Kasten, Lupe, Dos
 	ok(!!(await page.$('#poster #himmel')) && (await page.getAttribute('#titel', 'font-family')) === 'SgBE', 'Sonnenuntergang: Himmel mit Sonne und Palmen, Plakatschrift');
 	await design('cover');
 	ok(!!(await page.$('#poster #panels')) && !!(await page.$('#poster #plakette #titel')), 'Cover-Raster: Panels und Titel-Plakette');
+	// Album: nur die 10 Farben des Covers (Stil „Album-Abend“ + Design „Album“)
+	await page.click('#wzSteps button[data-step="stil"]');
+	await page.click('#wzStyles [data-p="albumabend"]');
+	await page.waitForTimeout(400);
+	await page.click('#wzSteps button[data-step="design"]');
+	await design('album');
+	const fremd = await page.evaluate(() => {
+		const A = ['#2c1e3d', '#5d4872', '#6e74a0', '#8d769d', '#9b8bb2', '#b17b9a', '#db93a3', '#e4a9a4', '#ebc5b9', '#fcf1f9'];
+		const f = new Set();
+		document.querySelectorAll('#poster *').forEach((e) => {
+			if (e.id === 'vorschau' || e.closest('#treffer') || e.closest('#sel')) return;
+			for (const at of ['fill', 'stroke', 'stop-color']) {
+				const v = (e.getAttribute(at) || '').toLowerCase();
+				if (/^#[0-9a-f]{6}$/.test(v) && !A.includes(v)) f.add(v);
+			}
+		});
+		return [...f];
+	});
+	ok(fremd.length === 0, 'Album: nur die 10 Farben des Covers' + (fremd.length ? ' – fremd: ' + fremd.join(', ') : ''));
 	await design('guide');
 	ok((await page.getAttribute('#titel', 'stroke')) === '#0b1f3a', 'Map Guide: Titel mit Kontur');
 	await page.click('#wzDesignKat [data-w=""]');
