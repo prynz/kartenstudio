@@ -817,3 +817,49 @@ body:not(.wiz-on) .fav-btn,body.mk-on .fav-btn{display:none}
 .wz-kat button i{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.03em;margin-left:5px;padding:2px 6px;border-radius:999px;background:linear-gradient(90deg,#ff4fa3,#ff8a3d);color:#fff;vertical-align:1px}
 .wz-cards>button.nk{display:none!important}
 @media(max-width:900px){.wz-kat{margin:0 -16px 10px;padding:0 16px 2px;scroll-padding-inline:16px}}
+
+/* =========================================================
+   Werkzeugleiste (neu): einheitliche Symbole, Gruppen, gleitende Markierung
+   ========================================================= */
+.wz-ind{position:absolute;left:0;top:0;z-index:0;border-radius:14px;background:#eceef4;pointer-events:none;transition:transform .28s cubic-bezier(.2,.8,.2,1),width .28s cubic-bezier(.2,.8,.2,1),height .28s cubic-bezier(.2,.8,.2,1),opacity .2s;will-change:transform}
+.wz-ind.weg{opacity:0}
+.wz-steps button{position:relative;z-index:1}
+.wz-steps button.on,.wz-steps button.on:hover{background:transparent}
+.wz-steps button svg{transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.wz-steps button:active svg{transform:scale(.9)}
+.wz-steps .wz-trenn,.wz-unten{display:none}
+/* Trennlinie ist ein <i> – alte Kreis-Regel für .wz-steps i aufheben */
+.wz-steps .wz-trenn{width:auto;height:auto;border:0;border-radius:0;background:none}
+@media(prefers-reduced-motion:reduce){.wz-ind,.wz-steps button svg{transition:none}}
+
+@media(min-width:901px){
+  .app{grid-template-columns:432px minmax(0,1fr)}
+  .wiz{grid-template-columns:72px minmax(0,1fr)}
+  .wz-steps{align-items:center;gap:6px;padding:14px 0 16px;background:#fbfbfd}
+  .wz-steps button{flex:0 0 46px;width:46px;height:46px;padding:0;display:grid;place-items:center;border-radius:14px;color:#6b7280}
+  .wz-steps button:hover{background:#f2f3f7;color:var(--ink)}
+  .wz-steps button.on{color:var(--slate)}
+  .wz-steps button.on svg{transform:scale(1.06)}
+  /* Beschriftung nur für Vorleser – sichtbar ist das Namensschild beim Überfahren */
+  .wz-steps button > span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .wz-ind{left:13px;width:46px}
+  .wz-ind::before{content:'';position:absolute;left:-13px;top:11px;bottom:11px;width:3px;border-radius:0 3px 3px 0;background:var(--slate)}
+  .wz-steps .wz-trenn{display:block;flex:0 0 1px;width:26px;height:1px;background:var(--line);margin:6px 0}
+  .wz-fertig{background:var(--slate)!important;color:#fff!important;border-radius:50%!important;box-shadow:0 6px 16px rgba(38,44,58,.28);transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}
+  .wz-fertig:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(38,44,58,.34)}
+  .wz-fertig.on{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--slate),0 6px 16px rgba(38,44,58,.28)}
+  .wz-unten{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:auto;padding-top:10px;border-top:1px solid var(--line)}
+  /* Namensschild beim Überfahren (mit Tastenkürzel) */
+  .wz-steps [data-tip]::after{content:attr(data-tip);position:absolute;left:calc(100% + 12px);top:50%;transform:translate(-4px,-50%);padding:6px 10px;border-radius:9px;background:var(--ink);color:#fff;font-size:12.5px;font-weight:550;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .18s cubic-bezier(.2,.8,.2,1),transform .18s cubic-bezier(.2,.8,.2,1);z-index:40;box-shadow:0 6px 18px rgba(20,24,35,.18)}
+  .wz-steps [data-key]::after{content:attr(data-tip) "  " attr(data-key)}
+  .wz-steps [data-tip]:hover::after,.wz-steps [data-tip]:focus-visible::after{opacity:1;transform:translate(0,-50%)}
+  /* Hilfe und Erweitert stehen jetzt in der Leiste */
+  /* Startseite: Hilfe bleibt in der Kopfzeile (dort gibt es keine Leiste) */
+  body.wiz-on:not(:has(#landing:not(.hidden))) #chatBtn,.wz-foot .wz-advbtn{display:none}
+  .wz-steps{overflow:visible}
+}
+@media(max-width:900px){
+  .wz-steps .wz-ind{display:block;top:5px;height:calc(100% - 10px - env(safe-area-inset-bottom))!important;border-radius:12px}
+  .wz-steps button.on{background:transparent}
+  .wz-fertig.on{color:var(--slate)}
+}

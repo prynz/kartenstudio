@@ -96,7 +96,7 @@ export function goStep(ziel, animate = true) {
 	saveDraftSoon();
 	all('.wz-pane').forEach((p) => p.classList.toggle('on', GRUPPE[next].includes(/** @type {string} */ (p.dataset.step))));
 	const idx = STEPS.indexOf(next);
-	all('#wzSteps button').forEach((b, i) => {
+	all('#wzSteps button[data-step]').forEach((b, i) => {
 		b.classList.toggle('on', i === idx);
 
 		b.setAttribute('aria-current', i === idx ? 'step' : 'false');
@@ -108,6 +108,7 @@ export function goStep(ziel, animate = true) {
 	const letzter = idx === STEPS.length - 1;
 	$('wiz').classList.toggle('wz-last', letzter);
 	$('wzNextLabel').textContent = letzter ? 'Download' : LABEL[STEPS[idx + 1]];
+	requestAnimationFrame(() => markierung());
 	if (!letzter) $('wzNextSmall').textContent = 'Weiter';
 	const pane = document.querySelector(`.wz-pane[data-step="${GRUPPE[next][0]}"]`);
 	if (animate && dir && pane && !reducedMotion()) {
@@ -749,9 +750,32 @@ function card(b, html) {
 	return b;
 }
 
+
+/**
+ * Gleitende Markierung in der Werkzeugleiste: ein Element, das nur verschoben wird
+ * (transform – kein Neu-Vermessen der Seite), PC senkrecht, Handy waagrecht.
+ */
+function markierung() {
+	const ind = document.getElementById('wzInd');
+	const b = /** @type {HTMLElement|null} */ (document.querySelector('#wzSteps button[data-step].on'));
+	if (!ind || !b) return;
+	const quer = matchMedia('(max-width: 900px)').matches;
+	// „Fertig“ hat am PC einen eigenen runden Knopf – dort keine Markierung
+	ind.classList.toggle('weg', !quer && b.classList.contains('wz-fertig'));
+	if (quer) {
+		ind.style.transform = `translate3d(${b.offsetLeft}px,0,0)`;
+		ind.style.width = b.offsetWidth + 'px';
+		ind.style.height = '';
+	} else {
+		ind.style.transform = `translate3d(0,${b.offsetTop}px,0)`;
+		ind.style.height = b.offsetHeight + 'px';
+		ind.style.width = '';
+	}
+}
+
 export function initWizard() {
 	// Schritte
-	all('#wzSteps button').forEach(
+	all('#wzSteps button[data-step]').forEach(
 		(b) =>
 			(b.onclick = () => {
 				const t = /** @type {string} */ (b.dataset.step);
@@ -762,6 +786,21 @@ export function initWizard() {
 				sheetZeigen(true);
 			})
 	);
+	// Leiste: Hilfe öffnet den Chat; Markierung bei Größenänderung mitnehmen
+	$('railHilfe').onclick = () => $('chatBtn').click();
+	// … auch wenn die Leiste erst sichtbar wird (nach der Startseite) oder sich ihre Größe ändert
+	if ('ResizeObserver' in window) new ResizeObserver(() => markierung()).observe($('wzSteps'));
+	else addEventListener('resize', () => requestAnimationFrame(markierung));
+	// Tasten 1–6 wechseln die Werkzeuge (nicht beim Tippen in Feldern)
+	document.addEventListener('keydown', (e) => {
+		const t = /** @type {HTMLElement} */ (e.target);
+		if (e.ctrlKey || e.metaKey || e.altKey || !app.DATA || /INPUT|TEXTAREA|SELECT/.test(t.tagName) || t.isContentEditable) return;
+		const n = +e.key;
+		if (n >= 1 && n <= STEPS.length) {
+			if (advOpen) showAdvanced(false);
+			goStep(STEPS[n - 1]);
+		}
+	});
 	$('wzBack').onclick = () => goStep(STEPS[Math.max(0, STEPS.indexOf(step) - 1)]);
 	$('wzNext').onclick = () => {
 		if (step !== 'fertig') return goStep(STEPS[STEPS.indexOf(step) + 1]);

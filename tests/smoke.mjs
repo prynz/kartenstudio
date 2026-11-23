@@ -130,7 +130,7 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 	await page.waitForTimeout(200);
 	ok((await page.textContent('#poster')).includes('MEIN DORF'), 'Titel im Assistenten geändert');
 	// Erweiterte Einstellungen: alle Detailregler weiterhin erreichbar
-	await page.click('#wzAdv');
+	await page.click('#wzSteps [data-adv-open]');
 	await page.waitForTimeout(400);
 	ok(await page.locator('#adv').isVisible(), 'Erweiterte Einstellungen öffnen');
 	await page.click('.sec[data-s="elemente"] > .sh');
@@ -495,7 +495,7 @@ await run('Desktop – Hilfe-Chat', { viewport: { width: 1440, height: 900 } }, 
 	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.waitForTimeout(500);
-	await page.click('#chatBtn');
+	await page.click('#railHilfe');
 	await page.fill('#chatIn', 'Gibt es einen Sternenhimmel?');
 	await page.press('#chatIn', 'Enter');
 	await page.waitForTimeout(400);
