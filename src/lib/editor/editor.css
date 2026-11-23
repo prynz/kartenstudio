@@ -2,6 +2,7 @@
 @font-face{font-family:'SgXB';src:url('../assets/fonts/inter-xb.woff') format('woff');font-display:block}
 @font-face{font-family:'SgMD';src:url('../assets/fonts/inter-md.woff') format('woff');font-display:block}
 @font-face{font-family:'SgFR';src:url('../assets/fonts/frak.woff') format('woff');font-display:block}
+@font-face{font-family:'SgBE';src:url('../assets/fonts/bebas.woff') format('woff');font-display:block}
 @font-face{font-family:'SgBR';src:url('../assets/fonts/brush.woff') format('woff');font-display:block}
 @font-face{font-family:'SgSC';src:url('../assets/fonts/script.woff') format('woff');font-display:block}
 :root{--ink:#1b1f2a;--slate:#262c3a;--muted:#6b7080;--soft:#9a9eab;--line:#e7e5e0;--line2:#d9d6cf;--canvas:#eceae5;--panel:#fff;--hover:#f5f4f1;--accent:#3b6ef5;--accentbg:#eef3ff;--ok:#1f7a3d;--err:#b42318;--r:12px}
@@ -807,3 +808,12 @@ body:not(.wiz-on) .fav-btn,body.mk-on .fav-btn{display:none}
 .wz-hoch{cursor:pointer}
 .wz-zeile{display:flex;gap:8px}
 .wz-zeile .inp{flex:1;min-width:0}
+
+/* Themenwelten (Kategorien für Stile und Designs) */
+.wz-kat{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:2px 0 12px;padding-bottom:2px}
+.wz-kat::-webkit-scrollbar{display:none}
+.wz-kat button{flex:0 0 auto;height:34px;padding:0 13px;border-radius:999px;border:1.5px solid var(--line2);background:#fff;font-size:13px;font-weight:550;color:var(--ink);white-space:nowrap;transition:background .2s cubic-bezier(.2,.8,.2,1),border-color .2s,color .2s}
+.wz-kat button.on{background:var(--slate);border-color:var(--slate);color:#fff}
+.wz-kat button i{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.03em;margin-left:5px;padding:2px 6px;border-radius:999px;background:linear-gradient(90deg,#ff4fa3,#ff8a3d);color:#fff;vertical-align:1px}
+.wz-cards>button.nk{display:none!important}
+@media(max-width:900px){.wz-kat{margin:0 -16px 10px;padding:0 16px 2px;scroll-padding-inline:16px}}

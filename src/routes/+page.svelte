@@ -149,6 +149,7 @@
 <div class="vs-grid" id="wzVorschlaege"></div>
 <div class="lab">Oder selbst wählen</div>
 <div class="tabs2 wz-mode wz-mode3" id="wzMode"><button data-m="art">Gezeichnet</button><button data-m="std">Landkarte</button><button data-m="sterne">Sternenhimmel</button><button data-m="koord">Koordinaten</button><button data-m="wolke">Wortwolke</button></div>
+<div class="wz-kat" id="wzStilKat" role="tablist" aria-label="Themenwelten"></div>
 <div class="wz-cards kurz" id="wzStyles"></div>
 <button type="button" class="wz-link wz-alle" data-alle="wzStyles">Alle Farbstile anzeigen ›</button>
 <div class="wz-hoehe" id="wzHoehe"><label class="tog wz-tog"><input type="checkbox" id="hoehenOn"><span>Höhenlinien (Berge &amp; Täler)</span></label><p class="wz-hint" id="hoehenInfo"></p></div>
@@ -183,6 +184,7 @@
 <section class="wz-pane" data-step="design">
 <h3>Design</h3>
 <p class="wz-hint">Wie Rahmen, Karte und Text angeordnet sind. Die Farben kommen vom Stil.</p>
+<div class="wz-kat" id="wzDesignKat" role="tablist" aria-label="Themenwelten"></div>
 <div class="wz-cards wz-designs kurz" id="wzDesigns"></div>
 <button type="button" class="wz-link wz-alle" data-alle="wzDesigns">Alle Designs anzeigen ›</button>
 <div class="hidden" id="wzFokus"><div class="lab">Fokus anpassen</div>
@@ -382,7 +384,7 @@
 <div class="sec" data-s="text"><button class="sh"><span class="num">05</span><span class="tt">Text</span><span class="sum" id="sumT"></span><span class="chev">▾</span></button><div class="sb">
 <div class="tabs2"><button id="tabTitle" class="on">Titel</button><button id="tabSub">Untertitel</button></div>
 <div class="row"><input type="text" class="inp" id="tText" placeholder="Text eingeben"><label class="tog" title="anzeigen"><input type="checkbox" id="tOn"></label></div>
-<div class="row"><span class="k">Schrift</span><select class="inp" id="tFont"><option value="SgXB">Inter Extra Bold</option><option value="SgMD">Inter Medium</option><option value="SgFR">Fraktur</option><option value="SgSC">Schreibschrift</option><option value="SgBR">Pinsel</option></select></div>
+<div class="row"><span class="k">Schrift</span><select class="inp" id="tFont"><option value="SgXB">Inter Extra Bold</option><option value="SgMD">Inter Medium</option><option value="SgFR">Fraktur</option><option value="SgSC">Schreibschrift</option><option value="SgBR">Pinsel</option><option value="SgBE">Plakat (schmal)</option></select></div>
 <div class="row"><span class="k">Größe</span><input type="range" id="tSize" min="10" max="160" step="1"><span class="v" id="tSizev"></span></div>
 <div class="row"><span class="k">Abstand</span><input type="range" id="tLs" min="-5" max="40" step="0.5"><span class="v" id="tLsv"></span></div>
 <div class="row"><span class="k">Farbe</span><div class="col"><input type="color" id="tColor"><div class="sw" data-for="tColor"></div></div></div>

@@ -109,8 +109,9 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 			const t = document.querySelector('#poster #titel');
 			const vb = document.getElementById('poster').viewBox.baseVal;
 			if (!t) return false;
-			const b = t.getBBox();
-			return b.y >= 0 && b.y + b.height <= vb.height && b.x >= 0 && b.x + b.width <= vb.width;
+			// Bildschirm-Rechtecke: stimmen auch bei gedrehten/verschobenen Gruppen (Plakette, Cover)
+			const b = t.getBoundingClientRect(), p = document.getElementById('poster').getBoundingClientRect();
+			return vb.width > 0 && b.top >= p.top - 1 && b.bottom <= p.bottom + 1 && b.left >= p.left - 1 && b.right <= p.right + 1;
 		});
 		if (!okDesign) bad.push(d);
 	}
@@ -782,7 +783,28 @@ await run('Designs nach Vorbildern: Fokus, Studie, Steckbrief, Kasten, Lupe, Dos
 	await page.click('#wzFormTextGo');
 	await page.waitForTimeout(800);
 	ok((await page.getAttribute('#cMap path', 'd')) !== katze, 'Eigene Form: Zahl als Form');
+	// Themenwelt „Sunset City“: Filter, Designs mit Himmel, Panels, Plakette
+	await page.click('#wzSteps button[data-step="stil"]');
+	await page.click('#wzStilKat [data-w="sunset"]');
+	await page.waitForTimeout(300);
+	const sichtbareStile = await page.$$eval('#wzStyles > button', (b) => b.filter((x) => x.offsetParent !== null).map((x) => x.dataset.p));
+	ok(sichtbareStile.includes('spielkarte') && !sichtbareStile.includes('umriss'), `Themenwelt filtert die Stile (${sichtbareStile.length} sichtbar)`);
+	await page.click('#wzStyles [data-p="sunset"]');
+	await page.waitForTimeout(400);
+	ok((await page.$$eval('#kartenhintergrund, #kartenflaeche', (e) => e.map((x) => x.getAttribute('fill')))).includes('url(#gBg)'), 'Stil „Sunset“ mit Farbverlauf');
+	await page.click('#wzSteps button[data-step="design"]');
+	ok(await page.locator('#wzDesignKat [data-w="sunset"]').evaluate((b) => b.classList.contains('on')), 'Themenwelt gilt auch bei den Designs');
+	await design('sonnenuntergang');
+	ok(!!(await page.$('#poster #himmel')) && (await page.getAttribute('#titel', 'font-family')) === 'SgBE', 'Sonnenuntergang: Himmel mit Sonne und Palmen, Plakatschrift');
+	await design('cover');
+	ok(!!(await page.$('#poster #panels')) && !!(await page.$('#poster #plakette #titel')), 'Cover-Raster: Panels und Titel-Plakette');
+	await design('guide');
+	ok((await page.getAttribute('#titel', 'stroke')) === '#0b1f3a', 'Map Guide: Titel mit Kontur');
+	await page.click('#wzDesignKat [data-w=""]');
+	await page.waitForTimeout(200);
+	await page.evaluate(() => document.querySelectorAll('.wz-cards.kurz').forEach((e) => e.classList.remove('kurz')));
 	await design('einsatz');
+	ok((await page.getAttribute('#untertitel', 'font-family').catch(() => null)) !== 'SgBE', 'Nach Sunset-Design wieder eigene Untertitel-Schrift');
 	ok((await page.$('#poster #einsatz')) && (await page.$('#poster #absatz')) && !(await page.$('#poster #untertitel')), 'Einsatzkarte: rotes Viertel, Text oben, ohne Untertitel');
 	await page.fill('#wzInfoAbsatz', 'Hier fing alles an.');
 	await page.waitForTimeout(300);

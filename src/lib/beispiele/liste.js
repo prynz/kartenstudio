@@ -41,6 +41,10 @@ export const BEISPIELE = [
 	{ id: 'bamberg-washi', titel: 'Fokus Kreis', text: 'Roter Punkt wie eine Sonne über dem Ort', ort: 'bamberg', breite: 2200, preset: 'washi', design: 'fokuskreis' },
 	{ id: 'wuerzburg-typoschnitt', titel: 'Karte in Buchstaben', text: 'Der Ort erscheint nur im eigenen Namen', ort: 'wuerzburg', breite: 3200, preset: 'tanne', design: 'typoschnitt' },
 	{ id: 'erlangen-typopinsel', titel: 'Typo Pinsel', text: 'Großer Pinselschriftzug quer über der Stadt', ort: 'erlangen', breite: 2400, preset: 'schiefer', design: 'typopinsel' },
+	// Themenwelt „Sunset City“
+	{ id: 'lindau-spielkarte', titel: 'Spielkarte', text: 'Grünes Land, türkiser Küstensaum – wie eine Videospiel-Karte', ort: 'lindau', breite: 2600, preset: 'spielkarte', design: 'guide', sub: 'Bodensee' },
+	{ id: 'regensburg-sonnenuntergang', titel: 'Sonnenuntergang', text: 'Retro-Sonne und Palmen über der Stadt', ort: 'regensburg', breite: 2600, preset: 'sunset', design: 'sonnenuntergang' },
+	{ id: 'nuernberg-cover', titel: 'Cover-Raster', text: 'Panels und Titel-Plakette wie ein Spiele-Cover', ort: 'nuernberg', breite: 2600, preset: 'nachtfahrt', design: 'cover' },
 	{ id: 'passau-lupe', titel: 'Lupe', text: 'Die Altstadt im Kreis hervorgehoben', ort: 'passau', breite: 2400, preset: 'schwarzweiss', design: 'lupe' },
 	{ id: 'nuernberg-koenigsblau', titel: 'Königsblau', text: 'Zarte Straßen, Wasser und Parks in Blau', ort: 'nuernberg', breite: 3000, preset: 'koenigsblau', design: 'galerie' },
 	{ id: 'wuerzburg-wimmel', titel: 'Wimmelbild', text: 'Illustrierter Stadtplan in Koralle und Türkis', ort: 'wuerzburg', breite: 1300, preset: 'wimmel', design: 'polaroid' },

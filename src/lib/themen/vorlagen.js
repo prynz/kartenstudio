@@ -538,6 +538,23 @@ Object.assign(PRESETS, {
   schiefer: MONO('Schiefer', 'Kühles Schiefergrau mit hellen Linien – zeitlos für große Buchstaben.', '#4a5568', '#e3e7ee', '#66728a', '#3f4859'),
   flamingo: MONO('Flamingo', 'Kräftiges Rosa mit hellen Straßen – fröhlich und modern.', '#e98aa0', '#fde6ec', '#f0a5b6', '#df7891'),
   tanne: MONO('Tanne', 'Dunkles Tannengrün mit hellen Linien.', '#2f5a46', '#dcebe2', '#4a7560', '#284e3c'),
+  // Themenwelt „Sunset City“: Spielkarten- und Miami-Look (eigene Farben, keine Marken)
+  spielkarte: mit(TH('Spielkarte', 'Grünes Land, tiefblaues Wasser mit türkisem Küstensaum, graue Stadt – wie eine Videospiel-Karte.', {
+    bg: '#a6d65b', haus: ['#80868f', '#c9cdd3'], haupt: '#3f444c', neben: '#5d636c', weg: '#8d9299',
+    wasser: ['#63d3e8', '#1f72c4'], gruen: ['#86c24a', '#86c24a'], bahn: '#4a4f57', frame: '#0b2f5b', bar: '#0b2f5b', text: '#ffffff'
+  }, { haus: 0.6, haupt: 4.6, neben: 2.2, weg: 1.2, wasser: 9 }), { ink: '#0b2f5b' }),
+  sunset: mit(TH('Sunset', 'Rosa-violetter Sonnenuntergang, helle Straßen – Miami-Abendstimmung.', {
+    bg: '#ff7eb3', haus: ['#ffb3d1', 'none'], haupt: '#fff1f7', neben: '#ffd6ea', weg: '#f7b6d6',
+    wasser: ['#86dbff', '#4b3fa8'], frame: '#2b1055', bar: '#2b1055', text: '#ffffff'
+  }, { haus: 0.6, haupt: 4.4, neben: 1.8, weg: 1 }), { bg2: '#6a2c91', ink: '#ffffff' }),
+  nachtfahrt: mit(TH('Nachtfahrt', 'Pinke Hauptstraßen und violette Gassen auf tiefem Nachtviolett, türkises Wasser.', {
+    bg: '#140a2b', haus: ['#3b1d63', 'none'], haupt: '#ff5fa2', neben: '#8b5cf6', weg: '#5b3aa0',
+    wasser: ['#22d3ee', '#0d2a4a'], frame: '#ff5fa2', bar: '#ff5fa2', text: '#140a2b'
+  }, { haus: 0.6, haupt: 4.2, neben: 1.6, weg: 0.9, wasser: 2.2 }), { bg2: '#3a0d4f', ink: '#ff8fc0' }),
+  pastellabend: mit(TH('Pastell-Abend', 'Lavendel geht in Pfirsich über, Straßen in dunklem Violett – sanft wie ein Plattencover.', {
+    bg: '#cdb8ea', haus: ['#b49bdc', 'none'], haupt: '#4b2d7a', neben: '#6e4fa3', weg: '#9a82c8',
+    wasser: ['#8fb6f0', '#a9c6f5'], frame: '#4b2d7a', bar: '#4b2d7a', text: '#ffffff'
+  }, { haus: 0.6, haupt: 3.6, neben: 1.5, weg: 0.8 }), { bg2: '#f7b9a6', ink: '#3d2266' }),
   wimmel: mit(POP('Wimmelbild', 'Illustrierter Stadtplan in Koralle, Türkis und Schieferblau.', '#ece2cc', ['#e8553e', '#e8553e', '#d9472f'], '#3d5a73', '#5cb4b6'), {}, (t) => {
     t.cls.haupt.s = '#3d5a73';
     t.cls.neben.s = '#3d5a73';

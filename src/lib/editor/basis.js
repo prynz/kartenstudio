@@ -6,8 +6,9 @@ import FONT_MD_URL from '../assets/fonts/inter-md.woff?inline';
 import FONT_FR_URL from '../assets/fonts/frak.woff?inline';
 import FONT_SC_URL from '../assets/fonts/script.woff?inline';
 import FONT_BR_URL from '../assets/fonts/brush.woff?inline';
+import FONT_BE_URL from '../assets/fonts/bebas.woff?inline';
 const b64 = (u) => u.slice(u.indexOf(',') + 1);
-const FONT_XB = b64(FONT_XB_URL), FONT_MD = b64(FONT_MD_URL), FONT_FR = b64(FONT_FR_URL), FONT_SC = b64(FONT_SC_URL), FONT_BR = b64(FONT_BR_URL);
+const FONT_XB = b64(FONT_XB_URL), FONT_MD = b64(FONT_MD_URL), FONT_FR = b64(FONT_FR_URL), FONT_SC = b64(FONT_SC_URL), FONT_BR = b64(FONT_BR_URL), FONT_BE = b64(FONT_BE_URL);
 
 export const NS = 'http://www.w3.org/2000/svg';
 export const FONTDATA = {
@@ -15,14 +16,16 @@ export const FONTDATA = {
   SgMD: FONT_MD,
   SgFR: FONT_FR,
   SgSC: FONT_SC,
-  SgBR: FONT_BR
+  SgBR: FONT_BR,
+  SgBE: FONT_BE
 };
 export const CAP = {
   SgXB: 0.7275,
   SgMD: 0.7275,
   SgFR: 0.684,
   SgSC: 0.75,
-  SgBR: 0.72
+  SgBR: 0.72,
+  SgBE: 0.7
 };
 export const SWATCH = ['#262c3a', '#000000', '#ffffff', '#a6a6a6', '#c62828', '#1f6f43', '#b07d2b', '#2f5fa8'];
 export const CLS = {

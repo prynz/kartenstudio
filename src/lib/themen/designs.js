@@ -3,7 +3,7 @@
 // wie Rahmen, Karte und Text angeordnet sind. Beides ist frei kombinierbar.
 
 /**
- * @typedef {'bar'|'bartop'|'below'|'top'|'over'|'typo'|'steckbrief'|'kasten'} LayKind
+ * @typedef {'bar'|'bartop'|'below'|'top'|'over'|'typo'|'steckbrief'|'kasten'|'cover'|'plakette'} LayKind
  * @typedef {{
  *   kind: LayKind,      // + bartop: Farbbalken oben
  *   rule?: boolean,     // Zierlinie zwischen Titel und Untertitel      // bar: Text im Farbbalken unten · below: Text frei unter der Karte · top: Text über der Karte · over: Text über der Karte gelegt
@@ -19,6 +19,7 @@
  *   lupe?: number,      // hervorgehobener Kreis, außen gedämpft (Radius relativ zur Karte)
  *   lupeStrich?: boolean, gitter?: boolean, kompass?: boolean|'unten',
  *   fokusForm?: 'fleck'|'kreis'|'herz'|'raute', typoStil?: 'voll'|'umriss'|'schnitt', typoSchrift?: string, typoZeilen?: number,
+ *   oben?: boolean, fadeFarbe?: string, titelFarbe?: string, subFarbe?: string, kontur?: string, himmel?: boolean,
  *   bezirk?: boolean, absatz?: boolean, ohneSub?: boolean, koordFarbe?: string
  * }} Lay
  * @typedef {{
@@ -27,7 +28,7 @@
  *   bar?: boolean,
  *   lay: Partial<Lay>,
  *   title?: {size?:number, ls?:number, font?:string},
- *   sub?: {size?:number, ls?:number},
+ *   sub?: {size?:number, ls?:number, font?:string},
  *   aspect?: number,
  *   gap?: number        // Abstand Titel–Untertitel
  * }} Design
@@ -379,6 +380,42 @@ export const DESIGNS = {
 		sub: { size: 30, ls: 2 },
 		aspect: 1.33
 	},
+	// ---------- Themenwelt „Sunset City“ (Spielkarten- und Miami-Look, siehe themen/sunset.js) ----------
+	guide: {
+		name: 'Map Guide',
+		desc: 'Randlose Karte, oben ein großer Titel in Plakatschrift mit Kontur – wie eine Spielkarten-Übersicht.',
+		frame: { w: 0, r: 0, pad: 0 },
+		lay: { kind: 'over', oben: true, fade: true, fadeFarbe: '#06203f', titelFarbe: '#ffffff', subFarbe: '#ffd43b', kontur: '#0b1f3a' },
+		title: { size: 150, ls: 4, font: 'SgBE' },
+		sub: { size: 62, ls: 4, font: 'SgBE' },
+		gap: 14
+	},
+	cover: {
+		name: 'Cover-Raster',
+		desc: 'Die Karte in Panels wie ein Spiele-Cover, in der Mitte eine Titel-Plakette mit Farbverlauf.',
+		frame: { w: 0, r: 0, pad: 0 },
+		lay: { kind: 'cover', kontur: '#1a0b2e' },
+		title: { size: 120, ls: 2, font: 'SgBE' },
+		sub: { size: 40, ls: 4, font: 'SgBE' }
+	},
+	plakette: {
+		name: 'Plakette',
+		desc: 'Randlose Karte mit einem runden Sticker in der Ecke – Titel in Plakatschrift auf Sonnenuntergang.',
+		frame: { w: 0, r: 0, pad: 0 },
+		lay: { kind: 'plakette', kontur: '#1a0b2e' },
+		title: { size: 110, ls: 2, font: 'SgBE' },
+		sub: { size: 36, ls: 3, font: 'SgBE' }
+	},
+	sonnenuntergang: {
+		name: 'Sonnenuntergang',
+		desc: 'Retro-Himmel mit gestreifter Sonne und Palmen über der Karte – wie ein 80er-Plattencover.',
+		frame: { w: 0, r: 0, pad: 0 },
+		lay: { kind: 'top', textPad: 50, himmel: true, titelFarbe: '#ffffff', subFarbe: '#ffe3f1', kontur: '#2b1055' },
+		title: { size: 120, ls: 6, font: 'SgBE' },
+		sub: { size: 44, ls: 6, font: 'SgBE' },
+		gap: 12,
+		aspect: 0.95
+	},
 	bogenlinie: {
 		name: 'Bogen elegant',
 		desc: 'Bogenfenster mit feiner Zierlinie zwischen Titel und Untertitel.',
@@ -444,6 +481,10 @@ export function applyDesign(S, key, preset, full) {
 			S.title.klein = false;
 		}
 		S.title.fontDesign = !!(D.title && D.title.font);
+		// Untertitel-Schrift, die ein Design mitbringt, beim Verlassen wieder auf die vorige setzen
+		if (S.sub.fontDesign && !(D.sub && D.sub.font)) S.sub.font = S.sub.fontVorher || 'SgFR';
+		if (D.sub && D.sub.font && !S.sub.fontDesign) S.sub.fontVorher = S.sub.font;
+		S.sub.fontDesign = !!(D.sub && D.sub.font);
 		// Eigene Anpassungen von Fokus/Typografie gelten nur für das jeweilige Design
 		S.typo = {};
 		if (S.info) S.info = { ...S.info, fokusForm: '', fokusGr: '', fokusX: '', fokusY: '' };

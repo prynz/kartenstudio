@@ -17,6 +17,7 @@ import { koordSVG } from '../themen/koordinaten.js';
 import { wolkeSVG } from '../themen/wolke.js';
 import { inkColor } from '../themen/designs.js';
 import { formOk, formPfad, textForm } from './silhouette.js';
+import { coverSVG, plaketteSVG, himmelSVG } from '../themen/sunset.js';
 import { einsatzSVG, absatzSVG, fokusSVG, lupeSVG, gitterSVG, kompassSVG, tabelleSVG, steckbriefSVG, kastenSVG, leuchtenSVG } from '../themen/layouts.js';
 import { multiKey, multiOn, multiSVG } from './mehrere.js';
 import { routeSVG } from './route.js';
@@ -39,7 +40,7 @@ export function geo() {
   // Koordinaten-Poster: der Ortsname steht groß im Motiv, nicht noch einmal darunter
   const koord = S.motif === 'koord';
   // Tabelle/Steckbrief/Kasten zeichnen Untertitel, Koordinaten und Widmung selbst
-  const eigen = L.foot === 'tabelle' || L.kind === 'steckbrief' || L.kind === 'kasten';
+  const eigen = L.foot === 'tabelle' || L.kind === 'steckbrief' || L.kind === 'kasten' || L.kind === 'cover' || L.kind === 'plakette';
   const capT = t.on && t.text && !koord ? t.size * CAP[t.font] : 0,
     capS = u.on && u.text && !eigen && !L.ohneSub ? u.size * CAP[u.font] : 0;
   const cSize = Math.round(Math.max(16, (u.size || 34) * 0.62));
@@ -51,6 +52,7 @@ export function geo() {
     gapC = capC && (capT || capS) ? Math.round(S.bar.gap * 0.8) : 0,
     gapN = capN && (capT || capS || capC) ? Math.max(14, Math.round(S.bar.gap * 0.8)) : 0;
   const block = capT + gap + capS + gapC + capC + gapN + capN;
+  let himmelH = 0;
   let my,
     H,
     barTop,
@@ -62,6 +64,14 @@ export function geo() {
     const tp = block > 0 ? Math.max(L.textPad, p) : p;
     top = my + MH + tp;
     H = block > 0 ? top + block + tp + sw : my + MH + p + sw;
+  } else if (L.kind === 'top' && L.himmel) {
+    // Retro-Himmel über der Karte, Text unten im Himmel
+    const tp = Math.max(L.textPad, p);
+    himmelH = Math.max(block + 2 * tp, MW * 0.55);
+    top = sw + himmelH - tp * 0.7 - block;
+    my = sw + himmelH;
+    barTop = my + MH;
+    H = my + MH + p + sw;
   } else if (L.kind === 'top') {
     const tp = block > 0 ? Math.max(L.textPad, p) : 0;
     top = sw + tp;
@@ -81,11 +91,11 @@ export function geo() {
     barTop = my + MH;
     H = my + MH + 430 + sw;
     top = my + MH;
-  } else if (L.kind === 'over' || L.kind === 'typo' || L.kind === 'kasten') {
+  } else if (L.kind === 'over' || L.kind === 'typo' || L.kind === 'kasten' || L.kind === 'cover' || L.kind === 'plakette') {
     my = sw + p;
     barTop = my + MH;
     H = my + MH + p + sw;
-    top = my + MH - Math.max(56, MH * 0.07) - block - (L.kompass === 'unten' ? 70 : 0);
+    top = L.oben ? my + Math.max(60, MH * 0.05) : my + MH - Math.max(56, MH * 0.07) - block - (L.kompass === 'unten' ? 70 : 0);
   } else {
     // 'bar' – Text im Farbbalken unter der Karte (Ursprungsdesign)
     my = sw + p;
@@ -110,7 +120,7 @@ export function geo() {
   if (capS) yS = y += (capT ? gap : 0) + capS;
   if (capC) yC = y += gapC + capC;
   if (capN) yN = y += gapN + capN;
-  return { W, H, sw, p, mx, my, MH, barTop, barH, yT, yS, yC, yN, nSize, note: nt, top, block, cSize, L, footY, footH };
+  return { W, H, sw, p, mx, my, MH, barTop, barH, yT, yS, yC, yN, nSize, note: nt, top, block, cSize, L, footY, footH, himmelH };
 }
 /** Eigene Form: hochgeladen, sonst der Anfangsbuchstabe des Titels */
 export function aktuelleForm(S) {
@@ -662,7 +672,7 @@ export function passendeGroesse(text, font, size, ls, maxW) {
 /** Sind die Schriften geladen? (Textmotive messen damit – vorher gemessen = falsche Umbrüche) */
 export function schriftenBereit() {
   try {
-    return ['SgXB', 'SgMD', 'SgSC', 'SgBR'].map(f => document.fonts.check('30px ' + f)).join('');
+    return ['SgXB', 'SgMD', 'SgSC', 'SgBR', 'SgBE'].map(f => document.fonts.check('30px ' + f)).join('');
   } catch (e) {
     return '';
   }
@@ -944,17 +954,24 @@ export function buildSVG(forExport) {
   o += pinsSVG(g, forExport);
   if (g.L.inner > 0) o += mapShape(g, g.L.innerGap + g.L.inner / 2, ` id="innenlinie" transform="translate(${g.mx},${g.my})" fill="none" stroke="${f.w > 0 ? f.color : ink}" stroke-width="${g.L.inner}"`);
   if (g.L.kind === 'over' && g.L.fade && g.block > 0) {
-    const paper = app.S.bg !== 'none' ? app.S.bg : '#ffffff',
-      y0 = Math.max(g.my, g.top - 150);
-    o += `<defs><linearGradient id="gFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${paper}" stop-opacity="0"/><stop offset=".55" stop-color="${paper}" stop-opacity=".82"/><stop offset="1" stop-color="${paper}" stop-opacity=".95"/></linearGradient></defs>`;
-    o += `<rect id="verlauf" x="${g.mx}" y="${y0.toFixed(1)}" width="${MW}" height="${(g.my + g.MH - y0).toFixed(1)}" fill="url(#gFade)" clip-path="url(#cIn)"/>`;
+    const paper = g.L.fadeFarbe || (app.S.bg !== 'none' ? app.S.bg : '#ffffff');
+    if (g.L.oben) {
+      const y1 = g.top + g.block + 170;
+      o += `<defs><linearGradient id="gFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${paper}" stop-opacity=".9"/><stop offset=".5" stop-color="${paper}" stop-opacity=".6"/><stop offset="1" stop-color="${paper}" stop-opacity="0"/></linearGradient></defs>`;
+      o += `<rect id="verlauf" x="${g.mx}" y="${g.my.toFixed(1)}" width="${MW}" height="${(y1 - g.my).toFixed(1)}" fill="url(#gFade)" clip-path="url(#cIn)"/>`;
+    } else {
+      const y0 = Math.max(g.my, g.top - 150);
+      o += `<defs><linearGradient id="gFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${paper}" stop-opacity="0"/><stop offset=".55" stop-color="${paper}" stop-opacity=".82"/><stop offset="1" stop-color="${paper}" stop-opacity=".95"/></linearGradient></defs>`;
+      o += `<rect id="verlauf" x="${g.mx}" y="${y0.toFixed(1)}" width="${MW}" height="${(g.my + g.MH - y0).toFixed(1)}" fill="url(#gFade)" clip-path="url(#cIn)"/>`;
+    }
   }
+  o += himmelSVG(g);
   if (g.L.kind === 'bartop' && g.barH > 0) o += `<rect id="balken" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.barH).toFixed(1)}" fill="${app.S.bar.color}" clip-path="url(#cOut)"/>`;
   if (g.L.kind === 'bar' && app.S.bar.on && g.barH > 0) o += `<rect id="balken" x="${f.w / 2}" y="${g.barTop.toFixed(1)}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - g.barTop).toFixed(1)}" fill="${app.S.bar.color}" clip-path="url(#cOut)"/>`;
   if (f.w > 0) o += `<rect id="rahmen" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="none" stroke="${f.color}" stroke-width="${f.w}"/>`;
-  const typo = g.L.kind === 'typo' || g.L.kind === 'steckbrief' || g.L.kind === 'kasten';
+  const typo = g.L.kind === 'typo' || g.L.kind === 'steckbrief' || g.L.kind === 'kasten' || g.L.kind === 'cover' || g.L.kind === 'plakette';
   if (g.L.kind === 'typo') o += typoSVG(g);
-  o += steckbriefSVG(g) + kastenSVG(g) + tabelleSVG(g) + kompassSVG(g);
+  o += steckbriefSVG(g) + kastenSVG(g) + tabelleSVG(g) + kompassSVG(g) + coverSVG(g) + plaketteSVG(g);
   [['title', g.yT], ['sub', g.yS]].forEach(([k, y]) => {
     const t = app.S[k];
     if (typo) return;
@@ -963,7 +980,7 @@ export function buildSVG(forExport) {
     if (!t.on || !t.text) return;
     // Lange Namen (z. B. „Rothenburg ob der Tauber“) automatisch verkleinern, damit sie ins Poster passen
     const fs = passendeGroesse(t.text, t.font, t.size, t.ls, g.W - 2 * (g.sw + Math.max(g.p, 24)));
-    o += `<text id="${k === 'title' ? 'titel' : 'untertitel'}" x="${(g.W / 2 + t.ls * fs / t.size / 2).toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" font-family="${t.font}" font-size="${+fs.toFixed(2)}" letter-spacing="${+(t.ls * fs / t.size).toFixed(2)}" fill="${t.color}">${esc(t.text)}</text>`;
+    o += `<text id="${k === 'title' ? 'titel' : 'untertitel'}" x="${(g.W / 2 + t.ls * fs / t.size / 2).toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" font-family="${t.font}" font-size="${+fs.toFixed(2)}" letter-spacing="${+(t.ls * fs / t.size).toFixed(2)}" fill="${(k === 'title' ? g.L.titelFarbe : g.L.subFarbe) || t.color}"${g.L.kontur ? ` stroke="${g.L.kontur}" stroke-width="${(fs * 0.08).toFixed(1)}" stroke-linejoin="round" paint-order="stroke"` : ''}>${esc(t.text)}</text>`;
   });
   if (!typo && g.L.rule && app.S.title.on && app.S.title.text && app.S.sub.on && app.S.sub.text) {
     const yr = (g.yT + (g.yS - app.S.sub.size * CAP[app.S.sub.font])) / 2;

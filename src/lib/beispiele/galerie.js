@@ -123,7 +123,7 @@ export function lookAnwenden(B, mitOrt) {
 	change(() => (app.S = lookZustand(B, app.S, mitOrt)));
 	// Text-Motive messen die Schrift aus, der Himmel braucht seine Sterndaten → danach einmal neu zeichnen
 	if (B.motif === 'sterne') loadSky().then(() => render());
-	if (B.motif === 'koord' || B.motif === 'wolke' || B.titelSchrift) Promise.all(['SgXB', 'SgMD', 'SgSC', 'SgBR'].map((f) => document.fonts.load('30px ' + f))).then(() => render());
+	if (B.motif === 'koord' || B.motif === 'wolke' || B.titelSchrift) Promise.all(['SgXB', 'SgMD', 'SgSC', 'SgBR', 'SgBE'].map((f) => document.fonts.load('30px ' + f))).then(() => render());
 }
 
 /** Beispiel komplett öffnen (Startseite): Ort laden, danach Look anwenden (siehe wizardAfterLoad) @param {string} id */

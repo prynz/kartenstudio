@@ -14,6 +14,7 @@ import { dotsHTML } from './seitenleiste.js';
 import { PRESETS as PRESETS_UNTYPED } from '../themen/vorlagen.js';
 import { BASES, inBayern } from '../themen/standard.js';
 import { DESIGNS, applyDesign } from '../themen/designs.js';
+import { THEMENWELTEN } from '../themen/sammlungen.js';
 import { ensureRaster } from '../karte/raster.js';
 import { attachSearch } from '../karte/suche.js';
 import { pickPlace } from '../karte/ortswahl-start.js';
@@ -300,6 +301,7 @@ export function syncWizard() {
 	}
 	// Beim Koordinaten-Poster bleiben die Farbthemen sichtbar (sie bestimmen Hintergrund und Schrift)
 	$('wzStyles').classList.toggle('hidden', std || sky);
+	$('wzStilKat').classList.toggle('hidden', std || sky);
 	$('wzKoord').classList.toggle('hidden', !koord);
 	if (koord && S.koord) {
 		const ta = /** @type {HTMLTextAreaElement} */ ($('koordText'));
@@ -495,7 +497,7 @@ export function enableWolke() {
 			if (!D || D.aspect || (D.lay && D.lay.kind === 'typo')) pickDesign(S, 'galerie');
 		})
 	);
-	Promise.all(['SgXB', 'SgMD', 'SgSC', 'SgBR'].map((f) => document.fonts.load('30px ' + f))).then(() => render());
+	Promise.all(['SgXB', 'SgMD', 'SgSC', 'SgBR', 'SgBE'].map((f) => document.fonts.load('30px ' + f))).then(() => render());
 }
 
 /** Ausschnitt um die aktuelle Mitte 2,5-mal größer neu laden (bis 40 km) */
@@ -653,6 +655,36 @@ export function waehle(knopf, fn) {
 		const alle = () => fns.forEach((f) => f());
 		if (ruhig) smooth(alle);
 		else alle();
+	});
+}
+
+/** Die ersten sechs (ohne Themenwelt) */
+const TOP = /** @type {Record<string, string[]>} */ ({
+	p: ['umriss', 'dunkel', 'vintage', 'koralle', 'blaupause', 'popart'],
+	d: ['poster', 'silhouette', 'siegritz', 'galerie', 'kreiskoord', 'herz']
+});
+/** Aktive Themenwelt ('' = alle) – gilt für Stile und Designs gemeinsam @param {string} id */
+export function weltWaehlen(id) {
+	const W = THEMENWELTEN.find((w) => w.id === id);
+	/** @type {[string, string, string, string[]][]} */
+	const listen = [
+		['wzStilKat', 'wzStyles', 'p', W ? W.stile : []],
+		['wzDesignKat', 'wzDesigns', 'd', W ? W.designs : []]
+	];
+	listen.forEach(([kat, box, attr, keys]) => {
+		all(`#${kat} button`).forEach((b) => b.classList.toggle('on', (b.dataset.w || '') === (W && keys.length ? id : '')));
+		const B = $(box);
+		const filter = !!(W && keys.length);
+		// in der Welt: alle zugehörigen Karten zeigen, in ihrer Reihenfolge vorne
+		B.classList.toggle('kurz', !filter && B.dataset.alle !== '1');
+		all(`#${box} > button`).forEach((b) => b.classList.toggle('nk', filter && !keys.includes(/** @type {string} */ (b.dataset[attr]))));
+		[...(filter ? keys : TOP[attr])].reverse().forEach((k) => {
+			const b = B.querySelector(`[data-${attr}="${k}"]`);
+			if (b) B.prepend(b);
+		});
+		const mehr = /** @type {HTMLElement|null} */ (document.querySelector(`[data-alle="${box}"]`));
+		if (mehr) mehr.classList.toggle('hidden', filter);
+		if (filter && !reducedMotion()) B.animate([{ opacity: 0.5 }, { opacity: 1 }], { duration: 220, easing: EASE });
 	});
 }
 
@@ -825,14 +857,25 @@ export function initWizard() {
 	};
 	// (erst nachdem alle Karten erzeugt sind – das passiert weiter unten)
 	setTimeout(() => {
-		nachVorn('wzStyles', ['umriss', 'dunkel', 'vintage', 'koralle', 'blaupause', 'popart'], 'p');
-		nachVorn('wzDesigns', ['poster', 'silhouette', 'siegritz', 'galerie', 'kreiskoord', 'herz'], 'd');
+		nachVorn('wzStyles', TOP.p, 'p');
+		nachVorn('wzDesigns', TOP.d, 'd');
 	}, 0);
+	// Themenwelten: Chips über Stilen und Designs filtern beide Listen gemeinsam
+	const welten = (/** @type {string} */ wo) => THEMENWELTEN.filter((w) => (wo === 'p' ? w.stile : w.designs).length);
+	[['wzStilKat', 'wzStyles', 'p'], ['wzDesignKat', 'wzDesigns', 'd']].forEach(([kat, box, attr]) => {
+		$(kat).innerHTML =
+			`<button type="button" data-w="" class="on">Alle</button>` +
+			welten(attr)
+				.map((w) => `<button type="button" data-w="${w.id}" title="${w.desc}">${w.name}${w.neu ? ' <i>Neu</i>' : ''}</button>`)
+				.join('');
+	});
+	all('.wz-kat button').forEach((b) => (b.onclick = () => weltWaehlen(/** @type {string} */ (b.dataset.w))));
 	all('[data-alle]').forEach(
 		(b) =>
 			(b.onclick = () => {
 				const box = $(/** @type {string} */ (b.dataset.alle));
 				const zu = box.classList.toggle('kurz');
+				box.dataset.alle = zu ? '' : '1';
 				b.textContent = zu ? (b.dataset.alle === 'wzStyles' ? 'Alle Farbstile anzeigen ›' : 'Alle Designs anzeigen ›') : 'Weniger anzeigen ‹';
 				if (!zu && !reducedMotion()) box.animate([{ opacity: 0.6 }, { opacity: 1 }], { duration: 220, easing: EASE });
 			})

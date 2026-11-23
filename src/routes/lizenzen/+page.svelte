@@ -20,6 +20,7 @@
 		<li><b>Inter</b> – Rasmus Andersson, SIL Open Font License 1.1</li>
 		<li><b>KaTeX Fraktur</b> – KaTeX-Projekt, SIL Open Font License 1.1 (ergänzt um Umlaute)</li>
 		<li><b>Great Vibes</b> – The Great Vibes Pro Project Authors, SIL Open Font License 1.1</li>
+		<li><b>Bebas Neue</b> (Plakatschrift) – The Bebas Neue Project Authors, SIL Open Font License 1.1</li>
 		<li><b>Kaushan Script</b> (Pinselschrift) – Pablo Impallari, Igino Marini, SIL Open Font License 1.1</li>
 	</ul>
 
