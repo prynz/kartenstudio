@@ -940,3 +940,59 @@ body:not(.wiz-on) .poster-tools,body.mk-on .poster-tools{display:none}
 }
 @media(max-width:900px){.wz-steps button.naechst::before{top:4px}}
 @media(prefers-reduced-motion:reduce){.wz-steps button.naechst::before{animation:none}.wz-ring-fg{transition:none}}
+
+/* =========================================================
+   Leiste mit Kerbe (nach Vorbild: dunkle Navy-Leiste, aktiver Kreis ragt ins Einstellungsfeld)
+   ========================================================= */
+@media(min-width:901px){
+  .wiz{grid-template-columns:80px minmax(0,1fr)}
+  .wz-steps{margin:10px 0 10px 10px;height:calc(100vh - 56px - 20px);top:10px;padding:16px 0;border:0;border-radius:24px;background:linear-gradient(180deg,#2b3242 0%,#232938 100%);box-shadow:0 10px 30px rgba(20,24,35,.18);overflow:visible;gap:8px}
+  /* Symbole hell und gedämpft */
+  .wz-steps button{color:rgba(255,255,255,.58);width:48px;height:48px;flex-basis:48px;border-radius:50%;background:none}
+  .wz-steps button svg:not(.wz-ring){position:relative;z-index:1;transition:transform .25s cubic-bezier(.2,.8,.2,1),color .2s}
+  /* Hover: weicher Lichtkreis wächst auf, Symbol hebt sich und leuchtet */
+  .wz-steps button:not(.wz-fertig)::before{content:'';position:absolute;inset:4px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),rgba(255,255,255,.06) 70%);opacity:0;transform:scale(.55);transition:opacity .22s cubic-bezier(.2,.8,.2,1),transform .28s cubic-bezier(.2,.8,.2,1)}
+  .wz-steps button:not(.on):not(.wz-fertig):hover{background:none;color:#fff}
+  .wz-steps button:not(.on):not(.wz-fertig):hover::before{opacity:1;transform:scale(1)}
+  .wz-steps button:not(.on):not(.wz-fertig):hover svg{transform:translateX(2px) scale(1.12);filter:drop-shadow(0 0 6px rgba(255,255,255,.35))}
+  .wz-steps button:not(.wz-fertig):active svg{transform:scale(.9)}
+  /* Aktiv: Navy-Kreis in der weißen Kerbe */
+  .wz-steps button.on:not(.wz-fertig){color:#fff}
+  .wz-steps button.on:not(.wz-fertig)::before{opacity:1;transform:scale(1);inset:3px;background:linear-gradient(145deg,#38415a,#262c3a);box-shadow:0 6px 14px rgba(38,44,58,.35),inset 0 1px 0 rgba(255,255,255,.12)}
+  .wz-steps button.on svg{transform:none}
+  /* Die Kerbe: weiße „Blase“ vom Knopf bis zum Einstellungsfeld, oben/unten nach innen gewölbt */
+  .wz-steps .wz-ind{overflow:visible;max-width:none}
+  .wz-ind{left:6px;right:auto;width:64px!important;height:56px!important;border-radius:28px 0 0 28px;background:var(--panel);transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .2s;z-index:0}
+  .wz-ind::before,.wz-ind::after{content:'';position:absolute;right:0;left:auto;width:22px;height:22px;border-radius:0;background:none;pointer-events:none}
+  .wz-ind::before{top:-22px;bottom:auto;background:radial-gradient(circle at 0 0,transparent 21.5px,var(--panel) 22px)}
+  .wz-ind::after{bottom:-22px;background:radial-gradient(circle at 0 100%,transparent 21.5px,var(--panel) 22px)}
+  /* Trennlinien und untere Gruppe hell */
+  .wz-steps .wz-trenn{background:rgba(255,255,255,.14)}
+  .wz-unten{border-top-color:rgba(255,255,255,.12)}
+  /* Fertig: heller Kreis mit Navy-Haken, Fortschrittsring in Hellblau */
+  .wz-fertig{background:#fff!important;color:var(--slate)!important;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  .wz-fertig:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 10px 22px rgba(0,0,0,.3)}
+  .wz-fertig.on{box-shadow:0 0 0 3px #232938,0 0 0 5px #fff}
+  .wz-ring-bg{stroke:rgba(255,255,255,.16)}
+  .wz-ring-fg{stroke:#8fb0ff}
+  .wz-steps button.naechst::after{content:none}
+  .wz-steps button.naechst::before{content:'';position:absolute;inset:auto;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#8fb0ff;box-shadow:0 0 0 2px #262c3a;opacity:1;transform:none}
+  /* Namensschild gleitet weich heraus */
+  .wz-steps [data-tip]::after{left:calc(100% + 18px);transform:translate(-8px,-50%) scale(.96);transition:opacity .2s cubic-bezier(.2,.8,.2,1),transform .25s cubic-bezier(.2,.8,.2,1)}
+  .wz-steps [data-tip]:hover::after,.wz-steps [data-tip]:focus-visible::after{transform:translate(0,-50%) scale(1)}
+  .wz-steps button.on[data-tip]:hover::after{opacity:0}
+  /* keine Trennlinie mehr zwischen Leiste und Feld – die Kerbe verbindet sie */
+  .wz-panes{border-left:0}
+}
+@media(max-width:900px){
+  /* Handy: dunkle Leiste, aktives Symbol in hellem Kreis, leicht angehoben */
+  .wz-steps,.sheet-grip + .wiz .wz-steps{background:linear-gradient(180deg,#2b3242,#232938);border-top:0;box-shadow:0 -6px 20px rgba(20,24,35,.18)}
+  .wz-steps button{color:rgba(255,255,255,.6)}
+  .wz-steps button.on{color:var(--slate)}
+  .wz-steps button.on span{color:#fff}
+  .wz-steps button svg:not(.wz-ring){position:relative;z-index:1}
+  .wz-steps .wz-ind{width:44px!important;height:44px!important;top:-6px;border-radius:50%;background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.28),0 0 0 4px #262c3a;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+  .wz-steps button.on svg{transform:translateY(-4px)}
+  .wz-steps button.naechst::before{background:#8fb0ff;box-shadow:0 0 0 2px #262c3a}
+}
+@media(prefers-reduced-motion:reduce){.wz-steps button::before,.wz-steps button svg,.wz-ind{transition:none!important}}

@@ -815,14 +815,25 @@ function markierung() {
 	const quer = matchMedia('(max-width: 900px)').matches;
 	// „Fertig“ hat am PC einen eigenen runden Knopf – dort keine Markierung
 	ind.classList.toggle('weg', !quer && b.classList.contains('wz-fertig'));
+	const alt = ind.dataset.pos || '';
 	if (quer) {
-		ind.style.transform = `translate3d(${b.offsetLeft}px,0,0)`;
-		ind.style.width = b.offsetWidth + 'px';
+		// Handy: runder Hintergrund, mittig hinter dem Symbol
+		ind.style.transform = `translate3d(${b.offsetLeft + b.offsetWidth / 2 - 22}px,0,0)`;
+		ind.style.width = '';
 		ind.style.height = '';
 	} else {
-		ind.style.transform = `translate3d(0,${b.offsetTop}px,0)`;
-		ind.style.height = b.offsetHeight + 'px';
+		// PC: Kerbe mittig auf dem Knopf (Höhe der Kerbe 56 px)
+		ind.style.transform = `translate3d(0,${b.offsetTop + b.offsetHeight / 2 - 28}px,0)`;
+		ind.style.height = '';
 		ind.style.width = '';
+	}
+	const neu = (quer ? 'q' : 's') + b.dataset.step;
+	ind.dataset.pos = neu;
+	// Flüssiges „Strecken“ während der Fahrt und ein kleiner Hüpfer des neuen Symbols
+	if (alt && alt !== neu && !reducedMotion()) {
+		ind.animate([{ scale: '1 1' }, { scale: quer ? '1.18 0.92' : '0.94 1.16' }, { scale: '1 1' }], { duration: 320, easing: EASE });
+		const svg = b.querySelector('svg');
+		if (svg) svg.animate([{ scale: '0.82' }, { scale: '1.12' }, { scale: '1' }], { duration: 340, easing: EASE });
 	}
 }
 
