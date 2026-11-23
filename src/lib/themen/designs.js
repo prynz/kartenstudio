@@ -10,7 +10,7 @@
  *   textPad: number,    // Luft über und unter dem Textblock (below/top)
  *   inner: number,      // Stärke einer feinen Linie direkt um die Karte (0 = keine)
  *   innerGap: number,   // Abstand dieser Linie zur Karte
- *   shape: 'rect'|'circle'|'heart'|'hex'|'arch'|'rounded'|'house',
+ *   shape: 'rect'|'circle'|'heart'|'hex'|'arch'|'rounded'|'house'|'eigen',
  *   coords: boolean,    // zusätzliche Zeile mit Koordinaten
  *   fade: boolean,      // (over) weicher Verlauf hinter dem Text
  *   papier?: string,    // eigene Papierfarbe außerhalb der Karte (Karte behält die Themenfarbe)
@@ -333,6 +333,24 @@ export const DESIGNS = {
 		lay: { kind: 'over', fade: true },
 		title: { size: 40, ls: 8 },
 		sub: { size: 22, ls: 2 }
+	},
+	silhouette: {
+		name: 'Eigene Form',
+		desc: 'Die Karte in einer Form deiner Wahl: lade eine Silhouette oder ein freigestelltes Foto hoch – oder nimm einen Buchstaben.',
+		frame: { w: 0, r: 0, pad: 46 },
+		lay: { kind: 'below', textPad: 40, shape: 'eigen', papier: '#ffffff' },
+		title: { size: 64, ls: 18 },
+		sub: { size: 34, ls: 1 },
+		aspect: 1
+	},
+	silhouettelinie: {
+		name: 'Eigene Form + Linie',
+		desc: 'Wie „Eigene Form“, mit feiner Umrisslinie.',
+		frame: { w: 0, r: 0, pad: 50 },
+		lay: { kind: 'below', textPad: 40, shape: 'eigen', inner: 3, innerGap: 0 },
+		title: { size: 64, ls: 18 },
+		sub: { size: 34, ls: 1 },
+		aspect: 1
 	},
 	typoumriss: {
 		name: 'Typo Umriss',

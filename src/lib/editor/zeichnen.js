@@ -16,6 +16,7 @@ import { loadSky, skyReady, skySVG } from '../themen/himmel.js';
 import { koordSVG } from '../themen/koordinaten.js';
 import { wolkeSVG } from '../themen/wolke.js';
 import { inkColor } from '../themen/designs.js';
+import { formOk, formPfad, textForm } from './silhouette.js';
 import { einsatzSVG, absatzSVG, fokusSVG, lupeSVG, gitterSVG, kompassSVG, tabelleSVG, steckbriefSVG, kastenSVG, leuchtenSVG } from '../themen/layouts.js';
 import { multiKey, multiOn, multiSVG } from './mehrere.js';
 import { routeSVG } from './route.js';
@@ -111,6 +112,13 @@ export function geo() {
   if (capN) yN = y += gapN + capN;
   return { W, H, sw, p, mx, my, MH, barTop, barH, yT, yS, yC, yN, nSize, note: nt, top, block, cSize, L, footY, footH };
 }
+/** Eigene Form: hochgeladen, sonst der Anfangsbuchstabe des Titels */
+export function aktuelleForm(S) {
+  if (S.form && formOk(S.form)) return S.form;
+  if (typeof document === 'undefined') return null;
+  const t = ((S.title && S.title.text) || (app.DATA && app.DATA.place) || 'A').trim();
+  return textForm([...t][0] ? [...t][0].toUpperCase() : 'A');
+}
 /** Koordinaten der Kartenmitte als Textzeile. */
 export function coordText() {
   const [lon, lat] = viewCenterLL();
@@ -119,6 +127,13 @@ export function coordText() {
 /** Umriss der Kartenfläche (Rechteck oder Kreis), optional um `grow` vergrößert. */
 function mapShape(g, grow, attrs) {
   const sh = g.L.shape;
+  // Eigene Form (hochgeladenes Bild oder Buchstabe), eingepasst in die Kartenfläche
+  if (sh === 'eigen') {
+    const F = aktuelleForm(app.S);
+    if (F) return `<path d="${formPfad(F, MW, g.MH, grow)}" fill-rule="evenodd" clip-rule="evenodd"${attrs}/>`;
+    const r = Math.min(MW, g.MH) / 2 + grow;
+    return `<circle cx="${MW / 2}" cy="${(g.MH / 2).toFixed(1)}" r="${r.toFixed(1)}"${attrs}/>`;
+  }
   if (sh === 'circle') {
     const r = Math.min(MW, g.MH) / 2 + grow;
     return `<circle cx="${MW / 2}" cy="${(g.MH / 2).toFixed(1)}" r="${r.toFixed(1)}"${attrs}/>`;

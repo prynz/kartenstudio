@@ -192,6 +192,13 @@
 <div class="row wz-kipp"><span class="k">Waagrecht</span><input type="range" id="wzFokusX" min="0.1" max="0.9" step="0.01" aria-label="Fokus nach links oder rechts"></div>
 <div class="row wz-kipp"><span class="k">Senkrecht</span><input type="range" id="wzFokusY" min="0.1" max="0.9" step="0.01" aria-label="Fokus nach oben oder unten"></div>
 </div>
+<div class="hidden" id="wzForm"><div class="lab">Eigene Form</div>
+<div class="wz-form"><svg id="wzFormBild" viewBox="0 0 100 100" aria-hidden="true"></svg><div><label class="btn primary wz-hoch"><input type="file" id="wzFormDatei" accept="image/*" hidden>Bild hochladen</label><button type="button" class="wz-link hidden" id="wzFormWeg">Wieder Buchstabe</button></div></div>
+<p class="wz-hint">Am besten eine <b>Silhouette</b>, ein Logo oder ein <b>freigestelltes Foto</b> (durchsichtiger Hintergrund). Tipp iPhone: In „Fotos“ das Motiv lange gedrückt halten → „Teilen“ → „Bild sichern“ – dann ist der Hintergrund schon weg.</p>
+<div class="hidden" id="wzFormBildOpt"><label class="tog wz-tog"><input type="checkbox" id="wzFormUm"><span>Umkehren (Hintergrund wird zur Form)</span></label>
+<div class="row wz-kipp" id="wzFormSchwRow"><span class="k">Schwelle</span><input type="range" id="wzFormSchw" min="10" max="245" step="1" aria-label="Hell/Dunkel-Schwelle"></div></div>
+<div class="wz-sublab">… oder ein Buchstabe, eine Zahl</div><div class="wz-zeile"><input id="wzFormText" class="inp" type="text" maxlength="6" autocomplete="off" placeholder="z. B. B, ♥ oder 25"><button type="button" class="btn" id="wzFormTextGo">Übernehmen</button></div>
+</div>
 <div class="hidden" id="wzTypo"><div class="lab">Typografie anpassen</div>
 <div class="wz-sublab">Stil</div><div class="wz-chips" id="wzTypoStil"><button type="button" data-v="voll">Gefüllt</button><button type="button" data-v="umriss">Umriss</button><button type="button" data-v="schnitt">Karte in Buchstaben</button></div>
 <div class="wz-sublab">Schrift</div><div class="wz-chips" id="wzTypoSchrift"><button type="button" data-v="SgXB"><b style="font-family:SgXB">Fett</b></button><button type="button" data-v="SgMD"><span style="font-family:SgMD">Fein</span></button><button type="button" data-v="SgBR"><span style="font-family:SgBR;font-size:17px">Pinsel</span></button><button type="button" data-v="SgSC"><span style="font-family:SgSC;font-size:19px">Schrift</span></button><button type="button" data-v="SgFR"><span style="font-family:SgFR">Fraktur</span></button></div>

@@ -2,7 +2,7 @@
 // Es ist immer nur ein Schritt sichtbar. Alle Detailregler aus dem Prototyp
 // bleiben unter „Erweiterte Einstellungen“ erreichbar.
 import { fokusOpt, akzent } from '../themen/layouts.js';
-import { typoOpt, geo } from './zeichnen.js';
+import { typoOpt, geo, aktuelleForm } from './zeichnen.js';
 import { sheetZeigen, sheetOffen } from './sheet.js';
 import { textImPoster, einfuehrung, favoritenZeichnen } from './direkt.js';
 import { app as appUntyped } from './app.js';
@@ -27,6 +27,7 @@ import { PIN_SHAPES } from './zeichnen.js';
 import { shareLink } from './entwurf.js';
 import { ANLAESSE } from '../themen/anlaesse.js';
 import { initMulti, multiOn, syncMulti } from './mehrere.js';
+import { initForm, syncForm } from './form-ui.js';
 import { beispielNachLaden, vorschlaegeZeichnen } from '../beispiele/galerie.js';
 import { meinStandort } from '../karte/suche.js';
 import { defView, vLimits } from './zustand.js';
@@ -249,7 +250,10 @@ function renderDesignThumbs() {
 			if (c.fx) c.fx = { ...c.fx, h3d: false, kipp: 0, dreh: 0, schatten: false, relief: false, gelaende: false };
 			applyDesign(c, k, PRESETS[c.preset], true);
 			const D = DESIGNS[k];
-			if (D.aspect) c.view.a = D.aspect;
+			if (D.aspect) {
+				const F = D.lay && D.lay.shape === 'eigen' ? aktuelleForm(c) : null;
+				c.view.a = F ? Math.min(2.2, Math.max(0.45, F.a)) : D.aspect;
+			}
 			else if (keep.design && DESIGNS[keep.design] && DESIGNS[keep.design].aspect && keep.aPrev) c.view.a = keep.aPrev;
 			app.S = c;
 			fitPrint(c);
@@ -370,6 +374,7 @@ export function syncWizard() {
 	if (document.activeElement !== n) n.value = (S.note && S.note.text) || '';
 	syncPins();
 	syncMulti();
+	syncForm();
 	all('#wzFonts button').forEach((b) => b.classList.toggle('on', b.dataset.t === S.title.font && b.dataset.s === S.sub.font));
 	syncRoute();
 	/** @type {HTMLInputElement} */ ($('fxPaper')).checked = !!(S.fx && S.fx.paper);
@@ -589,7 +594,9 @@ export function pickDesign(S, k) {
 	applyDesign(S, k, PRESETS[S.preset], true);
 	if (D.aspect) {
 		if (!wasFixed) S.aPrev = S.view.a;
-		S.view.a = D.aspect;
+		// Eigene Form: Seitenverhältnis der Form
+		const F = D.lay && D.lay.shape === 'eigen' ? aktuelleForm(S) : null;
+		S.view.a = F ? Math.min(2.2, Math.max(0.45, F.a)) : D.aspect;
 	} else if (wasFixed && S.aPrev) S.view.a = S.aPrev;
 	fitPrint(S);
 	clampView(S.view);
@@ -783,7 +790,7 @@ export function initWizard() {
 	// (erst nachdem alle Karten erzeugt sind – das passiert weiter unten)
 	setTimeout(() => {
 		nachVorn('wzStyles', ['umriss', 'dunkel', 'vintage', 'koralle', 'blaupause', 'popart'], 'p');
-		nachVorn('wzDesigns', ['poster', 'klassisch', 'siegritz', 'galerie', 'kreiskoord', 'herz'], 'd');
+		nachVorn('wzDesigns', ['poster', 'silhouette', 'siegritz', 'galerie', 'kreiskoord', 'herz'], 'd');
 	}, 0);
 	all('[data-alle]').forEach(
 		(b) =>
@@ -1031,6 +1038,7 @@ export function initWizard() {
 	);
 
 	initMulti();
+	initForm();
 	initRoute();
 	initGift();
 

@@ -771,6 +771,17 @@ await run('Designs nach Vorbildern: Fokus, Studie, Steckbrief, Kasten, Lupe, Dos
 	await page.click('#wzTypoSchrift [data-v="SgBR"]');
 	await page.waitForTimeout(300);
 	ok((await page.$$('#titel text')).length === 1 && (await page.getAttribute('#titel text', 'font-family')) === 'SgBR', 'Typografie: Schrift und Zeilenzahl wählbar');
+	// Eigene Form: Buchstabe als Standard, Silhouette hochladen, Zahl
+	await design('silhouette');
+	ok((await page.getAttribute('#cMap path', 'd') || '').length > 100, 'Eigene Form: Karte in Form des Anfangsbuchstabens');
+	await page.setInputFiles('#wzFormDatei', new globalThis.URL('./fixtures/silhouette-katze.jpg', import.meta.url).pathname);
+	await page.waitForTimeout(800);
+	const katze = await page.getAttribute('#cMap path', 'd');
+	ok(katze && katze.length > 200, 'Eigene Form: hochgeladene Silhouette schneidet die Karte zu');
+	await page.fill('#wzFormText', '25');
+	await page.click('#wzFormTextGo');
+	await page.waitForTimeout(800);
+	ok((await page.getAttribute('#cMap path', 'd')) !== katze, 'Eigene Form: Zahl als Form');
 	await design('einsatz');
 	ok((await page.$('#poster #einsatz')) && (await page.$('#poster #absatz')) && !(await page.$('#poster #untertitel')), 'Einsatzkarte: rotes Viertel, Text oben, ohne Untertitel');
 	await page.fill('#wzInfoAbsatz', 'Hier fing alles an.');

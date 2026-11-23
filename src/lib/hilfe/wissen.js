@@ -16,6 +16,13 @@ export const FAQ = [
 		a: 'Ort eintippen – das Poster steht sofort. Dann Schritt für Schritt: Ausschnitt, Stil, Design, Text, Produkt und zum Schluss herunterladen. Unter „Erweitert“ kannst du jedes Detail einzeln ändern.'
 	},
 	{
+		id: 'form',
+		q: 'Kann ich die Karte in eine eigene Form bringen (z. B. Silhouette, Tier, Logo)?',
+		k: ['eigene form', 'silhouette', 'umriss', 'form hochladen', 'bild hochladen', 'foto hochladen', 'logo', 'tier', 'katze', 'hund', 'buchstabe', 'zahl', 'ausschneiden'],
+		a: 'Ja! Wähle im Bereich „Design“ das Design „Eigene Form“ und lade eine Silhouette, ein Logo oder ein freigestelltes Foto hoch – die Karte wird genau in diese Form geschnitten. Am besten klappt es mit klaren Umrissen oder durchsichtigem Hintergrund (iPhone: Motiv in „Fotos“ lange gedrückt halten → Teilen → Bild sichern). Alternativ geht auch ein Buchstabe oder eine Zahl.',
+		act: { label: 'Zum Bereich Design', step: 'design' }
+	},
+	{
 		id: 'preis',
 		q: 'Was kostet ein Poster?',
 		k: ['preis', 'kosten', 'kostet', 'teuer', 'euro', '€', 'günstig'],
