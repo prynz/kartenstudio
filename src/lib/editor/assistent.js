@@ -226,7 +226,12 @@ function renderDesignThumbs() {
 	if (designBeobachter && !designSichtbar) return;
 	const S = app.S;
 	// Bewusst OHNE Kartenausschnitt: Verschieben/Zoomen soll nicht 22 Vorschaubilder neu berechnen
-	const key = JSON.stringify([app.DATA.place, app.DATA.feats.length, S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.motif, S.fx && [S.fx.paper, S.fx.vig], S.view.a, S.title.text, S.sub.text, S.title.font, S.sub.font, S.scale]);
+	// … und ohne das, was das gerade gewählte Design selbst setzt (Seitenverhältnis, Titelschrift),
+	// sonst würde jeder Designwechsel alle Vorschaubilder neu berechnen
+	const D = /** @type {any} */ (DESIGNS)[S.design];
+	const aBasis = D && D.aspect ? S.aPrev || S.view.a : S.view.a;
+	const tt = S.title.klein ? String(S.title.text || '').toUpperCase() : S.title.text;
+	const key = JSON.stringify([app.DATA.place, app.DATA.feats.length, S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.motif, S.fx && [S.fx.paper, S.fx.vig], aBasis, tt, S.sub.text, S.title.fontDesign ? '' : S.title.font, S.sub.font, S.scale, S.form ? S.form.ringe.length + ':' + S.form.a : 0]);
 	if (key === thumbKey) return;
 	thumbKey = key;
 	const lauf = ++thumbLauf;
@@ -620,6 +625,37 @@ export function smooth(fn) {
 	app.poster.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: 260, easing: EASE });
 }
 
+/** Wartende Auswahl je Gruppe (Stile, Designs …) – in Klick-Reihenfolge @type {Map<Element, () => void>} */
+const wahl = new Map();
+let wahlPlan = 0,
+	letzteWahl = 0;
+/**
+ * Auswahl (Stil, Design) beim schnellen Durchklicken: Der Knopf ist sofort markiert, gezeichnet
+ * wird je Gruppe nur die zuletzt gewählte Variante – Zwischenschritte, die man nie sehen würde, entfallen.
+ * Die weiche Überblendung gibt es nur bei einzelnen, ruhigen Klicks (sonst stottert sie).
+ * @param {HTMLElement} knopf @param {() => void} fn
+ */
+export function waehle(knopf, fn) {
+	const gruppe = knopf.parentElement || knopf;
+	gruppe.querySelectorAll('.on').forEach((/** @type {Element} */ x) => x.classList.remove('on'));
+	knopf.classList.add('on');
+	wahl.delete(gruppe);
+	wahl.set(gruppe, fn);
+	if (wahlPlan) return;
+	wahlPlan = requestAnimationFrame(() => {
+		wahlPlan = 0;
+		const fns = [...wahl.values()];
+		wahl.clear();
+		if (!fns.length) return;
+		const jetzt = performance.now();
+		const ruhig = jetzt - letzteWahl > 700;
+		letzteWahl = jetzt;
+		const alle = () => fns.forEach((f) => f());
+		if (ruhig) smooth(alle);
+		else alle();
+	});
+}
+
 /** Zufällige, aber stimmige Kombination aus Stil und Design */
 export function surprise() {
 	const S = app.S;
@@ -740,7 +776,7 @@ export function initWizard() {
 		b.dataset.p = k;
 		b.title = p.desc || '';
 		b.onclick = () =>
-			smooth(() =>
+			waehle(b, () =>
 				change(() => {
 					const keep = app.S;
 					app.S = newState(k, keep);
@@ -914,7 +950,7 @@ export function initWizard() {
 		const b = card(document.createElement('button'), `<div class="dth"><img alt="" decoding="async"></div><span class="nm">${D.name}</span>`);
 		b.dataset.d = k;
 		b.title = D.desc;
-		b.onclick = () => smooth(() => change(() => pickDesign(app.S, k)));
+		b.onclick = () => waehle(b, () => change(() => pickDesign(app.S, k)));
 		$('wzDesigns').appendChild(b);
 	});
 

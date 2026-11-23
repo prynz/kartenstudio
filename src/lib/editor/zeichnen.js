@@ -467,6 +467,8 @@ export function mapContent(forExport, vr) {
   // Schatten der Häuser: Licht von links oben, Schatten fällt nach rechts unten
   const h3d = !!fx.h3d && !pop;
   const klein = app.vorschau ? 5 / app.S.view.z : 0;
+  // Bildschirm, nur umfärbbar: ausgeblendete Klassen unsichtbar mitzeichnen (Stilwechsel ohne Neuaufbau)
+  const farbModus = !forExport && !klein && TCP.p === 'tc' && nurFarbe();
   /** @type {{ft:any, e:any}[]} */
   const haus3 = [];
   const schatten = fx.schatten && !h3d ? new Map() : null;
@@ -477,7 +479,8 @@ export function mapContent(forExport, vr) {
     app.DATA.feats.forEach(ft => {
       if (ft.k !== k) return;
       const e = eff(ft);
-      if (e.h) return;
+      const ovH = app.S.ov[ft.id] && app.S.ov[ft.id].h != null;
+      if (e.h && (forExport || ovH || !farbModus)) return;
       const bx = ft.bx;
       if (bx[2] < vr[0] || bx[0] > vr[2] || bx[3] < vr[1] || bx[1] > vr[3]) return;
       // Vorschaubild: Teile unter ~5 Poster-Punkten sind dort kleiner als ein Bildpunkt
@@ -493,7 +496,7 @@ export function mapContent(forExport, vr) {
       if (pop && k === 'haus' && !(app.S.ov[ft.id] && app.S.ov[ft.id].f)) fill = popColor(ft.id, pop);
       // Mit Schatten: leere Häuser mit Papierfarbe füllen, sonst scheint der Schatten durch
       if (schatten && k === 'haus' && ft.a && fill === 'none') fill = app.S.bg !== 'none' ? app.S.bg : '#ffffff';
-      const p = `<path id="${ft.fid}" d="${ft.d}" fill="${fill}" fill-rule="evenodd" stroke="${e.s}" stroke-width="${+(e.w * sc * pk).toFixed(3)}" ${lc}${forExport ? '' : ' data-k="' + k + '" data-g="' + ft.id + '"'}/>`;
+      const p = `<path id="${ft.fid}" d="${ft.d}" fill="${fill}" fill-rule="evenodd" stroke="${e.s}" stroke-width="${+(e.w * sc * pk).toFixed(3)}" ${lc}${forExport ? '' : ' data-k="' + k + '" data-g="' + ft.id + '"' + (ft.a ? ' data-a="1"' : '') + (e.h ? ' display="none"' : '')}/>`;
       const t = ft.t ?? -1;
       if (!groups.has(t)) groups.set(t, []);
       groups.get(t).push(p);
@@ -544,9 +547,51 @@ function cacheCovers() {
   return (v[0] >= r[0] - eps || r[0] <= E.x0 + eps) && (v[1] >= r[1] - eps || r[1] <= E.y0 + eps) && (v[2] <= r[2] + eps || r[2] >= E.x1 - eps) && (v[3] <= r[3] + eps || r[3] >= E.y1 - eps);
 }
 /** Kartenknoten (und Klickflächen) holen – aus dem Zwischenspeicher oder neu bauen */
+/** Zwischenspeicher-Schlüssel ohne Farben/Linienstärken (nur, was sichtbar ist) */
+function formKey() {
+  // nur für gezeichnete Karten ohne Sonderfälle – Textmotive brauchen die Farben im Schlüssel
+  if (!nurFarbe()) return null;
+  const S = app.S;
+  const cls = S.cls;
+  S.cls = {};
+  try {
+    return mapKey();
+  } finally {
+    S.cls = cls;
+  }
+}
+/** Darf die vorhandene Karte nur umgefärbt werden? (keine Einzelfarben, Pop-Art, Schatten, 3D …) */
+function nurFarbe() {
+  const S = app.S, fx = S.fx || {};
+  return S.mode === 'art' && (!S.motif || S.motif === 'karte') && !multiOn() && !(S.pop && S.pop.pal) && !Object.keys(S.ov || {}).length && !fx.schatten && !fx.h3d && !perspektiveAn() && !(S.hoehen && S.hoehen.on);
+}
+/**
+ * Stilwechsel: Statt die ganze Karte neu aufzubauen (tausende Häuser), nur Farben und
+ * Linienstärken der vorhandenen Linien ändern – viel schneller, vor allem in Städten.
+ */
+function umfaerben(node) {
+  const S = app.S, sc = S.scale / S.view.z;
+  const wert = {};
+  Object.entries(S.cls).forEach(([k, c]) => (wert[k] = [c.s, c.f, String(+(c.w * sc).toFixed(3)), !!c.h]));
+  for (const p of node.querySelectorAll('path[data-k]')) {
+    const w = wert[p.dataset.k];
+    if (!w) continue;
+    p.setAttribute('stroke', w[0]);
+    p.setAttribute('fill', p.dataset.a ? w[1] : 'none');
+    p.setAttribute('stroke-width', w[2]);
+    if (w[3]) p.setAttribute('display', 'none');
+    else p.removeAttribute('display');
+  }
+}
 function mapNodes() {
   const key = mapKey();
   if (key === MC.key && cacheCovers()) return MC;
+  const fk = formKey();
+  if (fk && MC.node && fk === MC.fk && MC.farbe && cacheCovers()) {
+    umfaerben(MC.node);
+    MC.key = key;
+    return MC;
+  }
   const rect = cullRect();
   // Einlesen über den HTML-Parser (template) – rund 3,5× schneller als DOMParser mit XML
   const tpl = document.createElement('template');
@@ -556,7 +601,7 @@ function mapNodes() {
   const hits = document.createElementNS(NS, 'g');
   const hw = (12 / app.S.view.z).toFixed(2);
   // In der Perspektive passen die Klickflächen nicht zur Ansicht → dann keine
-  if (!perspektiveAn() && !(app.S.fx && app.S.fx.h3d)) node.querySelectorAll('path[data-k]').forEach(p => {
+  if (!perspektiveAn() && !(app.S.fx && app.S.fx.h3d)) node.querySelectorAll('path[data-k]:not([display])').forEach(p => {
     if (p.getAttribute('fill') !== 'none' || p.dataset.k === 'haus') {
       p.setAttribute('pointer-events', 'all');
       p.style.cursor = 'pointer';
@@ -571,7 +616,7 @@ function mapNodes() {
     h.dataset.ref = p.dataset.g;
     hits.appendChild(h);
   });
-  Object.assign(MC, { key, node, hits, rect, z: app.S.view.z });
+  Object.assign(MC, { key, fk, farbe: nurFarbe(), node, hits, rect, z: app.S.view.z });
   return MC;
 }
 

@@ -8,18 +8,36 @@ import { mapSel, panel } from './seitenleiste.js';
 import { setTool } from './bedienung.js';
 import { snap, updUndo } from './zustand.js';
 
+/**
+ * Größe der Vorschaufläche merken (ResizeObserver), statt sie bei jedem Zeichnen abzufragen –
+ * die Abfrage direkt nach einer Änderung zwingt den Browser, die ganze Seite sofort neu zu vermessen.
+ */
+let FL = null;
+function flaeche(c) {
+  if (!FL && typeof ResizeObserver !== 'undefined') {
+    FL = { w: c.clientWidth, h: c.clientHeight };
+    new ResizeObserver(([e]) => {
+      const r = e.contentRect;
+      if (Math.abs(r.width - FL.w) < 0.5 && Math.abs(r.height - FL.h) < 0.5) return;
+      FL = { w: c.clientWidth, h: c.clientHeight };
+      zoom();
+    }).observe(c);
+  }
+  return FL || { w: c.clientWidth, h: c.clientHeight };
+}
 export function zoom() {
   if (!app.DATA) return;
   const z = +$('zoom').value / 100;
   const g = geo(),
     c = $('canvas');
+  const F = flaeche(c);
   // Rand um das Poster: am Handy knapper, damit es den Platz über der Einstellungs-Leiste nutzt
   const narrow = matchMedia('(max-width: 900px)').matches;
   const B = document.body.classList;
   const dock = !B.contains('wiz-on') && !(narrow && B.contains('sheet-big'));
   const padX = narrow ? 32 : 80,
     padY = narrow ? (dock ? 78 : 26) : dock ? 136 : 80;
-  const base = Math.max(narrow ? 60 : 240, Math.min(c.clientWidth - padX, (c.clientHeight - padY) * g.W / g.H));
+  const base = Math.max(narrow ? 60 : 240, Math.min(F.w - padX, (F.h - padY) * g.W / g.H));
   app.poster.style.width = base * z + 'px';
   // Ecken des Schattens an die Rahmenrundung anpassen
   const R = Math.max(0, app.S.frame.r) + app.S.frame.w / 2;
