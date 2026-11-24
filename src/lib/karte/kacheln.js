@@ -179,7 +179,7 @@ export async function fetchTiles(big) {
     y
   });
   if (list.length > 160) throw new Error('Ausschnitt zu groß');
-  const want = ['building', 'transportation', 'water', 'waterway', 'park', 'landcover'];
+  const want = ['building', 'transportation', 'water', 'waterway', 'park', 'landcover', 'place'];
   let idx = 0;
   const out = [];
   async function worker() {

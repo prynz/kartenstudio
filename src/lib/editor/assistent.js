@@ -10,7 +10,8 @@ import { app as appUntyped } from './app.js';
 import { alsBild, buildSVG, render, vorschauSVG } from './zeichnen.js';
 import { begin, change, clampView, commit, newState } from './zustand.js';
 import { openSec } from './seitenleiste.js';
-import { setTool } from './bedienung.js';
+import { setTool, sliderToZ, zToSlider } from './bedienung.js';
+import { STRASSEN } from './zustand.js';
 import { dotsHTML } from './seitenleiste.js';
 import { PRESETS as PRESETS_UNTYPED } from '../themen/vorlagen.js';
 import { BASES, inBayern } from '../themen/standard.js';
@@ -289,6 +290,39 @@ function renderDesignThumbs() {
 }
 
 /* ---------- Anzeige mit dem Zustand abgleichen ---------- */
+/** Bereich „Ort“: Zoom, Umfang, Kartendetails, Ortsnamen, Ausrichtung */
+function syncOrt() {
+	const S = app.S;
+	if (!app.DATA) return;
+	const zr = /** @type {HTMLInputElement} */ ($('wzZoomR'));
+	if (document.activeElement !== zr) zr.value = String(zToSlider(S.view));
+	const L = vLimits(S.view),
+		z = S.view.z;
+	const umf = Math.abs(z - 1.7) < 0.02 ? 'kern' : Math.abs(z - 1) < 0.02 ? 'ort' : Math.abs(z - L.zmin) < 0.02 ? 'weit' : '';
+	all('#wzUmfang button').forEach((b) => b.classList.toggle('on', b.dataset.z === umf));
+	const karte = !S.motif || S.motif === 'karte';
+	$('oaDetails').classList.toggle('hidden', !karte || multiOn());
+	const H = S.cls.haus && S.cls.haus.h,
+		R = S.cls.haupt && S.cls.haupt.h && S.cls.neben && S.cls.neben.h;
+	const zg = !H && !R ? 'alle' : H && !R ? 'strassen' : !H && R ? 'haeuser' : '';
+	all('#wzZeig button').forEach((b) => b.classList.toggle('on', b.dataset.zg === zg));
+	$('wzZeig').classList.toggle('hidden', S.mode === 'std');
+	const on = /** @type {HTMLInputElement} */ ($('wzOrtsnamen'));
+	on.checked = S.mode === 'std' ? !!S.labels : !!S.ortsnamen;
+	const keine = S.mode !== 'std' && !(app.DATA.orte && app.DATA.orte.length);
+	on.disabled = keine;
+	/** @type {HTMLElement} */ (on.closest('label')).classList.toggle('dis', keine);
+	$('wzOrtsnamenInfo').textContent = keine ? '– für diesen Ausschnitt keine vorhanden' : '';
+	const fest = !!(S.design && /** @type {any} */ (DESIGNS)[S.design] && /** @type {any} */ (DESIGNS)[S.design].aspect);
+	const g = geo(),
+		r = g.H / g.W;
+	const o = r > 1.02 ? 'hoch' : r < 0.98 ? 'quer' : 'quadrat';
+	all('#wzAusr button').forEach((b) => {
+		b.classList.toggle('on', b.dataset.o === o);
+		/** @type {HTMLButtonElement} */ (b).disabled = fest;
+	});
+	$('wzAusrInfo').classList.toggle('hidden', !fest);
+}
 export function syncWizard() {
 	const S = app.S;
 	if (!S) return;
@@ -344,6 +378,7 @@ export function syncWizard() {
 		$('wzPlace').textContent = app.DATA.place || 'Mein Ort';
 		$('wzPlaceInfo').textContent = app.DATA.region || '';
 	}
+	syncOrt();
 	const pr = S.print;
 	all('[data-sizes] button').forEach((b) => b.classList.toggle('on', pr ? b.dataset.k === pr.k : b.dataset.k === 'frei'));
 	all('[data-quer]').forEach((q) => {
@@ -960,6 +995,61 @@ export function initWizard() {
 					app.S.view.a = +(b.dataset.a || 1);
 					clampView(app.S.view);
 				}))
+	);
+	// Zoom-Regler im Bereich „Ort“ (gleiche Skala wie der Regler in „Alle Einstellungen“)
+	const kz = /** @type {HTMLInputElement} */ ($('wzZoomR'));
+	kz.addEventListener('input', () => {
+		begin();
+		app.S.view.z = sliderToZ(+kz.value, app.S.view);
+		clampView(app.S.view);
+		render();
+	});
+	kz.addEventListener('change', () => commit());
+	// Kartendetails: Straßen & Gebäude / nur Straßen / nur Gebäude (bleibt beim Stilwechsel erhalten)
+	all('#wzZeig button').forEach(
+		(b) =>
+			(b.onclick = () =>
+				smooth(() =>
+					change(() => {
+						const S = app.S,
+							z = b.dataset.zg;
+						S.zeig = z;
+						const P = PRESETS[S.preset].cls;
+						S.cls.haus.h = z === 'strassen';
+						// Wege/Bahn zurück wie im Stil vorgesehen, Haupt-/Nebenstraßen immer sichtbar (außer „nur Gebäude“)
+						STRASSEN.forEach((k) => S.cls[k] && (S.cls[k].h = z === 'haeuser' ? true : k === 'haupt' || k === 'neben' ? false : !!(P[k] && P[k].h)));
+					})
+				))
+	);
+	$('wzOrtsnamen').addEventListener('change', (e) => {
+		const an = /** @type {HTMLInputElement} */ (e.target).checked;
+		change(() => (app.S.mode === 'std' ? (app.S.labels = an) : (app.S.ortsnamen = an)));
+	});
+	// Ausrichtung: Hoch/Quadrat/Quer – mit Druckgröße über „Querformat“, sonst passendes Seitenverhältnis
+	all('#wzAusr button').forEach(
+		(b) =>
+			(b.onclick = () =>
+				smooth(() =>
+					change(() => {
+						const S = app.S,
+							o = b.dataset.o;
+						const pr = S.print && /** @type {any} */ (SIZES)[S.print.k];
+						const quadratDruck = pr && pr.w === pr.h;
+						if (pr && !quadratDruck && o !== 'quadrat') {
+							S.print.q = o === 'quer';
+							fitPrint(S);
+						} else {
+							S.print = null;
+							const r = o === 'hoch' ? 4 / 3 : o === 'quer' ? 3 / 4 : 1;
+							for (let i = 0; i < 3; i++) {
+								const g = geo();
+								const a = (g.W * r - (g.H - g.MH)) / 1004;
+								if (Number.isFinite(a)) S.view.a = Math.max(0.4, Math.min(2.4, +a.toFixed(4)));
+							}
+						}
+						clampView(S.view);
+					})
+				))
 	);
 	$('wzZIn').onclick = () => $('zIn').click();
 	$('wzZOut').onclick = () => $('zOut').click();

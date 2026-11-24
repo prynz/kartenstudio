@@ -82,6 +82,11 @@ export function newState(presetKey, keep) {
     st.mode = keep.mode;
     st.base = keep.base;
     st.labels = keep.labels;
+    if (keep.ortsnamen) st.ortsnamen = true;
+    if (keep.zeig) {
+      st.zeig = keep.zeig;
+      zeigAnwenden(st);
+    }
     st.note = { ...(keep.note || st.note) };
     st.pins = JSON.parse(JSON.stringify(keep.pins || []));
     st.pinColor = keep.pinColor || st.pinColor;
@@ -103,6 +108,12 @@ export function newState(presetKey, keep) {
   // Design (Aufbau/Rahmen) bleibt beim Wechsel des Farbthemas erhalten
   applyDesign(st, keep && keep.design || 'poster', p, !keep);
   return st;
+}
+/** Kartendetails: „strassen“ = ohne Häuser, „haeuser“ = ohne Straßen/Wege/Bahn, „alle“ = wie der Stil */
+export const STRASSEN = ['haupt', 'neben', 'weg', 'bahn'];
+export function zeigAnwenden(st) {
+  if (st.zeig === 'strassen' && st.cls.haus) st.cls.haus.h = true;
+  if (st.zeig === 'haeuser') STRASSEN.forEach(k => st.cls[k] && (st.cls[k].h = true));
 }
 export function defView() {
   const a = app.DATA ? app.DATA.MH0 / MW : 0.8805;

@@ -20,7 +20,7 @@ import { formOk, formPfad, textForm } from './silhouette.js';
 import { coverSVG, plaketteSVG, himmelSVG } from '../themen/sunset.js';
 import { einsatzSVG, absatzSVG, fokusSVG, lupeSVG, gitterSVG, kompassSVG, tabelleSVG, steckbriefSVG, kastenSVG, leuchtenSVG } from '../themen/layouts.js';
 import { multiKey, multiOn, multiSVG } from './mehrere.js';
-import { routeSVG } from './route.js';
+import { routeSVG, routeStrich } from './route.js';
 import { contours, reliefBild } from '../karte/hoehen.js';
 import { syncTools } from './bedienung.js';
 import { msg, zoom } from './ansicht.js';
@@ -655,6 +655,8 @@ export function renderView() {
   if (pa) pa.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
   const ea = app.poster.querySelector('#einsatzAnsicht');
   if (ea) ea.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
+  const oa = app.poster.querySelector('#orteAnsicht');
+  if (oa) oa.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
   if (MC.hits) MC.hits.setAttribute('transform', t);
   drawSel();
   syncTools();
@@ -860,7 +862,44 @@ function routeFeld(K, pf) {
   if (!xy || xy.length < 2) return '';
   const w = R.w || 7, c = R.c || '#d64545';
   const d = xy.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
-  return `<path d="${d}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="${(w * 1.9).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  return `<path d="${d}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="${(w * 1.9).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${c}" stroke-width="${w}"${routeStrich(R, w)} stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+/** Ortsnamen an? (nur gezeichnete Karte – Landkarten-Stile bringen eigene Beschriftung mit) */
+export function ortsnamenAn() {
+  const S = app.S;
+  return !!(S.ortsnamen && S.mode !== 'std' && app.DATA && app.DATA.orte && app.DATA.orte.length && (!S.motif || S.motif === 'karte') && !multiOn() && !(S.fx && S.fx.h3d));
+}
+const ORT_GR = [0, 30, 22, 15, 11.5];
+/** Ortsnamen in eigener Ebene über der Karte – Schriftgröße auf dem Poster fest, Überlappungen werden weggelassen */
+function ortsnamenSVG(g) {
+  if (!ortsnamenAn()) return '';
+  const S = app.S, k = 1 / S.view.z, r = visRect(), pf = feldProjektion();
+  const farbe = (S.cls.haupt && !S.cls.haupt.h && S.cls.haupt.s) || S.title.color || '#262c3a';
+  const grund = S.bg && S.bg !== 'none' ? S.bg : '#ffffff';
+  const selbst = String(app.DATA.place || '').toLowerCase();
+  const platz = [];
+  let o = '';
+  app.DATA.orte
+    .filter(q => q.x > r[0] && q.x < r[2] && q.y > r[1] && q.y < r[3] && q.n.toLowerCase() !== selbst)
+    .sort((a, b) => a.c - b.c)
+    .slice(0, 80)
+    .forEach(q => {
+      const gr = ORT_GR[q.c] * (pf ? 1 : k), ls = gr * 0.12;
+      const w = q.n.length * (gr * 0.68 + ls) / 2 + gr * 0.4, h = gr * 0.75;
+      const box = [q.x - w, q.y - h, q.x + w, q.y + h];
+      // ganz im sichtbaren Bereich, sonst am Rand abgeschnitten
+      if (!pf && (box[0] < r[0] || box[2] > r[2] || box[1] < r[1] || box[3] > r[3])) return;
+      if (platz.some(b => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) return;
+      platz.push(box);
+      const xy = pf ? pf(q.x, q.y) : [q.x, q.y];
+      if (!xy) return;
+      o += `<text x="${xy[0].toFixed(1)}" y="${xy[1].toFixed(1)}" font-size="${gr.toFixed(2)}" letter-spacing="${ls.toFixed(2)}"${q.c >= 4 ? ' font-style="italic"' : ''}>${esc(q.c <= 3 ? q.n.toUpperCase() : q.n)}</text>`;
+    });
+  if (!o) return '';
+  const sw = (pf ? 1 : k) * 3.2;
+  const kopf = `<g font-family="SgMD" text-anchor="middle" dominant-baseline="central" fill="${farbe}" stroke="${grund}" stroke-width="${sw.toFixed(2)}" stroke-linejoin="round" paint-order="stroke">`;
+  if (pf) return `<g id="orte" clip-path="url(#cIn)" pointer-events="none"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)">${kopf}${o}</g></g></g></g>`;
+  return `<g id="orte" clip-path="url(#cIn)" pointer-events="none"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><g id="orteAnsicht" transform="${vT(g).replace(/^translate\([^)]*\) /, '')}">${kopf}${o}</g></g></g></g></g>`;
 }
 /** Pins als SVG – in eigener Ebene über der Karte, Größe unabhängig vom Zoom */
 function pinsSVG(g, forExport) {
@@ -908,6 +947,7 @@ export function buildSVG(forExport) {
     if (t.on && t.text) fonts.add(t.font);
   });
   if (multiOn()) ['SgXB', 'SgMD', app.S.sub.font].forEach(f => fonts.add(f));
+  if (ortsnamenAn()) fonts.add('SgMD');
   const schnitt = g.L.kind === 'typo' && typoOpt().stil === 'schnitt' && app.S.title.on && app.S.title.text;
   if (g.L.kind === 'typo') fonts.add(typoOpt().schrift), fonts.add('SgMD');
   if (g.L.kind === 'steckbrief' || g.L.kind === 'kasten' || g.L.foot) ['SgXB', 'SgMD', 'SgSC'].forEach(f => fonts.add(f));
@@ -954,6 +994,7 @@ export function buildSVG(forExport) {
   o += einsatzSVG(g, vT(g).replace(/^translate\([^)]*\) /, ''));
   o += gitterSVG(g);
   o += absatzSVG(g);
+  o += ortsnamenSVG(g);
   o += pinsSVG(g, forExport);
   if (g.L.inner > 0) o += mapShape(g, g.L.innerGap + g.L.inner / 2, ` id="innenlinie" transform="translate(${g.mx},${g.my})" fill="none" stroke="${f.w > 0 ? f.color : ink}" stroke-width="${g.L.inner}"`);
   if (g.L.kind === 'over' && g.L.fade && g.block > 0) {

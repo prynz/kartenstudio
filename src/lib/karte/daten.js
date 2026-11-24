@@ -35,6 +35,18 @@ function ohneSeeLinien(feats) {
     });
   });
 }
+/** Rang der Ortsnamen: 1 = groß (Stadt) … 4 = klein (Weiler, Viertel) */
+const ORT_RANG = { city: 1, town: 2, village: 3, suburb: 3, quarter: 4, neighbourhood: 4, hamlet: 4, isolated_dwelling: 0 };
+/** Derselbe Ort kommt am Kachelrand doppelt vor → nur einmal behalten */
+function ohneDoppelte(orte) {
+  const da = new Set();
+  return orte.filter(o => {
+    const k = o.n + '|' + Math.round(o.x / 40) + '|' + Math.round(o.y / 40);
+    if (da.has(k)) return false;
+    da.add(k);
+    return true;
+  });
+}
 export function buildDataTiles(tiles, b, big, place) {
   const [x0, y0] = merc(b.w, b.n),
     [x1, y1] = merc(b.e, b.s);
@@ -43,7 +55,8 @@ export function buildDataTiles(tiles, b, big, place) {
   const [ex0, ey0] = merc(big.w, big.n),
     [ex1, ey1] = merc(big.e, big.s);
   const feats = [],
-    tileRects = [];
+    tileRects = [],
+    orte = [];
   let n = 0;
   tiles.forEach((t, ti) => {
     const Z = Math.pow(2, t.z);
@@ -51,6 +64,12 @@ export function buildDataTiles(tiles, b, big, place) {
     Object.entries(t.layers || {}).forEach(([lname, L]) => {
       const f = 1 / (L.ext * Z);
       L.features.forEach(ft => {
+        // Ortsnamen (Stadt, Dorf, Stadtteil …) als Punkte – für „Ortsnamen anzeigen“
+        if (lname === 'place') {
+          const r = ft.rings[0], name = ft.props['name:de'] || ft.props.name, c = ORT_RANG[ft.props.class];
+          if (ft.type === 1 && r && name && c) orte.push({ x: ((t.x + r[0] / L.ext) / Z - x0) * sc, y: ((t.y + r[1] / L.ext) / Z - y0) * sc, n: String(name), c });
+          return;
+        }
         const k = classifyTile(lname, ft.props, ft.type);
         if (!k) return;
         let d = '',
@@ -90,6 +109,7 @@ export function buildDataTiles(tiles, b, big, place) {
   const E = [(ex0 - x0) * sc, (ey0 - y0) * sc, (ex1 - x0) * sc, (ey1 - y0) * sc];
   return {
     feats: ohneSeeLinien(feats),
+    orte: ohneDoppelte(orte),
     tiles: tileRects,
     MH0: MH,
     ext: {

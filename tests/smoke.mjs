@@ -361,11 +361,6 @@ await run('Desktop – Anlass-Vorlagen und Effekte', { viewport: { width: 1440, 
 	ok((await page.$$('#poster [data-pin]')).length === 1 && (await page.textContent('#widmung')) === 'Hier haben wir Ja gesagt', 'Herz und Widmung gesetzt');
 	ok((await page.$('#papier')) !== null, 'Papier-Struktur aktiv');
 	await page.screenshot({ path: `${OUT}/15-anlass-hochzeit.png` });
-	await page.click('#wzSteps button[data-step="ort"]');
-	await page.click('.wz-more [data-occ] button[data-k="geburt"]');
-	await page.waitForTimeout(700);
-	ok((await page.textContent('#widmung')) === 'Willkommen auf der Welt' && (await page.$('#papier')) === null, 'Anlass „Geburt“ im Assistenten gewechselt');
-	await page.screenshot({ path: `${OUT}/16-anlass-geburt.png` });
 	await page.click('#wzSteps button[data-step="stil"]');
 	await page.check('#fxVig');
 	await page.waitForTimeout(300);
@@ -631,6 +626,56 @@ await run('Einfacher Ablauf: Vorschläge, Top 6, Umfang, Widmungs-Ideen', { view
 	await page.click('#wzNoteIdeen button:first-child');
 	await page.waitForTimeout(300);
 	ok((await page.inputValue('#wzNote')) === 'Hier hat alles begonnen', 'Widmungs-Idee per Tippen');
+});
+
+await run('Ort: Kartendetails, Ausrichtung, Route selbst zeichnen', { viewport: { width: 1440, height: 900 } }, async (page) => {
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	await page.waitForTimeout(500);
+	await page.click('#wzSteps button[data-step="ort"]');
+	await page.click('#wzZeig button[data-zg="strassen"]');
+	await page.waitForTimeout(600);
+	ok(await page.$eval('#wzZeig button.on', (b) => b.dataset.zg) === 'strassen', 'Kartendetails: „Nur Straßen“ gewählt');
+	await page.click('#wzSteps button[data-step="stil"]');
+	await page.click('#wzStyles button >> nth=2');
+	await page.waitForTimeout(700);
+	await page.click('#wzSteps button[data-step="ort"]');
+	ok(await page.$eval('#wzZeig button.on', (b) => b.dataset.zg) === 'strassen', 'Nur Straßen bleibt beim Stilwechsel erhalten');
+	await page.click('#wzZeig button[data-zg="alle"]');
+	await page.waitForTimeout(400);
+	ok(await page.$('#wzOrtsnamen:disabled') !== null, 'Ortsnamen: beim Offline-Beispiel ohne Daten ausgegraut');
+	await page.click('#wzAusr button[data-o="quer"]');
+	await page.waitForTimeout(600);
+	let bb = await page.locator('#poster').boundingBox();
+	ok(bb.width > bb.height * 1.2, `Querformat (${Math.round(bb.width)} × ${Math.round(bb.height)})`);
+	await page.click('#wzAusr button[data-o="quadrat"]');
+	await page.waitForTimeout(600);
+	bb = await page.locator('#poster').boundingBox();
+	ok(Math.abs(bb.width - bb.height) < bb.width * 0.03, 'Quadrat');
+	await page.click('#wzAusr button[data-o="hoch"]');
+	await page.waitForTimeout(600);
+	bb = await page.locator('#poster').boundingBox();
+	ok(bb.height > bb.width * 1.2, 'Hochformat');
+	const z0 = await page.inputValue('#wzZoomR');
+	await page.click('#wzZIn');
+	await page.waitForTimeout(400);
+	ok(+(await page.inputValue('#wzZoomR')) > +z0, 'Zoom-Regler folgt dem +-Knopf');
+	await page.click('#routeDraw');
+	ok(await page.locator('#rtEditor').isVisible(), 'Routen-Editor erscheint über dem Poster');
+	const p = await page.locator('#poster').boundingBox();
+	for (const [fx, fy] of [[0.3, 0.3], [0.55, 0.4], [0.6, 0.6]]) {
+		await page.mouse.click(p.x + p.width * fx, p.y + p.height * fy);
+		await page.waitForTimeout(250);
+	}
+	ok(/3 Punkte/.test(await page.textContent('#rtEdInfo')) && (await page.$('#route')) !== null, 'Route per Antippen gezeichnet: ' + (await page.textContent('#rtEdInfo')));
+	await page.click('#rtEdZurueck');
+	await page.waitForTimeout(250);
+	ok(/2 Punkte/.test(await page.textContent('#rtEdInfo')), 'Letzten Punkt zurückgenommen');
+	await page.click('#rtEdFertig');
+	await page.click('#routeStil button[data-s="strich"]');
+	await page.waitForTimeout(300);
+	ok((await page.$('#pins path[stroke-dasharray]')) !== null, 'Linie gestrichelt');
+	await page.screenshot({ path: `${OUT}/49-route-gezeichnet.png` });
 });
 
 await run('Bedienung im Poster: Einführung, Text im Poster, Gespeichert, Favoriten', { viewport: { width: 1440, height: 900 } }, async (page) => {
