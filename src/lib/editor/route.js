@@ -5,6 +5,7 @@ import { change, clampView } from './zustand.js';
 import { geo, perspektiveAn } from './zeichnen.js';
 import { std3d } from '../karte/raster.js';
 import { MW } from './basis.js';
+import { netz, fang, weg } from './wege.js';
 import { loadBounds } from './laden.js';
 import { msg } from './ansicht.js';
 import { merc } from '../karte/overpass.js';
@@ -230,11 +231,28 @@ export function initRoute() {
 	$('routeEdit').onclick = () => zeichnen(!app.routeZeichnen);
 	$('routeFit').onclick = routeEinpassen;
 	$('rtEdFertig').onclick = () => zeichnen(false);
+	$('rtEdModus').onclick = () => {
+		app.routeFrei = !app.routeFrei;
+		syncRoute();
+	};
+	// Vorschau am PC: Punkt rastet sichtbar auf dem Weg ein
+	let rafId = 0;
+	const cv = $('canvas');
+	cv.addEventListener('pointermove', (e) => {
+		if (!app.routeZeichnen || e.pointerType !== 'mouse' || e.buttons) return fangZeigen(null);
+		cancelAnimationFrame(rafId);
+		rafId = requestAnimationFrame(() => fangZeigen(zielPunkt(e.clientX, e.clientY)));
+	});
+	cv.addEventListener('pointerleave', () => fangZeigen(null));
 	$('rtEdZurueck').onclick = () => {
 		const R = app.S.route;
 		if (!R || !R.pts.length) return;
 		change(() => {
-			R.pts = R.pts.slice(0, -1);
+			// ganzes zuletzt gezeichnetes Teilstück zurücknehmen
+			const teile = [...(R.teile || [])];
+			const n = Math.max(1, Math.min(R.pts.length, teile.pop() || 1));
+			R.pts = R.pts.slice(0, -n);
+			R.teile = teile;
 			R.km = +lengthKm(R.pts).toFixed(2);
 		});
 	};
@@ -243,7 +261,6 @@ export function initRoute() {
 		b.addEventListener('click', () => change(() => (app.S.route = { ...app.S.route, stil: /** @type {HTMLElement} */ (b).dataset.s })))
 	);
 	// Punkte setzen: kurzes Antippen der Karte (Ziehen verschiebt weiter die Karte)
-	const cv = $('canvas');
 	/** @type {{x:number,y:number}|null} */
 	let unten = null;
 	cv.addEventListener('pointerdown', (e) => (unten = app.routeZeichnen && e.isPrimary ? { x: e.clientX, y: e.clientY } : null), true);
@@ -255,13 +272,7 @@ export function initRoute() {
 			unten = null;
 			const t = /** @type {Element} */ (e.target);
 			if (weit > 6 || t.closest('#titel, #untertitel, [data-pin]')) return;
-			const ll = bildschirmZuGeo(e.clientX, e.clientY);
-			if (!ll) return;
-			change(() => {
-				const R = app.S.route;
-				R.pts = [...R.pts, ll];
-				R.km = +lengthKm(R.pts).toFixed(2);
-			});
+			punktSetzen(e.clientX, e.clientY);
 		},
 		true
 	);
@@ -308,8 +319,12 @@ export function syncRoute() {
 	$('rtFeat').classList.toggle('an', !!R);
 	if (app.routeZeichnen && !R) zeichnen(false);
 	const km = R ? String(R.km || 0).replace('.', ',') : '0';
-	$('rtEdInfo').textContent = !R || !R.pts.length ? 'Tippe Punkt für Punkt auf die Karte' : R.pts.length === 1 ? 'Start gesetzt – tippe den nächsten Punkt' : `${R.pts.length} Punkte · ${km} km`;
+	const stuecke = R ? (R.teile || []).length : 0;
+	$('rtEdInfo').textContent = !R || !R.pts.length ? (app.routeFrei ? 'Tippe Punkt für Punkt auf die Karte' : 'Tippe auf einen Weg: dort startet die Route') : stuecke <= 1 && R.pts.length === 1 ? 'Start gesetzt – tippe das nächste Ziel' : `${km} km · ${stuecke} ${stuecke === 1 ? 'Abschnitt' : 'Abschnitte'}`;
 	$('routeEdit').classList.toggle('on', !!app.routeZeichnen);
+	$('rtEdModus').classList.toggle('an', !app.routeFrei);
+	$('rtEdModus').setAttribute('aria-pressed', String(!app.routeFrei));
+	$('rtEdModusT').textContent = app.routeFrei ? 'Gerade Linie' : 'Wege folgen';
 	if (!R) return;
 	$('routeInfo').innerHTML = `<b>${esc(R.name)}</b> · ${km} km`;
 	/** @type {HTMLInputElement} */ ($('routeEnds')).checked = R.ends !== false;
@@ -318,8 +333,8 @@ export function syncRoute() {
 	document.querySelectorAll('.rt-c').forEach((b) => b.classList.toggle('on', /** @type {HTMLElement} */ (b).dataset.c === R.c));
 }
 
-/** Bildschirmpunkt → [lon, lat] (null außerhalb der Karte) @param {number} cx @param {number} cy */
-function bildschirmZuGeo(cx, cy) {
+/** Bildschirmpunkt → Kartenkoordinaten (null außerhalb der Karte); px = Kartenmaß je Bildschirmpixel */
+function bildschirmZuKarte(/** @type {number} */ cx, /** @type {number} */ cy) {
 	const svg = /** @type {SVGSVGElement|null} */ (document.getElementById('poster'));
 	const m = svg && svg.getScreenCTM();
 	if (!m || !app.DATA) return null;
@@ -327,11 +342,76 @@ function bildschirmZuGeo(cx, cy) {
 	const g = geo(),
 		v = app.S.view;
 	if (p.x < g.mx || p.x > g.mx + MW || p.y < g.my || p.y > g.my + g.MH) return null;
-	const mx = (p.x - g.mx - MW / 2) / v.z + v.cx,
-		my = (p.y - g.my - g.MH / 2) / v.z + v.cy;
+	return { x: (p.x - g.mx - MW / 2) / v.z + v.cx, y: (p.y - g.my - g.MH / 2) / v.z + v.cy, px: 1 / (m.a * v.z) };
+}
+/** Kartenkoordinaten → Bildschirm */
+function karteZuBildschirm(/** @type {number} */ x, /** @type {number} */ y) {
+	const svg = /** @type {SVGSVGElement|null} */ (document.getElementById('poster'));
+	const m = svg && svg.getScreenCTM();
+	if (!m) return null;
+	const g = geo(),
+		v = app.S.view;
+	return new DOMPoint((x - v.cx) * v.z + MW / 2 + g.mx, (y - v.cy) * v.z + g.MH / 2 + g.my).matrixTransform(m);
+}
+const zuGeo = (/** @type {number} */ x, /** @type {number} */ y) => {
 	const P = app.DATA.proj;
-	const [lon, lat] = mercInv(mx / P.sc + P.x0, my / P.sc + P.y0);
+	const [lon, lat] = mercInv(x / P.sc + P.x0, y / P.sc + P.y0);
 	return [+lon.toFixed(5), +lat.toFixed(5)];
+};
+const zuKarte = (/** @type {number[]} */ ll) => {
+	const P = app.DATA.proj,
+		[X, Y] = merc(ll[0], ll[1]);
+	return [(X - P.x0) * P.sc, (Y - P.y0) * P.sc];
+};
+
+/** Wohin ein Tipp an dieser Stelle führt: eingerastet auf einem Weg (fang) oder frei */
+function zielPunkt(/** @type {number} */ cx, /** @type {number} */ cy) {
+	const k = bildschirmZuKarte(cx, cy);
+	if (!k) return null;
+	const N = app.routeFrei ? null : netz(app.DATA);
+	// Fangradius ≈ 26 Bildschirmpixel – egal wie weit hineingezoomt ist
+	const f = N ? fang(N, k.x, k.y, 26 * k.px) : null;
+	return { x: f ? f.x : k.x, y: f ? f.y : k.y, f };
+}
+
+/** Punkt am Bildschirm setzen: entlang der Wege bis dorthin, sonst gerade */
+function punktSetzen(/** @type {number} */ cx, /** @type {number} */ cy) {
+	const Z = zielPunkt(cx, cy);
+	if (!Z) return;
+	const R = app.S.route;
+	/** @type {number[][]} */
+	let neu = [[Z.x, Z.y]];
+	if (R.pts.length && Z.f) {
+		const N = netz(app.DATA);
+		const [lx, ly] = zuKarte(R.pts[R.pts.length - 1]);
+		const P = fang(N, lx, ly, 1.5);
+		const w = P ? weg(N, P, Z.f) : null;
+		if (w) neu = w.slice(1);
+		else msg('Kein Weg dorthin gefunden – gerade Linie gezeichnet.', 'busy');
+	}
+	// doppelte Punkte (gleiche Stelle) weglassen
+	const ll = neu.map((p) => zuGeo(p[0], p[1])).filter((p, i, a) => !i || p[0] !== a[i - 1][0] || p[1] !== a[i - 1][1]);
+	if (!ll.length || R.pts.length + ll.length > 6000) return;
+	change(() => {
+		const R = app.S.route;
+		R.pts = [...R.pts, ...ll];
+		R.teile = [...(R.teile || []), ll.length];
+		R.km = +lengthKm(R.pts).toFixed(2);
+	});
+}
+
+/** Fang-Punkt unter der Maus zeigen @param {{x:number,y:number,f:any}|null} Z */
+function fangZeigen(Z) {
+	const el = $('rtFang');
+	const s = Z && karteZuBildschirm(Z.x, Z.y);
+	if (!s) {
+		el.hidden = true;
+		return;
+	}
+	const r = /** @type {HTMLElement} */ (el.offsetParent || document.body).getBoundingClientRect();
+	el.hidden = false;
+	el.classList.toggle('frei', !Z.f);
+	el.style.transform = `translate(${(s.x - r.left).toFixed(1)}px,${(s.y - r.top).toFixed(1)}px)`;
 }
 
 /**
@@ -354,12 +434,17 @@ export function zeichnen(an, neu) {
 		if (neu || !app.S.route)
 			change(() => {
 				const alt = app.S.route || {};
-				app.S.route = { pts: [], name: 'Meine Route', km: 0, c: alt.c || '#d64545', w: alt.w || 7, ends: alt.ends !== false, stil: alt.stil || 'voll' };
+				app.S.route = { pts: [], teile: [], name: 'Meine Route', km: 0, c: alt.c || '#d64545', w: alt.w || 7, ends: alt.ends !== false, stil: alt.stil || 'voll' };
 				if (app.S.multi) app.S.multi.on = false;
 			});
+		// Wegenetz im Hintergrund vorbereiten (beim ersten Tipp ist es dann fertig)
+		setTimeout(() => netz(app.DATA), 30);
 		// Handy: Einstellungen zuklappen, damit die Karte frei ist
 		if (matchMedia('(max-width: 900px)').matches) document.body.classList.add('sheet-zu');
-	} else if (app.S.route && app.S.route.pts.length < 2) change(() => (app.S.route = null));
+	} else {
+		fangZeigen(null);
+		if (app.S.route && app.S.route.pts.length < 2) change(() => (app.S.route = null));
+	}
 	syncRoute();
 }
 

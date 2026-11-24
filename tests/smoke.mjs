@@ -664,14 +664,42 @@ await run('Ort: Kartendetails, Ausrichtung, Route selbst zeichnen', { viewport: 
 	await page.click('#routeDraw');
 	ok(await page.locator('#rtEditor').isVisible(), 'Routen-Editor erscheint über dem Poster');
 	const p = await page.locator('#poster').boundingBox();
-	for (const [fx, fy] of [[0.3, 0.3], [0.55, 0.4], [0.6, 0.6]]) {
-		await page.mouse.click(p.x + p.width * fx, p.y + p.height * fy);
+	// Punkte genau auf Straßen der Karte (längste sichtbare Straßen, verschiedene Stellen)
+	const ziele = await page.evaluate(() => {
+		const pb = document.getElementById('poster').getBoundingClientRect();
+		const drin = (q) => q.x > pb.left + pb.width * 0.08 && q.x < pb.right - pb.width * 0.08 && q.y > pb.top + pb.height * 0.08 && q.y < pb.top + pb.height * 0.7;
+		const out = [];
+		const wege = [...document.querySelectorAll('#kartenInhalt path[data-k="neben"], #kartenInhalt path[data-k="haupt"]')].sort((a, b) => b.getTotalLength() - a.getTotalLength());
+		for (const w of wege) {
+			const m = w.getScreenCTM();
+			const L = w.getTotalLength();
+			for (const f of [0.5, 0.2, 0.8]) {
+				const q = w.getPointAtLength(L * f).matrixTransform(m);
+				if (drin(q) && out.every((o) => Math.hypot(o[0] - q.x, o[1] - q.y) > 120)) {
+					out.push([q.x, q.y]);
+					break;
+				}
+			}
+			if (out.length === 3) break;
+		}
+		return out;
+	});
+	for (const [x, y] of ziele) {
+		await page.mouse.click(x, y);
 		await page.waitForTimeout(250);
 	}
-	ok(/3 Punkte/.test(await page.textContent('#rtEdInfo')) && (await page.$('#route')) !== null, 'Route per Antippen gezeichnet: ' + (await page.textContent('#rtEdInfo')));
+	ok(/3 Abschnitte/.test(await page.textContent('#rtEdInfo')) && (await page.$('#route')) !== null, 'Route per Antippen gezeichnet: ' + (await page.textContent('#rtEdInfo')));
+	const punkte = async () => ((await page.getAttribute('#route', 'd')) || '').split('L').length;
+	ok((await punkte()) > 3, `Route folgt den Wegen (${await punkte()} Punkte statt 3)`);
 	await page.click('#rtEdZurueck');
 	await page.waitForTimeout(250);
-	ok(/2 Punkte/.test(await page.textContent('#rtEdInfo')), 'Letzten Punkt zurückgenommen');
+	ok(/2 Abschnitte/.test(await page.textContent('#rtEdInfo')), 'Letzten Abschnitt zurückgenommen');
+	await page.click('#rtEdModus');
+	ok((await page.textContent('#rtEdModusT')) === 'Gerade Linie', 'Umschalter „Gerade Linie“');
+	const vor = await punkte();
+	await page.mouse.click(p.x + p.width * 0.35, p.y + p.height * 0.62);
+	await page.waitForTimeout(300);
+	ok((await punkte()) === vor + 1, 'Gerade Linie: genau ein neuer Punkt');
 	await page.click('#rtEdFertig');
 	await page.click('#routeStil button[data-s="strich"]');
 	await page.waitForTimeout(300);
