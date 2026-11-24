@@ -54,7 +54,7 @@ Die echte App liegt im Repo-Wurzelverzeichnis: **SvelteKit 3 + Svelte 5 + Vite, 
 
 - **Live-Vorschau:** https://prynz.github.io/kartenstudio/ – GitHub Action `.github/workflows/pages.yml` baut bei jedem Push auf `main` (Basis-Pfad über `BASE_PATH`).
 - **Lokal:** `npm install`, `npm run dev` (öffnet auf Port 5173, auch im WLAN erreichbar) · `npm run build` · `npm run check` (Typprüfung).
-- **Rauchtest:** `npm run build && npm run preview`, dann `npm run test:smoke -- http://localhost:4173/` (Playwright; prüft Beispiel, Stile, Undo, Text, SVG/PNG-Export, iPhone-Ansicht, echte Suche + Vektorkacheln + Standard-Stil). `OFFLINE=1` überspringt die Online-Prüfungen.
+- **Rauchtest:** `npm run build && npm run preview`, dann `npm run test:smoke -- http://localhost:4173/` (Playwright; prüft Beispiel, Stile, Undo, Text, SVG/PNG-Export, iPhone-Ansicht, echte Suche + Vektorkacheln + Standard-Stil). `OFFLINE=1` überspringt die Online-Prüfungen, `NUR="Teil des Testnamens"` führt nur passende Tests aus.
 - **Konfiguration:** in SvelteKit 3 steht sie in `vite.config.ts` (nicht mehr `svelte.config.js`); Alias für `src/lib` ist `#lib`.
 
 Aufbau (`src/lib`), aus `prototyp/src/script.js` maschinell (Babel) zerlegt – Logik unverändert:

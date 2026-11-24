@@ -19,6 +19,7 @@ const ok = (cond, text) => {
 };
 
 async function run(name, ctxOpts, fn) {
+	if (process.env.NUR && !name.includes(process.env.NUR)) return;
 	const ctx = await browser.newContext(ctxOpts);
 	if (!/Einführung/.test(name)) await ctx.addInitScript(() => localStorage.setItem('kartenstudio.tipps.v1', '1'));
 	const page = await ctx.newPage();
