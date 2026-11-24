@@ -865,6 +865,19 @@ export function initWizard() {
 	// … auch wenn die Leiste erst sichtbar wird (nach der Startseite) oder sich ihre Größe ändert
 	if ('ResizeObserver' in window) new ResizeObserver(() => markierung()).observe($('wzSteps'));
 	else addEventListener('resize', () => requestAnimationFrame(() => markierung()));
+	// Handy: die Leiste hängt direkt an der Seite statt im Einstellungsfeld. Grund: iOS zeichnet fest
+	// positionierte Elemente in animierten/scrollenden Bereichen fehlerhaft (Leiste wurde überdeckt).
+	const leiste = $('wzSteps'),
+		heimat = $('wiz'),
+		handy = matchMedia('(max-width: 900px)');
+	const umhaengen = () => {
+		if (handy.matches) {
+			if (leiste.parentElement !== document.body) document.body.appendChild(leiste);
+		} else if (leiste.parentElement !== heimat) heimat.prepend(leiste);
+		requestAnimationFrame(() => markierung());
+	};
+	handy.addEventListener('change', umhaengen);
+	umhaengen();
 	// Überfahren (PC mit Maus): die Kerbe folgt flüssig der Maus und kehrt beim Verlassen zurück
 	const maus = matchMedia('(hover: hover) and (pointer: fine) and (min-width: 901px)');
 	let zurueck = 0;

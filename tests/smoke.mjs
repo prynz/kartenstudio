@@ -900,6 +900,8 @@ if (ONLINE)
 		await page.goto(URL + '#ort=pottenstein');
 		await page.reload();
 		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });
+		// Nach dem Laden springt der Editor einmal zum Bereich „Stil“ – erst danach umschalten
+		await page.waitForTimeout(1500);
 		await page.check('#fxRelief');
 		await page.waitForSelector('#relief', { timeout: 40000 }).catch(() => {});
 		ok(!!(await page.$('#relief')), 'Relief-Schattierung erscheint');
@@ -911,6 +913,7 @@ if (ONLINE)
 		await page.goto(URL + '#ort=bamberg');
 		await page.reload();
 		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });
+		await page.waitForTimeout(1500);
 		await page.click('#wzMode button[data-m="std"]');
 		await page.click('#wzSteps button[data-step="extras"]');
 		ok(await page.locator('#fxGelaende').isVisible(), 'Gelände-Schalter bei Landkarten-Stilen');

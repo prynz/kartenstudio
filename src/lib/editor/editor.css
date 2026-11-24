@@ -1032,3 +1032,10 @@ body:not(.wiz-on) .poster-tools,body.mk-on .poster-tools{display:none}
   .wz-ring{inset:-4px;width:56px;height:56px}
   .wz-ind{transition:transform .38s cubic-bezier(.2,.8,.2,1),opacity .2s}
 }
+
+/* Handy: Leiste hängt direkt an <body> (siehe assistent.js) – eigene Zeichenebene, ganz oben;
+   nur im Editor sichtbar (nicht auf der Startseite, nicht bei „Alle Einstellungen“) */
+@media(max-width:900px){
+  body > #wzSteps{z-index:40;transform:translateZ(0);will-change:transform}
+  body:not(.wiz-on) > #wzSteps,body:has(#landing:not(.hidden)) > #wzSteps,body:has(aside.nodata) > #wzSteps{display:none}
+}
