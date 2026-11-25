@@ -11,7 +11,7 @@ import { alsBild, buildSVG, render, vorschauSVG } from './zeichnen.js';
 import { begin, change, clampView, commit, newState } from './zustand.js';
 import { openSec } from './seitenleiste.js';
 import { setTool, sliderToZ, zToSlider } from './bedienung.js';
-import { STRASSEN } from './zustand.js';
+import { STRASSEN, extZmin } from './zustand.js';
 import { dotsHTML } from './seitenleiste.js';
 import { PRESETS as PRESETS_UNTYPED } from '../themen/vorlagen.js';
 import { BASES, inBayern } from '../themen/standard.js';
@@ -239,7 +239,7 @@ function renderDesignThumbs() {
 	const D = /** @type {any} */ (DESIGNS)[S.design];
 	const aBasis = D && D.aspect ? S.aPrev || S.view.a : S.view.a;
 	const tt = S.title.klein ? String(S.title.text || '').toUpperCase() : S.title.text;
-	const key = JSON.stringify([schriftenDa(), app.DATA.place, app.DATA.feats.length, S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.motif, S.fx && [S.fx.paper, S.fx.vig], aBasis, tt, S.sub.text, S.title.fontDesign ? '' : S.title.font, S.sub.font, S.scale, S.form ? S.form.ringe.length + ':' + S.form.a : 0]);
+	const key = JSON.stringify([schriftenDa(), app.DATA.place, app.DATA.n0 ?? app.DATA.feats.length, S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.motif, S.fx && [S.fx.paper, S.fx.vig], aBasis, tt, S.sub.text, S.title.fontDesign ? '' : S.title.font, S.sub.font, S.scale, S.form ? S.form.ringe.length + ':' + S.form.a : 0]);
 	if (key === thumbKey) return;
 	thumbKey = key;
 	const lauf = ++thumbLauf;
@@ -296,9 +296,9 @@ function syncOrt() {
 	if (!app.DATA) return;
 	const zr = /** @type {HTMLInputElement} */ ($('wzZoomR'));
 	if (document.activeElement !== zr) zr.value = String(zToSlider(S.view));
-	const L = vLimits(S.view),
-		z = S.view.z;
-	const umf = Math.abs(z - 1.7) < 0.02 ? 'kern' : Math.abs(z - 1) < 0.02 ? 'ort' : Math.abs(z - L.zmin) < 0.02 ? 'weit' : '';
+	const z = S.view.z,
+		zw = extZmin(S.view);
+	const umf = Math.abs(z - 1.7) < 0.02 ? 'kern' : Math.abs(z - 1) < 0.02 ? 'ort' : Math.abs(z - zw) < 0.02 ? 'weit' : '';
 	all('#wzUmfang button').forEach((b) => b.classList.toggle('on', b.dataset.z === umf));
 	const karte = !S.motif || S.motif === 'karte';
 	$('oaDetails').classList.toggle('hidden', !karte || multiOn());
@@ -1142,8 +1142,7 @@ export function initWizard() {
 					change(() => {
 						const S = app.S;
 						const v = { ...defView(), a: S.view.a };
-						const L = vLimits(v);
-						v.z = b.dataset.z === 'kern' ? 1.7 : b.dataset.z === 'ort' ? 1 : L.zmin;
+						v.z = b.dataset.z === 'kern' ? 1.7 : b.dataset.z === 'ort' ? 1 : extZmin(v);
 						S.view = v;
 						clampView(S.view);
 					})

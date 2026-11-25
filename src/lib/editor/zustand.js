@@ -124,10 +124,43 @@ export function defView() {
     a
   };
 }
+/** Meter je Karteneinheit (Poster-Kartenkoordinaten) */
+export function meterJeEinheit(D = app.DATA) {
+  const lat = (D.center && D.center[1]) || 50;
+  return 40075016.7 * Math.cos(lat * Math.PI / 180) / D.proj.sc;
+}
+/** Kann beim Verschieben weitere Karte nachgeladen werden? (nur Vektorkacheln, nicht beim Beispiel) */
+export function nachladbar(D = app.DATA) {
+  return !!(D && D.src === 'tiles' && D.tkeys && !app.isDemo && !(app.S && app.S.multi && app.S.multi.on));
+}
+/**
+ * Bereich, in dem man die Karte verschieben darf. Mit Nachladen: großzügig um den Ort
+ * (8 × Posterbreite, höchstens 15 km) – fehlende Teile werden beim Ziehen nachgeladen.
+ */
+export function freiBereich(D = app.DATA) {
+  const e = D.ext;
+  if (!nachladbar(D)) return e;
+  if (D._frei && D._frei.e === e) return D._frei.r;
+  const L = Math.min(MW * 8, 15000 / meterJeEinheit(D)) / 2;
+  const cx = MW / 2, cy = D.MH0 / 2;
+  const r = { x0: Math.min(e.x0, cx - L), y0: Math.min(e.y0, cy - L), x1: Math.max(e.x1, cx + L), y1: Math.max(e.y1, cy + L) };
+  D._frei = { e, r };
+  return r;
+}
+/** Kleinster Zoom, bei dem die schon geladene Gegend das Poster füllt („Mit Umgebung“) */
+export function extZmin(v) {
+  const e = app.DATA.ext, MH = MW * v.a;
+  return Math.max(MW / (e.x1 - e.x0), MH / (e.y1 - e.y0)) * 1.0001;
+}
 export function vLimits(v) {
-  const e = app.DATA.ext,
-    MH = MW * v.a;
-  const zmin = Math.max(MW / (e.x1 - e.x0), MH / (e.y1 - e.y0)) * 1.0001;
+  const MH = MW * v.a;
+  let zmin = extZmin(v);
+  if (nachladbar()) {
+    // Herauszoomen über die geladene Gegend hinaus: bis 3 × Posterbreite (max. 6 km) – lädt nach
+    const f = freiBereich();
+    const maxW = Math.max(MW / zmin, Math.min(MW * 3, 6000 / meterJeEinheit()));
+    zmin = Math.max(MW / maxW, MW / (f.x1 - f.x0), MH / (f.y1 - f.y0)) * 1.0001;
+  }
   return {
     zmin,
     zmax: 8,
@@ -139,7 +172,7 @@ export function clampView(v) {
   v.z = Math.min(L.zmax, Math.max(L.zmin, v.z));
   const hw = MW / 2 / v.z,
     hh = L.MH / 2 / v.z,
-    e = app.DATA.ext;
+    e = freiBereich();
   v.cx = Math.min(e.x1 - hw, Math.max(e.x0 + hw, v.cx));
   v.cy = Math.min(e.y1 - hh, Math.max(e.y0 + hh, v.cy));
   return v;

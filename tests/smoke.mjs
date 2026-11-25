@@ -1107,6 +1107,31 @@ if (ONLINE)
 	});
 
 if (ONLINE)
+	await run('Desktop – Karte lädt beim Verschieben nach', { viewport: { width: 1440, height: 900 } }, async (page) => {
+		// Seite ist schon geladen – Sprung per #ort=… braucht ein Neuladen
+		await page.evaluate(() => {
+			location.hash = 'ort=bamberg';
+			location.reload();
+		});
+		await page.waitForSelector('#landing', { state: 'hidden', timeout: 60000 });
+		await page.waitForTimeout(3000);
+		const kacheln = () => page.$$eval('#kartenInhalt g[clip-path]', (g) => Math.max(-1, ...g.map((x) => +((x.getAttribute('clip-path') || '').match(/(\d+)\)$/) || [0, -1])[1])));
+		const k0 = await kacheln();
+		const p = await page.locator('#poster').boundingBox();
+		const cx = p.x + p.width / 2, cy = p.y + p.height * 0.4;
+		for (let r = 0; r < 3; r++) {
+			await page.mouse.move(cx + 250, cy);
+			await page.mouse.down();
+			for (let i = 1; i <= 12; i++) await page.mouse.move(cx + 250 - i * 40, cy);
+			await page.mouse.up();
+			await page.waitForTimeout(2000);
+		}
+		const k1 = await kacheln();
+		ok(k1 > k0, `Neue Kartenteile beim Verschieben nachgeladen (Kachel-Nr. ${k0} → ${k1})`);
+		ok((await page.$$('#kartenInhalt path[data-k]')).length > 100, 'Nachgeladene Gegend gezeichnet');
+	});
+
+if (ONLINE)
 	await run('Desktop – echte Suche „Bamberg“ direkt ins Poster', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }, async (page) => {
 		await page.fill('#lq', 'Bamberg');
 		await page.click('#lgo');

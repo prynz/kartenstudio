@@ -162,12 +162,17 @@ export function lat2t(lat, z) {
   const s = Math.sin(lat * Math.PI / 180);
   return Math.floor((0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * Math.pow(2, z));
 }
-export async function fetchTiles(big) {
+/**
+ * Vektorkacheln für einen Bereich holen.
+ * @param {{w:number,e:number,n:number,s:number}} big
+ * @param {{z?:number, ohne?:Set<string>}} [opt] feste Zoomstufe (Nachladen) und schon geladene Kacheln
+ */
+export async function fetchTiles(big, opt = {}) {
   const T = await tileTemplate();
   // Große Gebiete (z. B. lange Routen): gröbere Kachelstufe, sonst würden es hunderte Kacheln
-  let z = T.maxz;
+  let z = opt.z || T.maxz;
   const count = zz => (lon2t(big.e, zz) - lon2t(big.w, zz) + 1) * (lat2t(big.s, zz) - lat2t(big.n, zz) + 1);
-  while (z > 11 && count(z) > 100) z--;
+  if (!opt.z) while (z > 11 && count(z) > 100) z--;
   const x0 = lon2t(big.w, z),
     x1 = lon2t(big.e, z),
     y0 = lat2t(big.n, z),
@@ -178,6 +183,11 @@ export async function fetchTiles(big) {
     x,
     y
   });
+  if (opt.ohne) {
+    const neu = list.filter(t => !opt.ohne.has(t.z + '/' + t.x + '/' + t.y));
+    list.length = 0;
+    list.push(...neu);
+  }
   if (list.length > 160) throw new Error('Ausschnitt zu groß');
   const want = ['building', 'transportation', 'water', 'waterway', 'park', 'landcover', 'place'];
   let idx = 0;

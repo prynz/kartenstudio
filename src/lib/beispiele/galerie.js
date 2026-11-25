@@ -77,7 +77,7 @@ let vorUrls = [];
 export function vorschlaegeZeichnen() {
 	const box = document.getElementById('wzVorschlaege');
 	if (!box || !app.DATA || !app.S) return;
-	const key = String(app.DATA.place) + app.DATA.feats.length + app.S.view.a + schriftenDa();
+	const key = String(app.DATA.place) + (app.DATA.n0 ?? app.DATA.feats.length) + app.S.view.a + schriftenDa();
 	if (key === vorKey) return;
 	vorKey = key;
 	vorUrls.forEach((u) => URL.revokeObjectURL(u));

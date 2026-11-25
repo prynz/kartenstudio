@@ -47,7 +47,10 @@ function ohneDoppelte(orte) {
     return true;
   });
 }
-export function buildDataTiles(tiles, b, big, place) {
+/**
+ * @param {{fid0?:number, ti0?:number}} [opt] Nachladen: Zähler für neue IDs und Kachel-Index fortsetzen
+ */
+export function buildDataTiles(tiles, b, big, place, opt = {}) {
   const [x0, y0] = merc(b.w, b.n),
     [x1, y1] = merc(b.e, b.s);
   const sc = MW / (x1 - x0);
@@ -57,8 +60,10 @@ export function buildDataTiles(tiles, b, big, place) {
   const feats = [],
     tileRects = [],
     orte = [];
-  let n = 0;
-  tiles.forEach((t, ti) => {
+  let n = opt.fid0 || 0;
+  const ti0 = opt.ti0 || 0;
+  tiles.forEach((t, ti1) => {
+    const ti = ti0 + ti1;
     const Z = Math.pow(2, t.z);
     tileRects.push([(t.x / Z - x0) * sc, (t.y / Z - y0) * sc, sc / Z]);
     Object.entries(t.layers || {}).forEach(([lname, L]) => {
@@ -111,6 +116,9 @@ export function buildDataTiles(tiles, b, big, place) {
     feats: ohneSeeLinien(feats),
     orte: ohneDoppelte(orte),
     tiles: tileRects,
+    tkeys: tiles.map(t => t.z + '/' + t.x + '/' + t.y),
+    tz: tiles.length ? tiles[0].z : 14,
+    fidN: n,
     MH0: MH,
     ext: {
       x0: E[0],

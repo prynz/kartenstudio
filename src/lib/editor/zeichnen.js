@@ -23,6 +23,7 @@ import { multiKey, multiOn, multiSVG } from './mehrere.js';
 import { routeSVG, routeStrich } from './route.js';
 import { contours, reliefBild } from '../karte/hoehen.js';
 import { syncTools } from './bedienung.js';
+import { nachladenPruefen } from './nachladen.js';
 import { msg, zoom } from './ansicht.js';
 
 /* ---------- Poster-Geometrie & SVG ---------- */
@@ -433,7 +434,7 @@ export function mapContent(forExport, vr) {
     if (!skyReady()) loadSky().then(() => render());
     return skySVG(app.S.sky, v.cx, v.cy, R, forExport ? 'hx' : 'hv');
   }
-  const sc = app.S.scale / app.S.view.z;
+  const sc = app.S.scale * (app.S.pop && app.S.pop.pal ? 1 : strichFaktor()) / app.S.view.z;
   if (app.S.mode === 'std' && std3d()) {
     const K = kameraBild();
     // 2 Punkte Überstand, damit an den Rändern keine Lücke durchblitzt
@@ -478,6 +479,7 @@ export function mapContent(forExport, vr) {
   // Schatten der Häuser: Licht von links oben, Schatten fällt nach rechts unten
   const h3d = !!fx.h3d && !pop;
   const klein = app.vorschau ? 5 / app.S.view.z : 0;
+  const winzig = !forExport && !app.vorschau ? 1.1 / app.S.view.z : 0;
   // Bildschirm, nur umfärbbar: ausgeblendete Klassen unsichtbar mitzeichnen (Stilwechsel ohne Neuaufbau)
   const farbModus = !forExport && !klein && TCP.p === 'tc' && nurFarbe();
   /** @type {{ft:any, e:any}[]} */
@@ -496,6 +498,8 @@ export function mapContent(forExport, vr) {
       if (bx[2] < vr[0] || bx[0] > vr[2] || bx[3] < vr[1] || bx[1] > vr[3]) return;
       // Vorschaubild: Teile unter ~5 Poster-Punkten sind dort kleiner als ein Bildpunkt
       if (klein && Math.max(bx[2] - bx[0], bx[3] - bx[1]) < klein) return;
+      // Bildschirm, weit herausgezoomt: Häuser unter ~1 Poster-Punkt sind kleiner als ein Pixel → weglassen (Export zeichnet alle)
+      if (winzig && k === 'haus' && Math.max(bx[2] - bx[0], bx[3] - bx[1]) < winzig) return;
       if (h3d && k === 'haus') {
         // Vorschau am Bildschirm: Häuser unter ~2 Poster-Punkten sind kleiner als ein Bildpunkt → weglassen (Export zeichnet alle)
         if (ft.a && (forExport || Math.max(bx[2] - bx[0], bx[3] - bx[1]) * app.S.view.z >= 2)) haus3.push({ ft, e });
@@ -581,7 +585,7 @@ function nurFarbe() {
  * Linienstärken der vorhandenen Linien ändern – viel schneller, vor allem in Städten.
  */
 function umfaerben(node) {
-  const S = app.S, sc = S.scale / S.view.z;
+  const S = app.S, sc = S.scale * strichFaktor() / S.view.z;
   const wert = {};
   Object.entries(S.cls).forEach(([k, c]) => (wert[k] = [c.s, c.f, String(+(c.w * sc).toFixed(3)), !!c.h]));
   for (const p of node.querySelectorAll('path[data-k]')) {
@@ -660,6 +664,7 @@ export function renderView() {
   if (MC.hits) MC.hits.setAttribute('transform', t);
   drawSel();
   syncTools();
+  nachladenPruefen();
   clearTimeout(fullTimer);
   fullTimer = window.setTimeout(render, 140);
 }
@@ -864,6 +869,19 @@ function routeFeld(K, pf) {
   const d = xy.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
   return `<path d="${d}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="${(w * 1.9).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${c}" stroke-width="${w}"${routeStrich(R, w)} stroke-linecap="round" stroke-linejoin="round"/>`;
 }
+/**
+ * Linien passend zum Maßstab: Die Strichstärken der Stile sind für ein Dorf (≈1,2 km Ausschnitt)
+ * gemacht. Zeigt das Poster mehr Fläche (Stadt, „Mit Umgebung“), liegen die Straßen dichter –
+ * dann werden alle Linien feiner (wie bei gedruckten Karten), höchstens bis 40 %.
+ */
+export function strichFaktor() {
+  const D = app.DATA, S = app.S;
+  if (!D || !D.proj || !S || !(S.view.z > 0)) return 1;
+  const lat = (D.center && D.center[1]) || 50;
+  const meter = (MW / S.view.z) * 40075016.7 * Math.cos(lat * Math.PI / 180) / D.proj.sc;
+  if (!(meter > 0)) return 1;
+  return Math.max(0.4, Math.min(1, Math.pow(1200 / meter, 0.65)));
+}
 /** Ortsnamen an? (nur gezeichnete Karte – Landkarten-Stile bringen eigene Beschriftung mit) */
 export function ortsnamenAn() {
   const S = app.S;
@@ -1048,6 +1066,7 @@ export function buildSVG(forExport) {
 export function render() {
   if (!app.DATA) return;
   clearTimeout(fullTimer);
+  nachladenPruefen();
   if (app.S.print) {
     // Druckformat: Kartenhöhe so anpassen, dass das Poster genau aufs Papier passt
     const a0 = app.S.view.a;

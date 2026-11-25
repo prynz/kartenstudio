@@ -33,7 +33,8 @@ function linien(d) {
 export function netz(D) {
 	if (!D || !D.feats) return null;
 	let N = CACHE.get(D);
-	if (N) return N;
+	// nach dem Nachladen weiterer Karte (mehr Linien) neu aufbauen
+	if (N && N.n === D.feats.length) return N;
 	// 1) Segmente sammeln
 	/** @type {number[][]} [x1,y1,x2,y2] */
 	const seg = [];
@@ -143,7 +144,7 @@ export function netz(D) {
 				else kr.set(k, [i]);
 			}
 	});
-	N = { xy, adj, kanten, kr };
+	N = { xy, adj, kanten, kr, n: D.feats.length };
 	CACHE.set(D, N);
 	return N;
 }

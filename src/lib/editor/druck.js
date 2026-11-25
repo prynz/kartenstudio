@@ -1,5 +1,6 @@
 // Druckfertig: feste Druckgrößen, Qualitäts-Ampel und PDF mit Beschnittzugabe.
 // Das PDF wird komplett im Browser erzeugt (kein fremder Dienst, keine Bibliothek).
+import { strichFaktor } from './zeichnen.js';
 import { ladeSchriften } from './basis.js';
 import { app as appUntyped } from './app.js';
 import { CLS, MW } from './basis.js';
@@ -97,7 +98,7 @@ export function quality() {
 		Object.keys(CLS).forEach((k) => {
 			const c = S.cls[k];
 			if (!c || c.h || !(c.w > 0) || !app.DATA.feats.some((/** @type {any} */ f) => f.k === k)) return;
-			const mm = c.w * S.scale * pk * mmPerUnit;
+			const mm = c.w * S.scale * pk * (S.pop && S.pop.pal ? 1 : strichFaktor()) * mmPerUnit;
 			if (mm < thin) {
 				thin = mm;
 				who = /** @type {Record<string,string>} */ (CLS)[k];
