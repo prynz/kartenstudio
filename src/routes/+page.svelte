@@ -4,6 +4,7 @@
 	import '#lib/editor/editor.css';
 	import '#lib/startseite.css';
 	import { onMount } from 'svelte';
+	import { updateHinweis } from '#lib/update.js';
 	import { resolve, asset } from '$app/paths';
 	import { PREISE, FESTPREISE, fmt } from '#lib/shop/preise.js';
 
@@ -65,6 +66,7 @@
 	 * Link mit Entwurf/Ort, gespeicherter Entwurf (für „Weiter mit …“) – spätestens kurz nach dem Laden.
 	 */
 	onMount(() => {
+		updateHinweis();
 		let bereit = false;
 		let laedt: Promise<void> | null = null;
 		let warteKlick: HTMLElement | null = null;
