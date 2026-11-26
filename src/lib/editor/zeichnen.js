@@ -396,60 +396,6 @@ export async function alsBild(svg, w = 240) {
     URL.revokeObjectURL(u);
   }
 }
-/**
- * Fertiges Kartenbild für Vorschaubilder ({href: Daten-URL, r: [x0,y0,x1,y1] in Kartenkoordinaten}).
- * Solange gesetzt, setzt buildSVG(true) nur dieses kleine Bild statt der ganzen Vektorkarte ein.
- * Grund: 46 Design-Bildchen mussten sonst je die ganze Stadt neu zeichnen (Nürnberg ≈ 0,4 s je Bild
- * bei langsamen Geräten → die Menüs hingen). So wird die Karte EINMAL gemalt und dann nur noch
- * mit Rahmen, Form und Text kombiniert.
- * @type {{ b: { href: string, r: number[] } | null }}
- */
-export const KARTENBILD = { b: null };
-/** Kann die Karte als ein Bild für alle Design-Vorschaubilder dienen? (nicht bei Textmotiven/mehreren Orten – die hängen am Seitenverhältnis) */
-export function kartenBildMoeglich() {
-  const m = app.S.motif;
-  return !!app.DATA && (!m || m === 'karte') && !multiOn();
-}
-/**
- * Malt den Kartenbereich um die aktuelle Ansicht einmal als Bild (großzügig, damit auch Designs mit
- * anderem Seitenverhältnis gedeckt sind). @param {number} px Breite in Bildpunkten
- * @returns {Promise<{ href: string, r: number[] }>}
- */
-export async function kartenBildMalen(px = 440) {
-  const v = app.S.view;
-  const w = (MW / v.z) * 1.3,
-    h = ((MW * Math.max(1.6, v.a * 1.25)) / v.z);
-  const r = [v.cx - w / 2, v.cy - h / 2, v.cx + w / 2, v.cy + h / 2];
-  let inhalt;
-  app.vorschau = true;
-  try {
-    inhalt = mapContent(true, r);
-  } finally {
-    app.vorschau = false;
-  }
-  let defs = '';
-  (app.DATA.tiles || []).forEach((t, i) => {
-    if (t[0] > r[2] || t[1] > r[3] || t[0] + t[2] < r[0] || t[1] + t[2] < r[1]) return;
-    const ue = Math.max(0.25, t[2] * 0.0015);
-    defs += `<clipPath id="tc${i}"><rect x="${(t[0] - ue).toFixed(2)}" y="${(t[1] - ue).toFixed(2)}" width="${(t[2] + 2 * ue).toFixed(2)}" height="${(t[2] + 2 * ue).toFixed(2)}"/></clipPath>`;
-  });
-  const ph = Math.round((px * h) / w);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${r.map((x) => x.toFixed(2)).join(' ')}" width="${px}" height="${ph}"><defs>${defs}</defs>${inhalt}</svg>`;
-  const u = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-  try {
-    const img = new Image();
-    img.src = u;
-    await img.decode();
-    const c = document.createElement('canvas');
-    c.width = px;
-    c.height = ph;
-    /** @type {CanvasRenderingContext2D} */ (c.getContext('2d')).drawImage(img, 0, 0, px, ph);
-    // WebP ist deutlich kleiner als PNG (Safari ohne WebP-Ausgabe liefert automatisch PNG)
-    return { href: c.toDataURL('image/webp', 0.85), r };
-  } finally {
-    URL.revokeObjectURL(u);
-  }
-}
 /** SVG für ein Vorschaubild: winzige Details (im kleinen Bild unsichtbar) werden weggelassen */
 export function vorschauSVG() {
   app.vorschau = true;
@@ -1093,7 +1039,7 @@ export function buildSVG(forExport) {
   }
   o += `<clipPath id="cMap">${mapShape(g, 0, '')}</clipPath>`;
   o += `<clipPath id="cIn"><rect x="${f.w}" y="${f.w}" width="${(g.W - 2 * f.w).toFixed(1)}" height="${(g.H - 2 * f.w).toFixed(1)}" rx="${ri}" ry="${ri}"/></clipPath>`;
-  if (!(forExport && app.vorschau && KARTENBILD.b)) (app.DATA.tiles || []).forEach((r, i) => {
+  (app.DATA.tiles || []).forEach((r, i) => {
     // Kacheln überlappen minimal (Kachelpuffer liegt darunter) – sonst bleibt an der Kante eine helle Naht
     const ue = Math.max(0.25, r[2] * 0.0015);
     o += `<clipPath id="tc${i}"><rect x="${(r[0] - ue).toFixed(2)}" y="${(r[1] - ue).toFixed(2)}" width="${(r[2] + 2 * ue).toFixed(2)}" height="${(r[2] + 2 * ue).toFixed(2)}"/></clipPath>`;
@@ -1120,9 +1066,7 @@ export function buildSVG(forExport) {
     o += kartenMaske(g, schnitt, papierF, verlauf, R);
   } else {
     o += `<g id="karte" clip-path="url(#${schnitt ? 'cTypo' : 'cIn'})"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><g id="kartenAnsicht" transform="${vT(g).replace(/^translate\([^)]*\) /, '')}">`;
-    const KB = app.vorschau && KARTENBILD.b;
-    if (KB) o += `<image href="${KB.href}" x="${KB.r[0].toFixed(2)}" y="${KB.r[1].toFixed(2)}" width="${(KB.r[2] - KB.r[0]).toFixed(2)}" height="${(KB.r[3] - KB.r[1]).toFixed(2)}" preserveAspectRatio="none"/>`;
-    else o += mapContent(true, visRect());
+    o += mapContent(true, visRect());
     o += '</g></g></g></g>';
   }
   const ink = app.S.title.color;

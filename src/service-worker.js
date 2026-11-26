@@ -16,7 +16,7 @@ const MAX_TILES = 600;
 // Pfade im Manifest sind relativ zum Basis-Pfad (z. B. /kartenstudio/)
 const SCOPE = new URL(sw.registration.scope).pathname;
 const abs = (/** @type {string} */ p) => SCOPE + p.replace(/^\//, '');
-const ASSETS = [...immutable, ...assets, ...prerendered].map((x) => x.path).filter((p) => !/(^|\/)\./.test(p) && !/^poster\//.test(p) && !/sitemap/.test(p)).map(abs);
+const ASSETS = [...immutable, ...assets, ...prerendered].map((x) => x.path).filter((p) => !/(^|\/)\./.test(p) && !/^poster\//.test(p) && !/^vorschau\//.test(p) && !/sitemap/.test(p)).map(abs);
 
 sw.addEventListener('install', (event) => {
 	event.waitUntil(
@@ -68,7 +68,8 @@ sw.addEventListener('fetch', (event) => {
 
 	// App-Dateien: aus dem Speicher (sie ändern sich nur mit einer neuen Version).
 	// Programmteile mit Versionskennung im Namen werden beim ersten Abruf zusätzlich gemerkt.
-	const immut = url.pathname.startsWith(SCOPE + '_app/immutable/');
+	// Vorschaubilder der Stile/Designs: nicht vorab laden (sparsam), aber beim ersten Anzeigen merken
+	const immut = url.pathname.startsWith(SCOPE + '_app/immutable/') || url.pathname.startsWith(SCOPE + 'vorschau/');
 	if (immut || ASSETS.includes(url.pathname)) {
 		event.respondWith(
 			caches.match(req, { ignoreVary: true, ignoreSearch: true }).then(

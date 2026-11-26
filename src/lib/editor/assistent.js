@@ -7,8 +7,9 @@ import { typoOpt, geo, aktuelleForm } from './zeichnen.js';
 import { sheetZeigen, sheetOffen } from './sheet.js';
 import { textImPoster, favoritenZeichnen } from './direkt.js';
 import { tourAnbieten, tourStarten } from './tour.js';
+import { asset } from '$app/paths';
 import { app as appUntyped } from './app.js';
-import { KARTENBILD, alsBild, buildSVG, kartenBildMalen, kartenBildMoeglich, karteSchwer, render, vorschauSVG } from './zeichnen.js';
+import { alsBild, buildSVG, karteSchwer, render, vorschauSVG } from './zeichnen.js';
 import { begin, change, clampView, commit, newState } from './zustand.js';
 import { openSec } from './seitenleiste.js';
 import { setTool, sliderToZ, zToSlider } from './bedienung.js';
@@ -137,7 +138,6 @@ export function goStep(ziel, animate = true) {
 		if (side) side.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
 		document.querySelector('.wz-panes')?.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
 	}
-	if (next === 'design') scheduleDesignThumbs(0);
 	setMockup(next === 'fertig' && !advOpen);
 	syncWizard();
 }
@@ -214,131 +214,11 @@ function showAdvanced(on) {
 	if (app.DATA) render();
 }
 
-/* ---------- Vorschaubilder der Designs ---------- */
-let thumbTimer = 0;
-let thumbKey = '';
-/** @type {string[]} */
-let thumbUrls = [];
-/** @param {number} delay */
-function scheduleDesignThumbs(delay = 600) {
-	clearTimeout(thumbTimer);
-	thumbTimer = window.setTimeout(renderDesignThumbs, delay);
-}
-let thumbLauf = 0;
-/** @type {null | (() => void)} angehaltene Bildchen-Erzeugung */
-let thumbWeiter = null;
-/** Sind die Design-Karten (fast) im sichtbaren Bereich? Vorher lohnt sich das Berechnen nicht. */
-let designSichtbar = false;
-let designBeobachter = /** @type {IntersectionObserver|null} */ (null);
-function renderDesignThumbs() {
-	if (!app.DATA || !app.S || step !== 'design' || advOpen) return;
-	if (!designBeobachter && 'IntersectionObserver' in window) {
-		designBeobachter = new IntersectionObserver(
-			(e) => {
-				designSichtbar = e.some((x) => x.isIntersecting);
-				if (designSichtbar) scheduleDesignThumbs(150);
-			},
-			{ rootMargin: '300px 0px' }
-		);
-		designBeobachter.observe($('wzDesigns'));
-	}
-	if (designBeobachter && !designSichtbar) return;
-	const S = app.S;
-	// Bewusst OHNE Kartenausschnitt: Verschieben/Zoomen soll nicht 22 Vorschaubilder neu berechnen
-	// … und ohne das, was das gerade gewählte Design selbst setzt (Seitenverhältnis, Titelschrift),
-	// sonst würde jeder Designwechsel alle Vorschaubilder neu berechnen
-	const D = /** @type {any} */ (DESIGNS)[S.design];
-	const aBasis = D && D.aspect ? S.aPrev || S.view.a : S.view.a;
-	const tt = S.title.klein ? String(S.title.text || '').toUpperCase() : S.title.text;
-	const key = JSON.stringify([schriftenDa(), app.DATA.place, app.DATA.n0 ?? app.DATA.feats.length, S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.motif, S.fx && [S.fx.paper, S.fx.vig], aBasis, tt, S.sub.text, S.title.fontDesign ? '' : S.title.font, S.sub.font, S.scale, S.form ? S.form.ringe.length + ':' + S.form.a : 0]);
-	if (key === thumbKey) {
-		// angehalten, weil der Bereich verlassen wurde → dort weitermachen
-		if (thumbWeiter) {
-			const f = thumbWeiter;
-			thumbWeiter = null;
-			f();
-		}
-		return;
-	}
-	thumbKey = key;
-	thumbWeiter = null;
-	const lauf = ++thumbLauf;
-	// Sichtbare Karten zuerst (Übersicht zeigt je Gruppe nur eine Reihe), aufgeklappte/ausgeblendete danach
-	const knoepfe = all('#wzDesigns button[data-d]').sort((a, b) => Number(a.offsetParent === null) - Number(b.offsetParent === null));
-	const alt = thumbUrls;
-	thumbUrls = [];
-	let i = 0;
-	/** @type {{ href: string, r: number[] } | null} */
-	let bild = null;
-	let bildDa = false;
-	// Eins nach dem anderen, mit Pausen dazwischen – die Seite bleibt bedienbar
-	const naechstes = async () => {
-		if (lauf !== thumbLauf || i >= knoepfe.length) {
-			if (i >= knoepfe.length) alt.forEach((u) => URL.revokeObjectURL(u));
-			return;
-		}
-		// Bereich verlassen → anhalten (sonst bremsen die Bildchen jedes andere Menü aus)
-		if (step !== 'design' || advOpen) {
-			thumbWeiter = naechstes;
-			return;
-		}
-		// Karte EINMAL als Bild malen – alle Design-Bildchen nutzen dann dieses Bild
-		if (!bildDa) {
-			bildDa = true;
-			if (kartenBildMoeglich()) {
-				const keep = app.S;
-				try {
-					const c = JSON.parse(JSON.stringify(keep));
-					if (c.fx) c.fx = { ...c.fx, h3d: false, kipp: 0, dreh: 0, schatten: false, relief: false, gelaende: false };
-					app.S = c;
-					const p = kartenBildMalen(440);
-					app.S = keep;
-					bild = await p;
-				} catch (e) {
-					bild = null;
-				} finally {
-					app.S = keep;
-				}
-				if (lauf !== thumbLauf) return;
-			}
-		}
-		const b = knoepfe[i++];
-		const k = /** @type {string} */ (b.dataset.d);
-		const keep = app.S;
-		let svg = '';
-		try {
-			const c = JSON.parse(JSON.stringify(keep));
-			// Vorschaubild zeigt nur den Aufbau – ohne 3D (das wäre je Bild die ganze Stadt in 3D)
-			if (c.fx) c.fx = { ...c.fx, h3d: false, kipp: 0, dreh: 0, schatten: false, relief: false, gelaende: false };
-			applyDesign(c, k, PRESETS[c.preset], true);
-			const D = DESIGNS[k];
-			if (D.aspect) {
-				const F = D.lay && D.lay.shape === 'eigen' ? aktuelleForm(c) : null;
-				c.view.a = F ? Math.min(2.2, Math.max(0.45, F.a)) : D.aspect;
-			}
-			else if (keep.design && DESIGNS[keep.design] && DESIGNS[keep.design].aspect && keep.aPrev) c.view.a = keep.aPrev;
-			app.S = c;
-			fitPrint(c);
-			clampView(c.view);
-			KARTENBILD.b = bild;
-			svg = vorschauSVG();
-		} finally {
-			KARTENBILD.b = null;
-			app.S = keep;
-		}
-		try {
-			const url = await alsBild(svg, 200);
-			if (lauf !== thumbLauf) return URL.revokeObjectURL(url);
-			thumbUrls.push(url);
-			/** @type {HTMLImageElement} */ (b.querySelector('img')).src = url;
-		} catch (e) {}
-		// Nächstes Bild erst, wenn der Browser gerade nichts anderes zu tun hat
-		const w = /** @type {any} */ (window);
-		if (w.requestIdleCallback) w.requestIdleCallback(naechstes, { timeout: 400 });
-		else setTimeout(naechstes, 30);
-	};
-	naechstes();
-}
+/* ---------- Vorschaubilder ----------
+   Stile und Designs zeigen feste Beispielbilder (static/vorschau/…, erzeugt mit tests/vorschaubilder.mjs).
+   Früher wurden sie für jeden Ort live gezeichnet – bei Städten kostete das Sekunden und bremste die Menüs. */
+/** @param {'stil'|'design'} art @param {string} k */
+export const vorschauBild = (art, k) => asset(/** @type {any} */ (`vorschau/${art}/${k}.webp`));
 
 /* ---------- Anzeige mit dem Zustand abgleichen ---------- */
 /** Bereich „Ort“: Zoom, Umfang, Kartendetails, Ortsnamen, Ausrichtung */
@@ -499,7 +379,6 @@ export function syncWizard() {
 		vorschlaegeZeichnen();
 		favoritenZeichnen();
 	}
-	if (step === 'design') scheduleDesignThumbs();
 	if (step === 'fertig') {
 		syncFinish();
 		scheduleMockup();
@@ -554,7 +433,6 @@ function fortschritt() {
 
 /** Nach dem Laden eines Orts: im Assistenten beim Stil weitermachen. */
 export function wizardAfterLoad() {
-	thumbKey = '';
 	besuchtLaden();
 	// Ort ist mit der Suche schon gewählt
 	besuchen('ort');
@@ -1170,7 +1048,7 @@ export function initWizard() {
 
 	// 3 Stil
 	Object.entries(PRESETS).forEach(([k, p]) => {
-		const b = card(document.createElement('button'), `<div class="th" style="background:${p.bg === 'none' ? '#fff' : p.bg}"></div><span class="nm">${p.name}</span>`);
+		const b = card(document.createElement('button'), `<div class="th" style="background:${p.bg === 'none' ? '#fff' : p.bg}"><img src="${vorschauBild('stil', k)}" alt="" loading="lazy" decoding="async"></div><span class="nm">${p.name}</span>`);
 		b.dataset.p = k;
 		b.title = p.desc || '';
 		b.onclick = () =>
@@ -1334,7 +1212,7 @@ export function initWizard() {
 
 	// 4 Design
 	Object.entries(DESIGNS).forEach(([k, D]) => {
-		const b = card(document.createElement('button'), `<div class="dth"><img alt="" decoding="async"></div><span class="nm">${D.name}</span>`);
+		const b = card(document.createElement('button'), `<div class="dth"><img src="${vorschauBild('design', k)}" alt="" loading="lazy" decoding="async"></div><span class="nm">${D.name}</span>`);
 		b.dataset.d = k;
 		b.title = D.desc;
 		b.onclick = () => waehle(b, () => change(() => pickDesign(app.S, k)));

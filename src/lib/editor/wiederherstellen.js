@@ -3,7 +3,7 @@ import { app as appUntyped } from './app.js';
 import { CLS } from './basis.js';
 import { PRESETS } from '../themen/vorlagen.js';
 import { DESIGNS } from '../themen/designs.js';
-import { loadBounds, renderThumbs } from './laden.js';
+import { loadBounds } from './laden.js';
 import { loadDemo } from './beispiel.js';
 import { clampView, updUndo } from './zustand.js';
 import { render } from './zeichnen.js';
@@ -43,7 +43,6 @@ export async function restoreDraft(d) {
 	app.redoS = [];
 	updUndo();
 	render();
-	renderThumbs();
 	if (d.step && d.step !== 'ort') goStep(d.step, false);
 	if (S.mode === 'std') ensureRaster();
 	if (S.motif === 'koord') document.fonts.load('40px SgXB').then(() => render());

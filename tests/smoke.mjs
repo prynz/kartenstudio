@@ -979,6 +979,21 @@ await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (pag
 	await page.screenshot({ path: `${OUT}/14-pinch-iphone.png` });
 });
 
+await run('Feste Vorschaubilder für Stile und Designs', { viewport: { width: 1440, height: 900 } }, async (page) => {
+	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
+	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
+	const stile = await page.$$eval('#wzStyles [data-p]', (b) => b.map((x) => x.dataset.p));
+	const designs = await page.$$eval('#wzDesigns [data-d]', (b) => b.map((x) => x.dataset.d));
+	const fehlt = [...stile.map((k) => `stil/${k}`), ...designs.map((k) => `design/${k}`)].filter((f) => !fs.existsSync(`static/vorschau/${f}.webp`));
+	ok(stile.length > 30 && designs.length > 30 && !fehlt.length, `Zu jedem Stil/Design gibt es ein Bild (fehlt: ${fehlt.join(', ') || '–'}) – sonst: node tests/vorschaubilder.mjs`);
+	await page.evaluate(() => document.querySelector('#wzSteps [data-step="design"]').click());
+	await page.waitForTimeout(1500);
+	const geladen = await page.$$eval('#wzDesigns [data-d] img', (i) => i.filter((x) => x.complete && x.naturalWidth > 0 && /vorschau\/design\//.test(x.src)).length);
+	ok(geladen >= 3, `Design-Vorschaubilder werden als fertige Bilder angezeigt (${geladen} sichtbar geladen)`);
+	const blobs = await page.$$eval('#wzStyles img, #wzDesigns img', (i) => i.filter((x) => x.src.startsWith('blob:')).length);
+	ok(blobs === 0, 'Keine live gezeichneten Vorschaubilder mehr');
+});
+
 await run('Orts-Seiten für Google', { viewport: { width: 1280, height: 860 } }, async (page) => {
 	const base = URL.replace(/\/$/, '');
 	const r = await page.goto(base + '/poster/siegritz');

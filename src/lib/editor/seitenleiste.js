@@ -12,6 +12,7 @@ import { begin, change, clampView, commit, eff, newState } from './zustand.js';
 import { ensureRaster } from '../karte/raster.js';
 import { feat, geo, render } from './zeichnen.js';
 import { fillReplace } from './farben.js';
+import { vorschauBild } from './assistent.js';
 
 export /* ---------- Eigenschaften ---------- */
 function mapSel() {
@@ -253,7 +254,7 @@ export function initEditorSeitenleiste() {
     const b = document.createElement('button');
     b.dataset.p = k;
     b.title = p.desc || '';
-    b.innerHTML = `<div class="th" style="background:${p.bg === 'none' ? '#fff' : p.bg}"></div><span class="nm">${p.name}</span>`;
+    b.innerHTML = `<div class="th" style="background:${p.bg === 'none' ? '#fff' : p.bg}"><img src="${vorschauBild('stil', k)}" alt="" loading="lazy" decoding="async"></div><span class="nm">${p.name}</span>`;
     b.onclick = () => change(() => {
       const keep = app.S;
       app.S = newState(k, keep);
