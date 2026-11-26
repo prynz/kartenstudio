@@ -106,7 +106,8 @@ export function newState(presetKey, keep) {
     if (keep.form) st.form = keep.form;
   }
   // Design (Aufbau/Rahmen) bleibt beim Wechsel des Farbthemas erhalten
-  applyDesign(st, keep && keep.design || 'poster', p, !keep);
+  // Neues Poster: der Stadtplan-Stil bringt sein passendes Design mit, alle anderen das schlichte „Poster“
+  applyDesign(st, (keep && keep.design) || (presetKey === 'stadtplan' ? 'stadtplan' : 'poster'), p, !keep);
   return st;
 }
 /** Kartendetails: „strassen“ = ohne Häuser, „haeuser“ = ohne Straßen/Wege/Bahn, „alle“ = wie der Stil */

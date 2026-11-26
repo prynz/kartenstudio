@@ -132,8 +132,16 @@ export function aktuelleForm(S) {
   return textForm([...t][0] ? [...t][0].toUpperCase() : 'A');
 }
 /** Koordinaten der Kartenmitte als Textzeile. */
-export function coordText() {
+export function coordText(kurz) {
   const [lon, lat] = viewCenterLL();
+  // Kurzform wie auf klassischen Stadtplan-Postern: 53°33′ N  10°00′ O
+  if (kurz) {
+    const k = (v, pos, neg) => {
+      const a = Math.abs(v), d = Math.floor(a), m = Math.floor((a - d) * 60);
+      return `${d}°${String(m).padStart(2, '0')}′ ${v < 0 ? neg : pos}`;
+    };
+    return `${k(lat, 'N', 'S')}   ${k(lon, 'O', 'W')}`;
+  }
   return `${dms(lat, 'N', 'S')}  ·  ${dms(lon, 'O', 'W')}`;
 }
 /** Umriss der Kartenfläche (Rechteck oder Kreis), optional um `grow` vergrößert. */
@@ -1112,7 +1120,7 @@ export function buildSVG(forExport) {
     const yr = (g.yT + (g.yS - app.S.sub.size * CAP[app.S.sub.font])) / 2;
     o += `<line id="zierlinie" x1="${(g.W / 2 - 70).toFixed(1)}" x2="${(g.W / 2 + 70).toFixed(1)}" y1="${yr.toFixed(1)}" y2="${yr.toFixed(1)}" stroke="${app.S.title.color}" stroke-width="2.5" stroke-linecap="round"/>`;
   }
-  if (!typo && g.L.coords && app.DATA) o += `<text id="koordinaten" x="${(g.W / 2 + 1.5).toFixed(2)}" y="${g.yC.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.cSize}" letter-spacing="${g.L.koordFarbe ? 4 : 3}" fill="${g.L.koordFarbe || app.S.sub.color}" fill-opacity="0.85">${esc(coordText())}</text>`;
+  if (!typo && g.L.coords && app.DATA) o += `<text id="koordinaten" x="${(g.W / 2 + 1.5).toFixed(2)}" y="${g.yC.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.cSize}" letter-spacing="${g.L.koordKurz ? 1.5 : g.L.koordFarbe ? 4 : 3}" fill="${g.L.koordFarbe || app.S.sub.color}" fill-opacity="${g.L.koordKurz ? 0.6 : 0.85}">${esc(coordText(g.L.koordKurz))}</text>`;
   if (!typo && g.note) o += `<text id="widmung" x="${(g.W / 2 + 1).toFixed(2)}" y="${g.yN.toFixed(2)}" text-anchor="middle" font-family="SgMD" font-size="${g.nSize}" letter-spacing="2" fill="${app.S.sub.color}">${esc(g.note)}</text>`;
   if (app.S.attr.on && app.S.motif !== 'sterne' && app.S.motif !== 'koord' && app.S.motif !== 'wolke') {
     const inBar = g.L.kind === 'bar' && app.S.bar.on && g.barH > 0;

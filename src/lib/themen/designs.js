@@ -20,7 +20,7 @@
  *   lupeStrich?: boolean, gitter?: boolean, kompass?: boolean|'unten',
  *   fokusForm?: 'fleck'|'kreis'|'herz'|'raute', typoStil?: 'voll'|'umriss'|'schnitt', typoSchrift?: string, typoZeilen?: number,
  *   oben?: boolean, fadeFarbe?: string, titelFarbe?: string, subFarbe?: string, kontur?: string, himmel?: boolean|'album',
- *   bezirk?: boolean, absatz?: boolean, ohneSub?: boolean, koordFarbe?: string
+ *   bezirk?: boolean, absatz?: boolean, ohneSub?: boolean, koordFarbe?: string, koordKurz?: boolean
  * }} Lay
  * @typedef {{
  *   name: string, desc: string,
@@ -39,6 +39,16 @@ export const LAY_DEFAULT = { kind: 'bar', textPad: 0, inner: 0, innerGap: 0, sha
 
 /** @type {Record<string, Design>} */
 export const DESIGNS = {
+	// Wie klassische Stadtplan-Poster: viel Weiß, großer schlichter Ortsname, darunter nur die Koordinaten
+	stadtplan: {
+		name: 'Stadtplan',
+		desc: 'Karte mit weißem Rand, großer schlichter Ortsname, darunter Region und Koordinaten.',
+		frame: { w: 0, r: 0, pad: 34 },
+		lay: { kind: 'below', textPad: 50, coords: true, koordKurz: true },
+		title: { size: 66, ls: 5, font: 'SgMD' },
+		// schlichter Untertitel (Region oder eigener Text) in derselben ruhigen Schrift
+		sub: { size: 24, ls: 3, font: 'SgMD' }
+	},
 	poster: {
 		name: 'Poster',
 		desc: 'Das reine Poster: Karte mit weißem Rand, Titel darunter – ohne Rahmen. Rahmen und Formen wählst du danach.',

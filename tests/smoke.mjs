@@ -81,7 +81,7 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 	// Undo
 	await page.click('#undo');
 	await page.waitForTimeout(200);
-	ok((await page.$('#kartenhintergrund')) === null, 'Rückgängig stellt Siegritz-Stil wieder her');
+	ok((await page.getAttribute('#kartenhintergrund', 'fill')) === '#ffffff', 'Rückgängig stellt den Start-Stil „Stadtplan“ wieder her');
 	// Karte im Poster ziehen verschiebt den Ausschnitt (ohne Werkzeug umzuschalten)
 	const cx0 = await page.evaluate(() => document.querySelector('#kartenAnsicht').getAttribute('transform') || document.querySelector('#kartenAnsicht').style.transform);
 	const box = await page.locator('#poster').boundingBox();
@@ -108,8 +108,10 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 	await page.waitForFunction(() => [...document.querySelectorAll('#wzDesigns img')].every((x) => x.complete && x.naturalWidth > 0), null, { timeout: 30000 }).catch(() => {});
 	const designs = await page.$$eval('#wzDesigns button', (b) => b.map((x) => x.dataset.d));
 	ok(designs.length >= 9, `${designs.length} Designs zur Auswahl`);
-	const thumbs = await page.$$eval('#wzDesigns img', (i) => i.filter((x) => x.complete && x.naturalWidth > 0).length);
-	ok(thumbs === designs.length, `Vorschaubilder für alle Designs (${thumbs})`);
+	// feste Bilder, die erst beim Hinscrollen laden (lazy) – alle haben ihr Bild, die sichtbaren sind geladen
+	const mitBild = await page.$$eval('#wzDesigns img', (i) => i.filter((x) => /vorschau\/design\//.test(x.src)).length);
+	const geladen = await page.$$eval('#wzDesigns img', (i) => i.filter((x) => x.complete && x.naturalWidth > 0).length);
+	ok(mitBild === designs.length && geladen >= 3, `Vorschaubilder für alle Designs (${mitBild}, ${geladen} schon geladen)`);
 	const bad = [];
 	for (const d of designs) {
 		await page.click(`#wzDesigns button[data-d="${d}"]`);
@@ -618,7 +620,7 @@ await run('Einfacher Ablauf: Gruppen (Top 6), Umfang, Widmungs-Ideen', { viewpor
 	const sichtbar = await zaehl();
 	ok(gruppen.length === 6 && sichtbar === 18, `Stile in ${gruppen.length} Gruppen, je eine Reihe (${sichtbar} sichtbar)`);
 	await page.click('#wzStyles .wz-gr[data-g="hell"] .wz-gr-mehr');
-	ok((await zaehl()) === 23, '„Alle 8“ klappt nur die Gruppe „Hell & klassisch“ auf');
+	ok((await zaehl()) === 24, '„Alle 9“ klappt nur die Gruppe „Hell & klassisch“ auf');
 	await page.click('#wzStilKat [data-w="dunkel"]');
 	const dunkel = await page.$$eval('#wzStyles > button', (b) => b.filter((x) => x.offsetParent !== null).map((x) => x.dataset.p));
 	ok(dunkel.length === 8 && dunkel.includes('goldnacht') && !dunkel.includes('umriss'), `Chip „Dunkel & Nacht“ zeigt nur diese Gruppe (${dunkel.length})`);

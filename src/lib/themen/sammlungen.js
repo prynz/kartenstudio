@@ -16,7 +16,7 @@ export const STIL_GRUPPEN = [
 		id: 'hell',
 		name: 'Hell & klassisch',
 		desc: 'Ruhige Linien auf hellem Papier – zeitlos und passend zu jedem Raum.',
-		keys: ['umriss', 'minimal', 'vintage', 'strassen', 'schwarzweiss', 'blaupause', 'washi', 'tusche']
+		keys: ['stadtplan', 'umriss', 'minimal', 'vintage', 'strassen', 'schwarzweiss', 'blaupause', 'washi', 'tusche']
 	},
 	{
 		id: 'dunkel',
@@ -57,7 +57,7 @@ export const DESIGN_GRUPPEN = [
 		id: 'schlicht',
 		name: 'Schlicht',
 		desc: 'Karte mit Text darunter oder darüber – ohne Schnickschnack.',
-		keys: ['poster', 'klassisch', 'minimal', 'linie', 'koordinaten', 'oben', 'randlos', 'leise', 'galerie', 'galeriekoord']
+		keys: ['stadtplan', 'poster', 'klassisch', 'minimal', 'linie', 'koordinaten', 'oben', 'randlos', 'leise', 'galerie', 'galeriekoord']
 	},
 	{
 		id: 'rahmen',

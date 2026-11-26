@@ -184,7 +184,8 @@ export function loadData(data) {
     app.undoS = [];
     app.redoS = [];
   } else {
-    app.S = newState('umriss');
+    // Standard für neue Poster: klarer Stadtplan (weiß, schwarze Straßen, hellblaues Wasser)
+    app.S = newState('stadtplan');
     app.undoS = [];
     app.redoS = [];
   }
