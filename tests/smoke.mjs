@@ -609,12 +609,10 @@ await run('Beispiel-Galerie', { viewport: { width: 1440, height: 900 } }, async 
 	ok(await page.locator('#bspOverlay').isHidden(), 'Galerie schließt sich danach');
 });
 
-await run('Einfacher Ablauf: Vorschläge, Gruppen (Top 6), Umfang, Widmungs-Ideen', { viewport: { width: 1440, height: 900 } }, async (page) => {
+await run('Einfacher Ablauf: Gruppen (Top 6), Umfang, Widmungs-Ideen', { viewport: { width: 1440, height: 900 } }, async (page) => {
 	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
-	await page.waitForFunction(() => [...document.querySelectorAll('#wzVorschlaege img')].filter((i) => i.complete && i.naturalWidth > 0).length === 6, null, { timeout: 20000 }).catch(() => {});
-	ok((await page.$$eval('#wzVorschlaege img', (i) => i.filter((x) => x.complete && x.naturalWidth > 0).length)) === 6, '6 Vorschläge mit dem eigenen Ort');
-	await page.screenshot({ path: `${OUT}/47-vorschlaege.png` });
+	ok((await page.$$('#wzVorschlaege')).length === 0, 'Keine „Vorschläge für deinen Ort“ mehr (vorerst entfernt)');
 	const zaehl = () => page.$$eval('#wzStyles > button', (b) => b.filter((x) => x.offsetParent !== null).length);
 	const gruppen = await page.$$eval('#wzStyles > .wz-gr', (g) => g.map((x) => x.dataset.g));
 	const sichtbar = await zaehl();
@@ -625,9 +623,10 @@ await run('Einfacher Ablauf: Vorschläge, Gruppen (Top 6), Umfang, Widmungs-Idee
 	const dunkel = await page.$$eval('#wzStyles > button', (b) => b.filter((x) => x.offsetParent !== null).map((x) => x.dataset.p));
 	ok(dunkel.length === 8 && dunkel.includes('goldnacht') && !dunkel.includes('umriss'), `Chip „Dunkel & Nacht“ zeigt nur diese Gruppe (${dunkel.length})`);
 	await page.click('#wzStilKat [data-w=""]');
-	await page.click('#wzVorschlaege [data-id="bamberg-typo"]');
+	await page.click('[data-bsp-open]');
+	await page.click('#bspGrid [data-id="bamberg-typo"]');
 	await page.waitForTimeout(700);
-	ok((await page.$$('#titel text')).length >= 2 && (await page.textContent('#titel')).includes('SIE'), 'Vorschlag „Typografie“ übernommen – mit eigenem Ort');
+	ok((await page.$$('#titel text')).length >= 2 && (await page.textContent('#titel')).includes('SIE'), 'Beispiel „Typografie“ übernommen – mit eigenem Ort');
 	await page.click('#wzSteps button[data-step="ort"]');
 	const sc = async () => parseFloat(((await page.evaluate(() => { const k = document.querySelector('#kartenAnsicht'); return k.getAttribute('transform') || k.style.transform; })) || '').match(/scale\(([\d.]+)\)/)?.[1] || '0');
 	await page.click('#wzUmfang button[data-z="kern"]');

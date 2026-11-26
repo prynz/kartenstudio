@@ -33,7 +33,7 @@ import { shareLink } from './entwurf.js';
 import { ANLAESSE } from '../themen/anlaesse.js';
 import { initMulti, multiOn, syncMulti } from './mehrere.js';
 import { initForm, syncForm } from './form-ui.js';
-import { beispielNachLaden, vorschlaegeZeichnen } from '../beispiele/galerie.js';
+import { beispielNachLaden } from '../beispiele/galerie.js';
 import { meinStandort } from '../karte/suche.js';
 import { defView, vLimits } from './zustand.js';
 import { initRoute, syncRoute } from './route.js';
@@ -375,10 +375,7 @@ export function syncWizard() {
 	if (document.activeElement !== $('fxDreh')) /** @type {HTMLInputElement} */ ($('fxDreh')).value = String(dr);
 	$('fxDrehV').textContent = dr ? (dr > 0 ? dr + '° ↻' : -dr + '° ↺') : 'Nord';
 	all('[data-occ] button').forEach((b) => b.classList.toggle('on', b.dataset.k === S.occasion));
-	if (step === 'stil') {
-		vorschlaegeZeichnen();
-		favoritenZeichnen();
-	}
+	if (step === 'stil') favoritenZeichnen();
 	if (step === 'fertig') {
 		syncFinish();
 		scheduleMockup();

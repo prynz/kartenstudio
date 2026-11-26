@@ -68,53 +68,6 @@ export function lookZustand(B, keep, mitOrt) {
 	return S;
 }
 
-/* ---------- Vorschläge für den eigenen Ort ----------
-   Direkt nach der Suche: sechs fertige Looks als Vorschaubild mit DEINEM Ort. Ein Tippen übernimmt den Look. */
-const VORSCHLAEGE = ['waischenfeld-heimat', 'bayreuth-steckbrief', 'bamberg-fokus', 'regensburg-gold', 'muenchen-kreis', 'bamberg-typo'];
-let vorKey = '';
-/** @type {string[]} */
-let vorUrls = [];
-export function vorschlaegeZeichnen() {
-	const box = document.getElementById('wzVorschlaege');
-	if (!box || !app.DATA || !app.S) return;
-	const key = String(app.DATA.place) + (app.DATA.n0 ?? app.DATA.feats.length) + app.S.view.a + schriftenDa();
-	if (key === vorKey) return;
-	vorKey = key;
-	vorUrls.forEach((u) => URL.revokeObjectURL(u));
-	vorUrls = [];
-	const liste = VORSCHLAEGE.map((id) => BEISPIELE.find((b) => b.id === id)).filter(Boolean);
-	box.innerHTML = liste
-		.map((B) => `<button type="button" class="vs" data-id="${/** @type {any} */ (B).id}"><span class="vs-img"><img alt=""></span><b>${esc(/** @type {any} */ (B).titel)}</b></button>`)
-		.join('');
-	// Bilder nacheinander berechnen, damit die Seite dabei bedienbar bleibt
-	let i = 0;
-	const naechstes = () => {
-		if (i >= liste.length || vorKey !== key) return;
-		const B = /** @type {import('./liste.js').Beispiel} */ (liste[i]);
-		const keep = app.S;
-		let svg = '';
-		try {
-			app.S = lookZustand(B, JSON.parse(JSON.stringify(keep)), false);
-			// Vorschaubild ohne 3D – sonst wäre jedes Bild die ganze Stadt in 3D
-			if (app.S.fx) app.S.fx = { ...app.S.fx, h3d: false, kipp: 0, dreh: 0, schatten: false, relief: false, gelaende: false };
-			svg = vorschauSVG();
-		} finally {
-			app.S = keep;
-		}
-		i++;
-		alsBild(svg, 220)
-			.then((u) => {
-				if (vorKey !== key) return URL.revokeObjectURL(u);
-				vorUrls.push(u);
-				const img = /** @type {HTMLImageElement|null} */ (box.querySelector(`[data-id="${B.id}"] img`));
-				if (img) img.src = u;
-			})
-			.catch(() => {})
-			.finally(() => setTimeout(naechstes, 16));
-	};
-	setTimeout(naechstes, 60);
-}
-
 /**
  * Look eines Beispiels auf den aktuellen Zustand anwenden.
  * @param {import('./liste.js').Beispiel} B
@@ -172,12 +125,6 @@ function overlayZu() {
 }
 
 export function initGalerie() {
-	document.getElementById('wzVorschlaege')?.addEventListener('click', (e) => {
-		const b = /** @type {HTMLElement} */ (e.target).closest('[data-id]');
-		const B = b && BEISPIELE.find((x) => x.id === /** @type {HTMLElement} */ (b).dataset.id);
-		if (!B) return;
-		smooth(() => lookAnwenden(B, false));
-	});
 	// Startseite: Beispiel mit Ort öffnen
 	$('bspStrip').innerHTML = BEISPIELE.map(karte).join('');
 	$('bspStrip').addEventListener('click', (e) => {

@@ -24,7 +24,7 @@ const STATIONEN = [
 	{ ziel: '#canvas', poster: true, titel: 'Dein Poster', text: 'Hier siehst du jede Änderung sofort. Karte mit Maus oder Finger ziehen, mit Mausrad oder zwei Fingern zoomen. Titel antippen = direkt bearbeiten.' },
 	{ ziel: '#wzSteps', step: 'ort', titel: 'Sechs Bereiche – von oben nach unten', text: 'Ort → Stil → Design → Text → Extras → Fertig. Du kannst jederzeit springen; „Weiter“ führt dich der Reihe nach durch.' },
 	{ ziel: '.oa-box', step: 'ort', titel: '1 · Ort & Ausschnitt', text: 'Wähle, wie viel vom Ort aufs Poster kommt – Ortskern, ganzer Ort oder mit Umgebung. Darunter: Ausrichtung, Straßen/Gebäude und Routen.' },
-	{ ziel: '#wzVorschlaege', step: 'stil', titel: '2 · Stil = die Farben', text: 'Tipp einen fertigen Vorschlag an – oder such dir unten einen Look aus den Gruppen (hell, dunkel, farbig …).' },
+	{ ziel: '#wzStilKat', step: 'stil', titel: '2 · Stil = die Farben', text: 'Such dir einen Look aus den Gruppen aus – hell, dunkel, farbig … Ein Tipp färbt dein Poster sofort um.' },
 	{ ziel: '#wzDesignKat', step: 'design', titel: '3 · Design = der Aufbau', text: 'Rahmen, Formen wie Kreis oder Herz, große Buchstaben … Die Farben vom Stil bleiben dabei erhalten.' },
 	{ ziel: '#wzTitle', step: 'text', titel: '4 · Text', text: 'Titel und Untertitel ändern, Schrift wählen und eine persönliche Widmung oder ein Datum hinzufügen.' },
 	{ ziel: '#wzPinAdd', step: 'extras', titel: '5 · Extras – alles freiwillig', text: 'Herz oder Pin an euren Ort setzen, Papier-Struktur, Gelände oder 3D-Häuser. Kann man auch einfach überspringen.' },
