@@ -12,8 +12,9 @@ export const FAQ = [
 	{
 		id: 'start',
 		q: 'Wie funktioniert Kartenstudio?',
-		k: ['funktioniert', 'anfangen', 'erstellen', 'gestalten', 'poster machen', 'anleitung', 'bedienung'],
-		a: 'Ort eintippen – das Poster steht sofort. Dann Schritt für Schritt: Ausschnitt, Stil, Design, Text, Produkt und zum Schluss herunterladen. Unter „Erweitert“ kannst du jedes Detail einzeln ändern.'
+		k: ['funktioniert', 'anfangen', 'erstellen', 'gestalten', 'poster machen', 'anleitung', 'bedienung', 'rundgang', 'tour', 'tutorial', 'einführung', 'erklärung'],
+		a: 'Ort eintippen – das Poster steht sofort. Dann der Reihe nach durch die sechs Bereiche links (am Handy unten): Ort, Stil (Farben), Design (Aufbau), Text, Extras und Fertig (Größe, Herunterladen, Teilen). Der Rundgang zeigt dir alles in einer Minute.',
+		act: { label: 'Rundgang starten', do: 'tour' }
 	},
 	{
 		id: 'form',

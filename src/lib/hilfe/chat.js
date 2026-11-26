@@ -85,6 +85,11 @@ function aktion(a) {
 		zeige('bot', 'Such zuerst einen Ort oder öffne das Beispiel – dann bringe ich dich direkt hin.');
 		return;
 	}
+	if (a.do === 'tour') {
+		oeffne(false);
+		import('../editor/tour.js').then((m) => m.tourStarten());
+		return;
+	}
 	if (a.do === 'sterne') {
 		goStep('stil');
 		enableSky();
@@ -149,7 +154,7 @@ export function oeffne(an = !offen) {
 			zeige(
 				'bot',
 				KONFIG.chatApi ? 'Hallo! Ich bin der KI-Assistent von Kartenstudio. Frag mich alles rund um dein Poster.' : 'Hallo! Ich helfe dir bei Fragen rund um dein Poster. Tippe eine Frage oder wähle eine:',
-				[],
+				app.DATA ? [{ label: 'Rundgang starten – alles in 1 Minute', do: 'tour' }] : [],
 				['Wie funktioniert Kartenstudio?', 'Was kostet ein Poster?', 'Gibt es einen Sternenhimmel?', 'Ist die Datei gut genug für den Druck?']
 			);
 		if (!reducedMotion()) p.animate([{ opacity: 0, transform: 'translateY(12px) scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: EASE });

@@ -5,7 +5,8 @@ import { schriftenDa } from './basis.js';
 import { fokusOpt, akzent } from '../themen/layouts.js';
 import { typoOpt, geo, aktuelleForm } from './zeichnen.js';
 import { sheetZeigen, sheetOffen } from './sheet.js';
-import { textImPoster, einfuehrung, favoritenZeichnen } from './direkt.js';
+import { textImPoster, favoritenZeichnen } from './direkt.js';
+import { tourAnbieten, tourStarten } from './tour.js';
 import { app as appUntyped } from './app.js';
 import { alsBild, buildSVG, render, vorschauSVG } from './zeichnen.js';
 import { begin, change, clampView, commit, newState } from './zustand.js';
@@ -16,7 +17,7 @@ import { dotsHTML } from './seitenleiste.js';
 import { PRESETS as PRESETS_UNTYPED } from '../themen/vorlagen.js';
 import { BASES, inBayern } from '../themen/standard.js';
 import { DESIGNS, applyDesign } from '../themen/designs.js';
-import { THEMENWELTEN } from '../themen/sammlungen.js';
+import { STIL_GRUPPEN, DESIGN_GRUPPEN } from '../themen/sammlungen.js';
 import { ensureRaster } from '../karte/raster.js';
 import { attachSearch } from '../karte/suche.js';
 import { pickPlace } from '../karte/ortswahl-start.js';
@@ -66,12 +67,12 @@ const LABEL = { ort: 'Ort', stil: 'Stil', design: 'Design', text: 'Text', extras
 /** Ein Satz je Bereich: was man hier tut */
 /** @type {Record<string,string>} */
 const SATZ = {
-	ort: 'Wo spielt dein Poster? Ort suchen und festlegen, wie viel man sieht.',
-	stil: 'Wie soll deine Karte aussehen? Fertigen Look antippen oder Farben wählen.',
-	design: 'Rahmen, Form und wo der Text steht.',
-	text: 'Was soll auf dem Poster stehen?',
-	extras: 'Markierungen und besondere Effekte – alles optional.',
-	fertig: 'Produkt wählen, herunterladen oder teilen.'
+	ort: 'Ort suchen und festlegen, welcher Ausschnitt aufs Poster kommt.',
+	stil: 'Die Farben deiner Karte – einfach einen Look antippen.',
+	design: 'Der Aufbau: Rahmen, Form und wo der Text steht. Die Farben bleiben.',
+	text: 'Titel, Untertitel, Schrift und eine persönliche Widmung.',
+	extras: 'Herzen und Pins, Effekte und 3D – alles freiwillig.',
+	fertig: 'Produkt und Größe wählen, herunterladen oder teilen.'
 };
 /** Welcher Abschnitt der erweiterten Einstellungen passt zu welchem Schritt */
 /** @type {Record<string,string>} */
@@ -110,9 +111,10 @@ export function goStep(ziel, animate = true) {
 	$('wzKopfD').textContent = SATZ[next];
 	const letzter = idx === STEPS.length - 1;
 	$('wiz').classList.toggle('wz-last', letzter);
-	$('wzNextLabel').textContent = letzter ? 'Download' : LABEL[STEPS[idx + 1]];
+	$('wzNextLabel').textContent = letzter ? 'Herunterladen' : LABEL[STEPS[idx + 1]];
 	requestAnimationFrame(() => markierung());
 	if (!letzter) $('wzNextSmall').textContent = 'Weiter';
+	else fertigKnopf();
 	const pane = document.querySelector(`.wz-pane[data-step="${GRUPPE[next][0]}"]`);
 	// Weicher Übergang: Kopf und Abschnitte gleiten nacheinander herein (nur transform/opacity → flüssig)
 	if (animate && dir && pane && !reducedMotion()) {
@@ -149,6 +151,14 @@ export function fertigReiter(t) {
 	});
 	const box = document.querySelector(`[data-fsub="${t}"]`);
 	if (box && !reducedMotion()) box.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: EASE });
+	fertigKnopf();
+}
+/** Großer Knopf unten im Bereich „Fertig“: führt der Reihe nach Produkt → Herunterladen → Teilen */
+function fertigKnopf() {
+	if (step !== 'fertig') return;
+	const t = $('wiz').dataset.fz || 'produkt';
+	$('wzNextSmall').textContent = t === 'produkt' ? 'Weiter' : t === 'laden' ? 'Zum Schluss' : 'Fertig';
+	$('wzNextLabel').textContent = t === 'produkt' ? 'Herunterladen' : t === 'laden' ? 'Teilen' : 'Zum Poster';
 }
 
 /** Produktauswahl ändern (mit Rückgängig). @param {Record<string, any>} patch */
@@ -180,7 +190,6 @@ function syncProduct() {
 	/** @type {HTMLElement} */ ($('mkMat').closest('label')).classList.toggle('hidden', P.type !== 'gerahmt');
 	const pr = preis(P, app.S.print);
 	$('priceVal').textContent = pr.text;
-	if (step === 'fertig') $('wzNextSmall').textContent = pr.text;
 	$('priceDet').textContent = pr.details.join(' · ');
 	$('orderLabel').textContent = `Bestellen · ${pr.text}`;
 	$('priceShip').textContent = P.type === 'download' ? 'Kein Versand nötig · ' + lieferung('download') : `Versand in Deutschland kostenlos · ${lieferung(P.type)}`;
@@ -342,6 +351,7 @@ export function syncWizard() {
 	// Beim Koordinaten-Poster bleiben die Farbthemen sichtbar (sie bestimmen Hintergrund und Schrift)
 	$('wzStyles').classList.toggle('hidden', std || sky);
 	$('wzStilKat').classList.toggle('hidden', std || sky);
+	$('wzFarbLab').classList.toggle('hidden', std || sky);
 	$('wzKoord').classList.toggle('hidden', !koord);
 	if (koord && S.koord) {
 		const ta = /** @type {HTMLTextAreaElement} */ ($('koordText'));
@@ -528,7 +538,7 @@ export function wizardAfterLoad() {
 	const bleib = app.bleibAusschnitt;
 	app.bleibAusschnitt = false;
 	if (!advOpen) goStep(bleib ? 'ausschnitt' : 'stil', false);
-	einfuehrung();
+	tourAnbieten();
 }
 
 /**
@@ -748,37 +758,84 @@ export function waehle(knopf, fn) {
 	});
 }
 
-/** Die ersten sechs (ohne Themenwelt) */
-const TOP = /** @type {Record<string, string[]>} */ ({
-	p: ['umriss', 'dunkel', 'vintage', 'koralle', 'blaupause', 'popart'],
-	d: ['poster', 'silhouette', 'siegritz', 'galerie', 'kreiskoord', 'herz']
-});
-/** Aktive Themenwelt ('' = alle) – gilt für Stile und Designs gemeinsam @param {string} id */
-export function weltWaehlen(id) {
-	const W = THEMENWELTEN.find((w) => w.id === id);
-	/** @type {[string, string, string, string[]][]} */
-	const listen = [
-		['wzStilKat', 'wzStyles', 'p', W ? W.stile : []],
-		['wzDesignKat', 'wzDesigns', 'd', W ? W.designs : []]
-	];
-	listen.forEach(([kat, box, attr, keys]) => {
+/** Gruppen je Liste: p = Farbstile, d = Designs */
+const GRUPPEN = /** @type {Record<string, import('../themen/sammlungen.js').Gruppe[]>} */ ({ p: STIL_GRUPPEN, d: DESIGN_GRUPPEN });
+const LISTE = /** @type {Record<string, [string, string]>} */ ({ p: ['wzStilKat', 'wzStyles'], d: ['wzDesignKat', 'wzDesigns'] });
+/** Karten je Gruppe in der Übersicht („Alle“) – eine Reihe */
+const REIHE = 3;
+
+/**
+ * Karten nach Gruppen ordnen: Überschrift (Name, ein Satz, „Alle N ›“) und darunter die Karten.
+ * In der Übersicht zeigt jede Gruppe eine Reihe; „Alle N“ klappt die Gruppe auf.
+ * @param {string} attr
+ */
+function gruppieren(attr) {
+	const B = $(LISTE[attr][1]);
+	GRUPPEN[attr].forEach((g) => {
+		const kopf = document.createElement('div');
+		kopf.className = 'wz-gr';
+		kopf.dataset.g = g.id;
+		const karten = g.keys.map((k) => /** @type {HTMLElement|null} */ (B.querySelector(`:scope > button[data-${attr}="${k}"]`))).filter((x) => !!x);
+		kopf.innerHTML = `<div><b>${g.name}${g.neu ? ' <i>Neu</i>' : ''}</b><small>${g.desc}</small></div>` + (karten.length > REIHE ? `<span class="wz-gr-mehr" role="button" tabindex="0" aria-expanded="false">Alle ${karten.length} ›</span>` : '');
+		B.appendChild(kopf);
+		karten.forEach((b, i) => {
+			const k = /** @type {HTMLElement} */ (b);
+			k.dataset.g = g.id;
+			k.classList.toggle('zu', i >= REIHE);
+			B.appendChild(k);
+		});
+	});
+	B.classList.add('kurz', 'gruppiert');
+	const auf = (/** @type {HTMLElement} */ m) => {
+		const id = /** @type {HTMLElement} */ (m.closest('.wz-gr')).dataset.g;
+		const offen = m.getAttribute('aria-expanded') !== 'true';
+		m.setAttribute('aria-expanded', String(offen));
+		m.textContent = offen ? 'Weniger ‹' : `Alle ${B.querySelectorAll(`:scope > button[data-g="${id}"]`).length} ›`;
+		/** @type {HTMLElement[]} */
+		const neu = [];
+		all(`#${B.id} > button[data-g="${id}"]`).forEach((b, i) => {
+			if (i >= REIHE) {
+				b.classList.toggle('zu', !offen);
+				if (offen) neu.push(b);
+			}
+		});
+		if (offen && !reducedMotion()) neu.forEach((b, i) => b.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, delay: i * 18, easing: EASE, fill: 'backwards' }));
+	};
+	B.addEventListener('click', (e) => {
+		const m = /** @type {HTMLElement} */ (e.target).closest('.wz-gr-mehr');
+		if (m) auf(/** @type {HTMLElement} */ (m));
+	});
+	B.addEventListener('keydown', (e) => {
+		const m = /** @type {HTMLElement} */ (e.target).closest('.wz-gr-mehr');
+		if (m && (e.key === 'Enter' || e.key === ' ')) {
+			e.preventDefault();
+			auf(/** @type {HTMLElement} */ (m));
+		}
+	});
+}
+
+/**
+ * Gruppe wählen ('' = Übersicht aller Gruppen). Gibt es die Gruppe auch in der anderen Liste
+ * (Themenwelt wie „Sunset City“), wird sie dort mit ausgewählt.
+ * @param {string} id @param {string} [nur] 'p' oder 'd' – Liste, in der gewählt wurde
+ */
+export function weltWaehlen(id, nur) {
+	['p', 'd'].forEach((attr) => {
+		const G = GRUPPEN[attr];
+		const hat = !id || G.some((g) => g.id === id);
+		if (nur && nur !== attr && (!id || !hat)) return;
+		const wahl = hat ? id : '';
+		const [kat, box] = LISTE[attr];
 		all(`#${kat} button`).forEach((b) => {
-			const an = (b.dataset.w || '') === (W && keys.length ? id : '');
+			const an = (b.dataset.w || '') === wahl;
 			b.classList.toggle('on', an);
 			b.setAttribute('aria-selected', String(an));
 		});
 		const B = $(box);
-		const filter = !!(W && keys.length);
-		// in der Welt: alle zugehörigen Karten zeigen, in ihrer Reihenfolge vorne
-		B.classList.toggle('kurz', !filter && B.dataset.alle !== '1');
-		all(`#${box} > button`).forEach((b) => b.classList.toggle('nk', filter && !keys.includes(/** @type {string} */ (b.dataset[attr]))));
-		[...(filter ? keys : TOP[attr])].reverse().forEach((k) => {
-			const b = B.querySelector(`[data-${attr}="${k}"]`);
-			if (b) B.prepend(b);
-		});
-		const mehr = /** @type {HTMLElement|null} */ (document.querySelector(`[data-alle="${box}"]`));
-		if (mehr) mehr.classList.toggle('hidden', filter);
-		if (filter && !reducedMotion()) B.animate([{ opacity: 0.5 }, { opacity: 1 }], { duration: 220, easing: EASE });
+		// Übersicht: je Gruppe eine Reihe · Gruppe gewählt: nur diese, ganz
+		B.classList.toggle('kurz', !wahl);
+		all(`#${box} > [data-g]`).forEach((b) => b.classList.toggle('nk', !!wahl && b.dataset.g !== wahl));
+		if (wahl && !reducedMotion()) B.animate([{ opacity: 0.5 }, { opacity: 1 }], { duration: 220, easing: EASE });
 	});
 }
 
@@ -897,6 +954,7 @@ export function initWizard() {
 	);
 	// Leiste: Hilfe öffnet den Chat; Markierung bei Größenänderung mitnehmen
 	$('railHilfe').onclick = () => $('chatBtn').click();
+	$('railTour').onclick = () => tourStarten();
 	// … auch wenn die Leiste erst sichtbar wird (nach der Startseite) oder sich ihre Größe ändert
 	if ('ResizeObserver' in window) new ResizeObserver(() => markierung()).observe($('wzSteps'));
 	else addEventListener('resize', () => requestAnimationFrame(() => markierung()));
@@ -944,8 +1002,12 @@ export function initWizard() {
 	$('wzBack').onclick = () => goStep(STEPS[Math.max(0, STEPS.indexOf(step) - 1)]);
 	$('wzNext').onclick = () => {
 		if (step !== 'fertig') return goStep(STEPS[STEPS.indexOf(step) + 1]);
-		// Letzter Schritt: zu den Druckdateien
-		fertigReiter('laden');
+		// Letzter Schritt: Produkt → Herunterladen → Teilen → zurück zum Poster (Handy: Feld zuklappen)
+		const t = $('wiz').dataset.fz || 'produkt';
+		if (t === 'produkt') fertigReiter('laden');
+		else if (t === 'laden') fertigReiter('teilen');
+		else if (matchMedia('(max-width: 900px)').matches) sheetZeigen(false);
+		else document.querySelector('.wz-panes')?.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
 	};
 	all('#fertigTabs button').forEach((b) => (b.onclick = () => fertigReiter(/** @type {string} */ (b.dataset.t))));
 	fertigReiter('produkt');
@@ -958,6 +1020,13 @@ export function initWizard() {
 		sheetZeigen(true);
 	};
 	$('wzZu').onclick = () => sheetZeigen(false);
+	// Querverweise im Text („Ort › Ausrichtung“): springen zum Bereich und holen den Abschnitt in Sicht
+	document.addEventListener('click', (e) => {
+		const l = /** @type {HTMLElement} */ (e.target).closest('[data-geh]');
+		if (!l) return;
+		goStep(/** @type {string} */ (/** @type {HTMLElement} */ (l).dataset.geh));
+		setTimeout(() => $('wzAusr').scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' }), 260);
+	});
 	// Werkzeuge am Poster: Vorschau-Größe (Regler #zoom, 40–300 %), Einpassen, Vergleichen
 	const zr = /** @type {HTMLInputElement} */ ($('zoom'));
 	const zSetz = (/** @type {number} */ v) => {
@@ -1099,40 +1168,19 @@ export function initWizard() {
 			})
 	);
 
-	// „Top 6 zuerst“: beliebte Stile und Designs nach vorn, der Rest auf Wunsch
-	/** @param {string} id @param {string[]} top @param {string} attr */
-	const nachVorn = (id, top, attr) => {
-		const box = $(id);
-		[...top].reverse().forEach((k) => {
-			const b = box.querySelector(`[data-${attr}="${k}"]`);
-			if (b) box.prepend(b);
-		});
-	};
+	// Gruppen: Chips über den Listen (alle sichtbar, umbrechend) + Überschriften in den Listen
 	// (erst nachdem alle Karten erzeugt sind – das passiert weiter unten)
 	setTimeout(() => {
-		nachVorn('wzStyles', TOP.p, 'p');
-		nachVorn('wzDesigns', TOP.d, 'd');
+		gruppieren('p');
+		gruppieren('d');
 	}, 0);
-	// Themenwelten: Chips über Stilen und Designs filtern beide Listen gemeinsam
-	const welten = (/** @type {string} */ wo) => THEMENWELTEN.filter((w) => (wo === 'p' ? w.stile : w.designs).length);
-	[['wzStilKat', 'wzStyles', 'p'], ['wzDesignKat', 'wzDesigns', 'd']].forEach(([kat, box, attr]) => {
+	['p', 'd'].forEach((attr) => {
+		const [kat] = LISTE[attr];
 		$(kat).innerHTML =
 			`<button type="button" role="tab" aria-selected="true" data-w="" class="on">Alle</button>` +
-			welten(attr)
-				.map((w) => `<button type="button" role="tab" aria-selected="false" data-w="${w.id}" title="${w.desc}">${w.name}${w.neu ? ' <i>Neu</i>' : ''}</button>`)
-				.join('');
+			GRUPPEN[attr].map((g) => `<button type="button" role="tab" aria-selected="false" data-w="${g.id}" title="${g.desc}">${g.name}${g.neu ? ' <i>Neu</i>' : ''}</button>`).join('');
+		all(`#${kat} button`).forEach((b) => (b.onclick = () => weltWaehlen(/** @type {string} */ (b.dataset.w), attr)));
 	});
-	all('.wz-kat button').forEach((b) => (b.onclick = () => weltWaehlen(/** @type {string} */ (b.dataset.w))));
-	all('[data-alle]').forEach(
-		(b) =>
-			(b.onclick = () => {
-				const box = $(/** @type {string} */ (b.dataset.alle));
-				const zu = box.classList.toggle('kurz');
-				box.dataset.alle = zu ? '' : '1';
-				b.textContent = zu ? (b.dataset.alle === 'wzStyles' ? 'Alle Farbstile anzeigen ›' : 'Alle Designs anzeigen ›') : 'Weniger anzeigen ‹';
-				if (!zu && !reducedMotion()) box.animate([{ opacity: 0.6 }, { opacity: 1 }], { duration: 220, easing: EASE });
-			})
-	);
 
 	// Wie viel vom Ort? (statt + / −)
 	all('#wzUmfang button').forEach(

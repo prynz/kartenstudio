@@ -165,6 +165,7 @@
 <div class="wz-unten">
 <button type="button" class="wz-rail" data-bsp-open data-tip="Beispiele" aria-label="Beispiele ansehen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.8"/><rect x="13" y="4" width="7" height="7" rx="1.8"/><rect x="4" y="13" width="7" height="7" rx="1.8"/><rect x="13" y="13" width="7" height="7" rx="1.8"/></svg></button>
 <button type="button" class="wz-rail" data-adv-open data-tip="Alle Einstellungen" aria-label="Alle Einstellungen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
+<button type="button" class="wz-rail" id="railTour" data-tip="Rundgang" aria-label="Rundgang starten"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg></button>
 <button type="button" class="wz-rail" id="railHilfe" data-tip="Hilfe" aria-label="Hilfe-Chat öffnen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.4a2.4 2.4 0 1 1 3.3 2.2c-.6.3-1 .8-1 1.4v.4"/><circle cx="12" cy="16.6" r=".4" fill="currentColor"/></svg></button>
 </div>
 </nav>
@@ -228,12 +229,11 @@
 <div class="fav-box" id="favBox" hidden><div class="lab">Deine Favoriten <i id="favN"></i><button type="button" class="wz-link fav-cmp" id="favCmp" hidden>Vergleichen ›</button></div><div class="fav-grid" id="favGrid"></div></div>
 <div class="lab vs-lab">Vorschläge für deinen Ort</div>
 <div class="vs-grid" id="wzVorschlaege"></div>
-<div class="lab">Oder selbst wählen</div>
+<div class="lab">Art des Posters</div>
 <div class="tabs2 wz-mode wz-mode3" id="wzMode"><button data-m="art">Gezeichnet</button><button data-m="std">Landkarte</button><button data-m="sterne">Sternenhimmel</button><button data-m="koord">Koordinaten</button><button data-m="wolke">Wortwolke</button></div>
-<div class="wz-kat" id="wzStilKat" role="tablist" aria-label="Themenwelten"></div>
+<div class="lab wz-farblab" id="wzFarbLab">Farbstil</div>
+<div class="wz-kat" id="wzStilKat" role="tablist" aria-label="Gruppen der Farbstile"></div>
 <div class="wz-cards kurz" id="wzStyles"></div>
-<button type="button" class="wz-link wz-alle" data-alle="wzStyles">Alle Farbstile anzeigen ›</button>
-<div class="wz-hoehe" id="wzHoehe"><label class="tog wz-tog"><input type="checkbox" id="hoehenOn"><span>Höhenlinien (Berge &amp; Täler)</span></label><p class="wz-hint" id="hoehenInfo"></p></div>
 <div class="wz-cards wz-bases hidden" id="wzBases"></div>
 <div class="wz-koord hidden" id="wzKoord">
 <p class="wz-hint">Große Koordinaten, der Ortsname und dein eigener Text – ganz ohne Karte. Den Ortsnamen änderst du im Schritt „Text“.</p>
@@ -264,10 +264,8 @@
 </section>
 <section class="wz-pane" data-step="design">
 <h3>Design</h3>
-<p class="wz-hint">Wie Rahmen, Karte und Text angeordnet sind. Die Farben kommen vom Stil.</p>
-<div class="wz-kat" id="wzDesignKat" role="tablist" aria-label="Themenwelten"></div>
+<div class="wz-kat" id="wzDesignKat" role="tablist" aria-label="Gruppen der Designs"></div>
 <div class="wz-cards wz-designs kurz" id="wzDesigns"></div>
-<button type="button" class="wz-link wz-alle" data-alle="wzDesigns">Alle Designs anzeigen ›</button>
 <div class="hidden" id="wzFokus"><div class="lab">Fokus anpassen</div>
 <div class="wz-sublab">Form</div><div class="wz-chips" id="wzFokusForm"><button type="button" data-v="fleck">Fleck</button><button type="button" data-v="kreis">Kreis</button><button type="button" data-v="herz">Herz</button><button type="button" data-v="raute">Raute</button></div>
 <div class="wz-sublab">Farbe</div><div class="wz-chips wz-farben" id="wzFokusFarben"><button type="button" data-c="" title="Wie der Stil">Stil</button><button type="button" data-c="#cf2e2e" style="--c:#cf2e2e" aria-label="Rot"></button><button type="button" data-c="#262c3a" style="--c:#262c3a" aria-label="Navy"></button><button type="button" data-c="#d8a93b" style="--c:#d8a93b" aria-label="Gold"></button><button type="button" data-c="#2440d8" style="--c:#2440d8" aria-label="Blau"></button><button type="button" data-c="#2f8f5b" style="--c:#2f8f5b" aria-label="Grün"></button><button type="button" data-c="#f08aa8" style="--c:#f08aa8" aria-label="Rosa"></button><label class="wz-eigen" title="Eigene Farbe"><input type="color" id="wzFokusEigen" aria-label="Eigene Farbe für den Fokus"></label></div>
@@ -314,35 +312,37 @@
 <div class="wz-pinadd" id="wzPinAdd"></div>
 <div class="wz-pins" id="wzPins"></div>
 <div class="mk-sw wz-pincol" id="wzPinCol"></div>
-<div class="lab">Effekte</div>
-<label class="tog wz-tog"><input type="checkbox" id="fxPaper"><span>Papier-Struktur</span></label>
-<label class="tog wz-tog"><input type="checkbox" id="fxVig"><span>Vignette (Rand abdunkeln)</span></label>
-<label class="tog wz-tog"><input type="checkbox" id="fxGlow"><span>Leuchten (Lichtschein in der Mitte)</span></label>
-<div class="wz-3d" id="wz3d"><div class="lab">3D-Effekte</div>
-<label class="tog wz-tog"><input type="checkbox" id="fxH3d"><span>3D-Häuser (Gebäude in die Höhe)</span></label>
-<label class="tog wz-tog"><input type="checkbox" id="fxSchatten"><span>Häuser mit Schatten</span></label>
-<label class="tog wz-tog"><input type="checkbox" id="fxRelief"><span>Relief – Berge &amp; Täler schattiert</span></label>
-<label class="tog wz-tog nur-std"><input type="checkbox" id="fxGelaende"><span>Gelände plastisch (Berge in 3D)</span></label>
+<div class="lab">Oberfläche &amp; Licht</div>
+<label class="tog wz-tog fx-tog"><input type="checkbox" id="fxPaper"><span>Papier-Struktur<small>Feine Körnung wie auf Naturpapier</small></span></label>
+<label class="tog wz-tog fx-tog"><input type="checkbox" id="fxVig"><span>Vignette<small>Ränder leicht abdunkeln – lenkt den Blick zur Mitte</small></span></label>
+<label class="tog wz-tog fx-tog"><input type="checkbox" id="fxGlow"><span>Leuchten<small>Weicher Lichtschein in der Mitte</small></span></label>
+<div class="wz-3d" id="wz3d">
+<div class="lab">Gelände</div>
+<div class="wz-hoehe" id="wzHoehe"><label class="tog wz-tog fx-tog"><input type="checkbox" id="hoehenOn"><span>Höhenlinien<small id="hoehenInfo"></small></span></label></div>
+<label class="tog wz-tog fx-tog"><input type="checkbox" id="fxRelief"><span>Relief<small>Berge und Täler als Licht und Schatten</small></span></label>
+<label class="tog wz-tog fx-tog nur-std"><input type="checkbox" id="fxGelaende"><span>Gelände plastisch<small>Berge echt in 3D (nur Landkarten-Stile)</small></span></label>
+<div class="lab">3D-Ansicht</div>
+<label class="tog wz-tog fx-tog"><input type="checkbox" id="fxH3d"><span>3D-Häuser<small>Gebäude wachsen in die Höhe</small></span></label>
+<label class="tog wz-tog fx-tog"><input type="checkbox" id="fxSchatten"><span>Häuser mit Schatten<small>Flacher Schatten – dezenter als 3D</small></span></label>
 <div class="row wz-kipp"><span class="k">Perspektive</span><input type="range" id="fxKipp" min="0" max="60" step="5" aria-label="Perspektive kippen"><output id="fxKippV">aus</output></div>
 <div class="row wz-kipp"><span class="k">Drehen</span><input type="range" id="fxDreh" min="-180" max="180" step="15" aria-label="Karte drehen"><output id="fxDrehV">Nord</output></div>
-<p class="wz-hint" id="wz3dHint">Für Karten – bei Sternenhimmel, Koordinaten, Wortwolke und mehreren Orten nicht verfügbar.</p>
+<p class="wz-hint" id="wz3dHint">Gelände und 3D gibt es nur für Karten – nicht bei Sternenhimmel, Koordinaten, Wortwolke oder mehreren Orten.</p>
 <p class="wz-hint nur-std" id="wz3dStd">Echte 3D-Ansicht: Kamera kippen und drehen, Gebäude und Berge in 3D. Markierungen lassen sich dabei nicht verschieben.</p></div>
 </section>
 <section class="wz-pane" data-step="produkt">
 <div class="tabs2 fz-tabs" id="fertigTabs" role="tablist" aria-label="Fertig"><button type="button" role="tab" data-t="produkt">Produkt</button><button type="button" role="tab" data-t="laden">Herunterladen</button><button type="button" role="tab" data-t="teilen">Teilen</button></div>
 <div data-fsub="produkt">
 <div class="wz-prod" id="wzProd"></div>
-<div class="price" id="wzPrice"><b id="priceVal">–</b><span>inkl. MwSt. · <i>Beispielpreis</i></span><small id="priceDet"></small><small class="ship" id="priceShip"></small></div>
-<button type="button" class="btn wz-order" disabled title="Kommt bald"><span id="orderLabel">Bestellen</span><small>bald verfügbar</small></button>
 <div class="mk-opt" data-for="poster gerahmt leinwand alu download"><div class="lab">Größe</div><div class="wz-chips wz-sizes" data-sizes></div>
 <label class="tog wz-tog wz-quer"><input type="checkbox" data-quer><span>Querformat</span></label>
-<div class="wz-free" id="wzFree"><div class="lab">Seitenverhältnis der Karte</div>
-<div class="wz-chips" id="wzFmt"><button data-a="0.8805">8 : 7</button><button data-a="1">1 : 1</button><button data-a="1.25">4 : 5</button><button data-a="1.3333">3 : 4</button><button data-a="0.6667">3 : 2</button></div></div>
+<div class="wz-free" id="wzFree"><p class="wz-hint">„Frei“ = Format wie in der Vorschau. Hoch-, Querformat oder Quadrat stellst du unter <button type="button" class="wz-link wz-inline" data-geh="ort">Ort › Ausrichtung</button> ein.</p></div>
 </div>
 <div class="mk-opt" data-for="gerahmt aufsteller"><div class="lab">Rahmen</div><div class="mk-sw" id="mkFrameSw"></div>
 <label class="tog wz-tog"><input type="checkbox" id="mkMat"><span>Passepartout (heller Rand)</span></label></div>
 <div class="mk-opt" data-for="shirt"><div class="lab">Shirtfarbe</div><div class="mk-sw" id="mkShirtSw"></div>
 <label class="tog wz-tog"><input type="checkbox" id="mkModel"><span>Am Model zeigen</span></label></div>
+<div class="price" id="wzPrice"><b id="priceVal">–</b><span>inkl. MwSt. · <i>Beispielpreis</i></span><small id="priceDet"></small><small class="ship" id="priceShip"></small></div>
+<button type="button" class="btn wz-order" disabled title="Kommt bald"><span id="orderLabel">Bestellen</span><small>bald verfügbar</small></button>
 <details class="wz-more mk-opt" data-for="poster gerahmt leinwand alu aufsteller"><summary>Vorschau anpassen: Raum, Wandfarbe, 3er-Set</summary>
 <div class="mk-opt" data-for="poster gerahmt leinwand alu aufsteller"><div class="lab">Raum</div><div class="mk-sw mk-rooms" id="mkRoomSw"></div></div>
 <div class="mk-opt" data-for="poster gerahmt leinwand alu aufsteller"><div class="lab">Wandfarbe</div><div class="mk-sw" id="mkWallSw"></div></div>

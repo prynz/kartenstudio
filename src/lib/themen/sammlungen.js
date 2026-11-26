@@ -1,55 +1,96 @@
-// Themenwelten: Stile und Designs nach Themen sortiert.
-// HIER NEUE THEMENWELTEN ANLEGEN: ein Eintrag mit Namen, kurzer Beschreibung und den Schlüsseln
-// der Stile (themen/vorlagen.js) und Designs (themen/designs.js). Mit `neu: true` bekommt die Welt
-// ein „Neu“-Etikett und steht vorne. Ein Stil/Design darf in mehreren Welten vorkommen.
+// Ordnung der Stile und Designs in klare Gruppen.
+// Jeder Stil und jedes Design gehört GENAU EINER Gruppe an (keine Doppelungen → leicht zu überblicken).
+// Reihenfolge der Gruppen = Reihenfolge im Editor; innerhalb einer Gruppe stehen die beliebtesten vorne.
+// NEUE GRUPPE / THEMENWELT: einen Eintrag ergänzen (id, name, kurze Beschreibung, Schlüssel aus
+// themen/vorlagen.js bzw. themen/designs.js). `neu: true` zeigt ein „Neu“-Etikett.
+// Gleiche id bei Stilen und Designs (z. B. „sunset“) = zusammengehörige Themenwelt: wählt man sie
+// bei den Stilen, ist sie auch bei den Designs vorausgewählt.
 
 /**
- * @typedef {{ id: string, name: string, desc: string, neu?: boolean, stile: string[], designs: string[] }} Themenwelt
+ * @typedef {{ id: string, name: string, desc: string, neu?: boolean, keys: string[] }} Gruppe
  */
 
-/** @type {Themenwelt[]} */
-export const THEMENWELTEN = [
+/** @type {Gruppe[]} Farbstile (Bereich „Stil“) */
+export const STIL_GRUPPEN = [
+	{
+		id: 'hell',
+		name: 'Hell & klassisch',
+		desc: 'Ruhige Linien auf hellem Papier – zeitlos und passend zu jedem Raum.',
+		keys: ['umriss', 'minimal', 'vintage', 'strassen', 'schwarzweiss', 'blaupause', 'washi', 'tusche']
+	},
+	{
+		id: 'dunkel',
+		name: 'Dunkel & Nacht',
+		desc: 'Dunkler Grund mit leuchtenden Straßen.',
+		keys: ['dunkel', 'goldnacht', 'cyber', 'tinte', 'lichter', 'neon', 'solar', 'vulkan']
+	},
+	{
+		id: 'farbig',
+		name: 'Farbig',
+		desc: 'Mehrere Farben, fröhlich und lebendig.',
+		keys: ['mittelmeer', 'pastell', 'japan', 'koenigsblau', 'puls', 'wald']
+	},
+	{
+		id: 'einfarbig',
+		name: 'Einfarbig',
+		desc: 'Eine Farbe in mehreren Tönen – stark mit großen Buchstaben.',
+		keys: ['koralle', 'lavendel', 'petrol', 'salbei', 'senf', 'schiefer', 'flamingo', 'tanne', 'insel']
+	},
+	{
+		id: 'illustriert',
+		name: 'Illustriert',
+		desc: 'Bunte Symbole, Wimmelbild und Lagekarten.',
+		keys: ['popart', 'konfetti', 'wimmel', 'dossier', 'einsatz']
+	},
 	{
 		id: 'sunset',
 		name: 'Sunset City',
 		desc: 'Spielkarten-Look und Miami-Abendstimmung: Neon, Palmen, Sonnenuntergang.',
 		neu: true,
-		stile: ['albumabend', 'spielkarte', 'sunset', 'nachtfahrt', 'pastellabend', 'neon', 'puls'],
-		designs: ['album', 'guide', 'cover', 'plakette', 'sonnenuntergang', 'nachtstadt', 'randlos']
+		keys: ['albumabend', 'sunset', 'spielkarte', 'nachtfahrt', 'pastellabend']
+	}
+];
+
+/** @type {Gruppe[]} Designs (Bereich „Design“) */
+export const DESIGN_GRUPPEN = [
+	{
+		id: 'schlicht',
+		name: 'Schlicht',
+		desc: 'Karte mit Text darunter oder darüber – ohne Schnickschnack.',
+		keys: ['poster', 'klassisch', 'minimal', 'linie', 'koordinaten', 'oben', 'randlos', 'leise', 'galerie', 'galeriekoord']
 	},
 	{
-		id: 'klassisch',
-		name: 'Klassisch',
-		desc: 'Zeitlos und ruhig – Linien, Papier, Rahmen.',
-		stile: ['umriss', 'minimal', 'strassen', 'blaupause', 'vintage', 'wald', 'tusche', 'schwarzweiss', 'washi'],
-		designs: ['poster', 'siegritz', 'klassisch', 'balkenoben', 'koordinaten', 'galerie', 'minimal', 'linie', 'passepartout', 'doppel', 'breit', 'polaroid', 'abgerundet', 'rund', 'oben', 'galeriekoord']
-	},
-	{
-		id: 'nacht',
-		name: 'Nacht',
-		desc: 'Dunkle Stile mit leuchtenden Straßen.',
-		stile: ['dunkel', 'cyber', 'solar', 'vulkan', 'konfetti', 'neon', 'goldnacht', 'lichter', 'tinte', 'nachtfahrt'],
-		designs: ['nachtstadt', 'leise', 'randlos', 'lupe']
-	},
-	{
-		id: 'einfarbig',
-		name: 'Einfarbig',
-		desc: 'Eine Farbe, viele Töne – stark mit großen Buchstaben.',
-		stile: ['lavendel', 'koralle', 'petrol', 'salbei', 'senf', 'schiefer', 'flamingo', 'tanne', 'insel', 'koenigsblau'],
-		designs: ['typo', 'typoumriss', 'typoschnitt', 'typopinsel']
+		id: 'rahmen',
+		name: 'Rahmen & Balken',
+		desc: 'Mit Rahmen, Passepartout oder farbigem Textbalken.',
+		keys: ['siegritz', 'passepartout', 'doppel', 'breit', 'polaroid', 'abgerundet', 'balkenoben']
 	},
 	{
 		id: 'formen',
 		name: 'Formen',
 		desc: 'Die Karte als Kreis, Herz, Haus – oder in deiner eigenen Form.',
-		stile: [],
-		designs: ['kreis', 'kreiskoord', 'herz', 'haus', 'sechseck', 'bogen', 'bogenlinie', 'silhouette', 'silhouettelinie', 'fokuskreis', 'fokusherz']
+		keys: ['kreiskoord', 'kreis', 'herz', 'silhouette', 'haus', 'rund', 'sechseck', 'bogen', 'bogenlinie', 'silhouettelinie']
+	},
+	{
+		id: 'typo',
+		name: 'Typografie',
+		desc: 'Der Ortsname in großen Buchstaben – auch mit der Karte darin.',
+		keys: ['typo', 'typoschnitt', 'typoumriss', 'typopinsel']
 	},
 	{
 		id: 'grafik',
-		name: 'Grafik & Plakat',
-		desc: 'Nach Vorbildern aus Grafikdesign und Kartenkunst.',
-		stile: ['japan', 'puls', 'dossier', 'einsatz', 'wimmel', 'popart', 'pastell', 'mittelmeer', 'koenigsblau'],
-		designs: ['fokus', 'fokuskreis', 'fokusherz', 'studie', 'steckbrief', 'kasten', 'lupe', 'dossier', 'einsatz']
+		name: 'Grafik & Editorial',
+		desc: 'Nach Vorbildern aus Grafikdesign und Kartenkunst: Fokus, Lupe, Steckbrief.',
+		keys: ['fokus', 'fokuskreis', 'fokusherz', 'steckbrief', 'studie', 'kasten', 'lupe', 'nachtstadt', 'dossier', 'einsatz']
+	},
+	{
+		id: 'sunset',
+		name: 'Sunset City',
+		desc: 'Spielkarten-Look und Miami-Abendstimmung: Neon, Palmen, Sonnenuntergang.',
+		neu: true,
+		keys: ['sonnenuntergang', 'album', 'guide', 'cover', 'plakette']
 	}
 ];
+
+/** Gruppe eines Stils/Designs @param {Gruppe[]} G @param {string} k */
+export const gruppeVon = (G, k) => G.find((g) => g.keys.includes(k));

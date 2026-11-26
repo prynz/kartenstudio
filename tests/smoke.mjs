@@ -601,16 +601,22 @@ await run('Beispiel-Galerie', { viewport: { width: 1440, height: 900 } }, async 
 	ok(await page.locator('#bspOverlay').isHidden(), 'Galerie schließt sich danach');
 });
 
-await run('Einfacher Ablauf: Vorschläge, Top 6, Umfang, Widmungs-Ideen', { viewport: { width: 1440, height: 900 } }, async (page) => {
+await run('Einfacher Ablauf: Vorschläge, Gruppen (Top 6), Umfang, Widmungs-Ideen', { viewport: { width: 1440, height: 900 } }, async (page) => {
 	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.waitForFunction(() => [...document.querySelectorAll('#wzVorschlaege img')].filter((i) => i.complete && i.naturalWidth > 0).length === 6, null, { timeout: 20000 }).catch(() => {});
 	ok((await page.$$eval('#wzVorschlaege img', (i) => i.filter((x) => x.complete && x.naturalWidth > 0).length)) === 6, '6 Vorschläge mit dem eigenen Ort');
 	await page.screenshot({ path: `${OUT}/47-vorschlaege.png` });
-	const sichtbar = await page.$$eval('#wzStyles > button', (b) => b.filter((x) => x.offsetParent !== null).length);
-	ok(sichtbar === 6, `Top 6 Stile zuerst (${sichtbar} sichtbar)`);
-	await page.click('[data-alle="wzStyles"]');
-	ok((await page.$$eval('#wzStyles > button', (b) => b.filter((x) => x.offsetParent !== null).length)) > 15, '„Alle anzeigen“ zeigt alle Stile');
+	const zaehl = () => page.$$eval('#wzStyles > button', (b) => b.filter((x) => x.offsetParent !== null).length);
+	const gruppen = await page.$$eval('#wzStyles > .wz-gr', (g) => g.map((x) => x.dataset.g));
+	const sichtbar = await zaehl();
+	ok(gruppen.length === 6 && sichtbar === 18, `Stile in ${gruppen.length} Gruppen, je eine Reihe (${sichtbar} sichtbar)`);
+	await page.click('#wzStyles .wz-gr[data-g="hell"] .wz-gr-mehr');
+	ok((await zaehl()) === 23, '„Alle 8“ klappt nur die Gruppe „Hell & klassisch“ auf');
+	await page.click('#wzStilKat [data-w="dunkel"]');
+	const dunkel = await page.$$eval('#wzStyles > button', (b) => b.filter((x) => x.offsetParent !== null).map((x) => x.dataset.p));
+	ok(dunkel.length === 8 && dunkel.includes('goldnacht') && !dunkel.includes('umriss'), `Chip „Dunkel & Nacht“ zeigt nur diese Gruppe (${dunkel.length})`);
+	await page.click('#wzStilKat [data-w=""]');
 	await page.click('#wzVorschlaege [data-id="bamberg-typo"]');
 	await page.waitForTimeout(700);
 	ok((await page.$$('#titel text')).length >= 2 && (await page.textContent('#titel')).includes('SIE'), 'Vorschlag „Typografie“ übernommen – mit eigenem Ort');
@@ -710,13 +716,29 @@ await run('Ort: Kartendetails, Ausrichtung, Route selbst zeichnen', { viewport: 
 await run('Bedienung im Poster: Einführung, Text im Poster, Gespeichert, Favoriten', { viewport: { width: 1440, height: 900 } }, async (page) => {
 	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
-	await page.waitForSelector('.coach', { timeout: 5000 }).catch(() => {});
-	ok(!!(await page.$('.coach')), 'Einführung erscheint beim ersten Mal');
+	await page.waitForSelector('.tour-frage', { timeout: 5000 }).catch(() => {});
+	ok(!!(await page.$('.tour-frage')), 'Einführung: Rundgang wird beim ersten Mal angeboten');
 	await page.screenshot({ path: `${OUT}/48-einfuehrung.png` });
-	await page.click('.coach-ok');
-	await page.click('.coach-ok');
-	await page.click('.coach-ok');
-	ok(!(await page.$('.coach')) && (await page.evaluate(() => localStorage.getItem('kartenstudio.tipps.v1'))) === '1', 'Einführung durchgeklickt und gemerkt');
+	await page.click('.tour-ja');
+	await page.waitForTimeout(400);
+	ok((await page.textContent('.tour-blase > b')) === 'Dein Poster', 'Rundgang startet beim Poster');
+	const titel = [];
+	for (let i = 0; i < 9; i++) {
+		await page.click('.tour-weiter');
+		await page.waitForTimeout(350);
+		titel.push(await page.textContent('.tour-blase > b'));
+	}
+	ok(titel.includes('2 · Stil = die Farben') && titel.includes('Herunterladen & drucken'), 'Rundgang führt von Ort bis Herunterladen (' + titel.length + ' weitere Stationen)');
+	ok(await page.locator('#wzSteps button[data-step="fertig"]').evaluate((b) => b.classList.contains('on')), 'Rundgang öffnet die passenden Bereiche (zuletzt „Fertig“)');
+	await page.keyboard.press('Escape');
+	await page.waitForTimeout(300);
+	ok(!(await page.$('.tour-blase')) && (await page.evaluate(() => localStorage.getItem('kartenstudio.tipps.v1'))) === '1', 'Rundgang mit Esc beendet und gemerkt');
+	await page.click('#railTour');
+	await page.waitForTimeout(300);
+	ok(!!(await page.$('.tour-blase')), 'Rundgang über die Leiste neu startbar');
+	await page.click('.tour-x');
+	await page.waitForTimeout(300);
+	await page.click('#wzSteps button[data-step="stil"]');
 	// Titel im Poster antippen → Eingabefeld direkt im Poster
 	const t = await page.locator('#titel').boundingBox();
 	await page.mouse.click(t.x + t.width / 2, t.y + t.height / 2);

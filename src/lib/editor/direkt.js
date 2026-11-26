@@ -65,64 +65,7 @@ function schliesseFeld() {
 	render();
 }
 
-/* ---------- Einführung beim ersten Mal ---------- */
-const TIPPS_KEY = 'kartenstudio.tipps.v1';
-/** @type {[string, string, string][]} Ziel, Überschrift, Text */
-const TIPPS = [
-	['#poster', 'Karte verschieben', 'Zieh die Karte direkt im Poster. Zoomen geht mit zwei Fingern oder dem Mausrad.'],
-	['#titel', 'Text antippen', 'Tipp auf den Ortsnamen – du kannst ihn gleich im Poster ändern.'],
-	['#wzSteps', 'Alles an einem Ort', 'Hier wechselst du zwischen Ort, Stil, Design, Text, Extras und Fertig. Alles wird automatisch gespeichert.']
-];
-let tippAktiv = false;
-export function einfuehrung() {
-	try {
-		if (localStorage.getItem(TIPPS_KEY)) return;
-	} catch (e) {
-		return;
-	}
-	if (tippAktiv) return;
-	tippAktiv = true;
-	setTimeout(() => zeigeTipp(0), 900);
-}
-/** @param {number} i */
-function zeigeTipp(i) {
-	document.querySelector('.coach')?.remove();
-	const fertig = () => {
-		document.querySelector('.coach')?.remove();
-		tippAktiv = false;
-		try {
-			localStorage.setItem(TIPPS_KEY, '1');
-		} catch (e) {}
-	};
-	if (i >= TIPPS.length) return fertig();
-	const [sel, h, t] = TIPPS[i];
-	const ziel = /** @type {HTMLElement|null} */ (document.querySelector(sel));
-	const r = ziel && ziel.getBoundingClientRect();
-	if (!r || !r.width) return zeigeTipp(i + 1);
-	const c = document.createElement('div');
-	c.className = 'coach';
-	c.setAttribute('role', 'dialog');
-	c.innerHTML = `<b>${esc(h)}</b><p>${esc(t)}</p><div class="coach-f"><span>${i + 1} / ${TIPPS.length}</span><button type="button" class="coach-x">Überspringen</button><button type="button" class="coach-ok">${i === TIPPS.length - 1 ? 'Los geht’s' : 'Weiter'}</button></div>`;
-	document.body.appendChild(c);
-	const w = c.offsetWidth,
-		hh = c.offsetHeight;
-	// Großes Ziel (Poster): Hinweis in die Mitte, sonst darüber oder darunter
-	let top, left;
-	if (r.height > innerHeight * 0.4) {
-		top = r.top + r.height * 0.3;
-		left = r.left + r.width / 2 - w / 2;
-	} else {
-		const oben = r.top > hh + 24;
-		top = oben ? r.top - hh - 12 : r.bottom + 12;
-		left = r.left + r.width / 2 - w / 2;
-		c.classList.add(oben ? 'oben' : 'unten');
-	}
-	c.style.left = Math.max(10, Math.min(innerWidth - w - 10, left)) + 'px';
-	c.style.top = Math.max(10, Math.min(innerHeight - hh - 10, top)) + 'px';
-	if (!reducedMotion()) c.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: EASE });
-	/** @type {HTMLElement} */ (c.querySelector('.coach-ok')).onclick = () => zeigeTipp(i + 1);
-	/** @type {HTMLElement} */ (c.querySelector('.coach-x')).onclick = fertig;
-}
+/* Einführung beim ersten Mal: siehe tour.js (geführter Rundgang) */
 
 /* ---------- „Gespeichert ✓“ ---------- */
 let gespTimer = 0;
