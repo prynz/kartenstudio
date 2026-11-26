@@ -152,13 +152,33 @@ export function extZmin(v) {
   const e = app.DATA.ext, MH = MW * v.a;
   return Math.max(MW / (e.x1 - e.x0), MH / (e.y1 - e.y0)) * 1.0001;
 }
+/**
+ * Wie viele Kartenelemente dürfen höchstens gleichzeitig sichtbar sein? Darüber wird das Poster am
+ * Bildschirm zäh (jede Linie ist ein eigenes Element) – und gedruckt ist es ohnehin nur noch Gewimmel.
+ */
+export const SICHTBAR_MAX = () => (typeof matchMedia !== 'undefined' && matchMedia('(max-width: 900px)').matches ? 11000 : 17000);
+/** Kartenelemente je Flächeneinheit der ursprünglich geladenen Gegend (Stadt dicht, Dorf dünn) */
+export function dichte(D = app.DATA) {
+  if (!D) return 0;
+  if (D._dichte == null) {
+    const e = D.ext;
+    D._dichte = (D.n0 ?? D.feats.length) / Math.max(1, (e.x1 - e.x0) * (e.y1 - e.y0));
+  }
+  return D._dichte;
+}
+/** Größte sinnvolle sichtbare Breite (Karteneinheiten) nach Dichte des Orts */
+export function dichteBreite(v) {
+  const d = dichte();
+  return d > 0 ? Math.sqrt(SICHTBAR_MAX() / (d * v.a)) : Infinity;
+}
 export function vLimits(v) {
   const MH = MW * v.a;
   let zmin = extZmin(v);
   if (nachladbar()) {
-    // Herauszoomen über die geladene Gegend hinaus: bis 3 × Posterbreite (max. 6 km) – lädt nach
+    // Herauszoomen über die geladene Gegend hinaus: bis 3 × Posterbreite (max. 6 km) – lädt nach.
+    // In dichten Städten weniger weit (höchstens ~17 000 Elemente sichtbar), nie aber enger als die geladene Gegend.
     const f = freiBereich();
-    const maxW = Math.max(MW / zmin, Math.min(MW * 3, 6000 / meterJeEinheit()));
+    const maxW = Math.max(MW / zmin, Math.min(MW * 3, 6000 / meterJeEinheit(), dichteBreite(v)));
     zmin = Math.max(MW / maxW, MW / (f.x1 - f.x0), MH / (f.y1 - f.y0)) * 1.0001;
   }
   return {

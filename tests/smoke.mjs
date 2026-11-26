@@ -83,15 +83,23 @@ await run('Desktop – Offline-Beispiel', { viewport: { width: 1440, height: 900
 	await page.waitForTimeout(200);
 	ok((await page.$('#kartenhintergrund')) === null, 'Rückgängig stellt Siegritz-Stil wieder her');
 	// Karte im Poster ziehen verschiebt den Ausschnitt (ohne Werkzeug umzuschalten)
-	const cx0 = await page.evaluate(() => document.querySelector('#karte > g > g > g').getAttribute('transform'));
+	const cx0 = await page.evaluate(() => document.querySelector('#kartenAnsicht').getAttribute('transform') || document.querySelector('#kartenAnsicht').style.transform);
 	const box = await page.locator('#poster').boundingBox();
 	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 3);
 	await page.mouse.down();
 	await page.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 3 + 40, { steps: 8 });
 	await page.mouse.up();
 	await page.waitForTimeout(200);
-	const cx1 = await page.evaluate(() => document.querySelector('#karte > g > g > g').getAttribute('transform'));
+	const cx1 = await page.evaluate(() => document.querySelector('#kartenAnsicht').getAttribute('transform') || document.querySelector('#kartenAnsicht').style.transform);
 	ok(cx0 !== cx1, 'Karte im Poster direkt verschiebbar');
+	// Neben dem Poster ziehen bewegt nichts
+	await page.mouse.move(box.x - 30, box.y + box.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(box.x - 30 + 150, box.y + box.height / 2 + 50, { steps: 8 });
+	await page.mouse.up();
+	await page.waitForTimeout(200);
+	const cx2 = await page.evaluate(() => document.querySelector('#kartenAnsicht').getAttribute('transform') || document.querySelector('#kartenAnsicht').style.transform);
+	ok(cx2 === cx1, 'Ziehen neben dem Poster verschiebt die Karte nicht');
 	// Designs durchklicken
 	await page.click('#wzNext');
 	await page.waitForTimeout(1200);
@@ -621,7 +629,7 @@ await run('Einfacher Ablauf: Vorschläge, Gruppen (Top 6), Umfang, Widmungs-Idee
 	await page.waitForTimeout(700);
 	ok((await page.$$('#titel text')).length >= 2 && (await page.textContent('#titel')).includes('SIE'), 'Vorschlag „Typografie“ übernommen – mit eigenem Ort');
 	await page.click('#wzSteps button[data-step="ort"]');
-	const sc = async () => parseFloat(((await page.getAttribute('#kartenAnsicht', 'transform')) || '').match(/scale\(([\d.]+)\)/)?.[1] || '0');
+	const sc = async () => parseFloat(((await page.evaluate(() => { const k = document.querySelector('#kartenAnsicht'); return k.getAttribute('transform') || k.style.transform; })) || '').match(/scale\(([\d.]+)\)/)?.[1] || '0');
 	await page.click('#wzUmfang button[data-z="kern"]');
 	await page.waitForTimeout(500);
 	const zk = await sc();
@@ -869,7 +877,8 @@ await run('Designs nach Vorbildern: Fokus, Studie, Steckbrief, Kasten, Lupe, Dos
 	await design('typo');
 	await page.click('#wzTypoStil [data-v="schnitt"]');
 	await page.waitForTimeout(300);
-	ok((await page.getAttribute('#karte', 'clip-path')) === 'url(#cTypo)', 'Typografie: Karte nur in den Buchstaben');
+	// Am Bildschirm deckt eine Maske alles außerhalb der Buchstaben ab (eigene Kartenebene), im Export der Beschnitt
+	ok((await page.getAttribute('#karte', 'clip-path')) === 'url(#cTypo)' || (await page.$$('#mKarte text')).length > 0, 'Typografie: Karte nur in den Buchstaben');
 	await page.click('#wzTypoZeilen [data-v="1"]');
 	await page.click('#wzTypoSchrift [data-v="SgBR"]');
 	await page.waitForTimeout(300);
@@ -910,7 +919,7 @@ await run('Designs nach Vorbildern: Fokus, Studie, Steckbrief, Kasten, Lupe, Dos
 		const A = ['#2c1e3d', '#5d4872', '#6e74a0', '#8d769d', '#9b8bb2', '#b17b9a', '#db93a3', '#e4a9a4', '#ebc5b9', '#fcf1f9'];
 		const f = new Set();
 		document.querySelectorAll('#poster *').forEach((e) => {
-			if (e.id === 'vorschau' || e.closest('#treffer') || e.closest('#sel')) return;
+			if (e.id === 'vorschau' || e.id === 'vorschauMaske' || e.closest('#mKarte') || e.closest('#treffer') || e.closest('#sel')) return;
 			for (const at of ['fill', 'stroke', 'stop-color']) {
 				const v = (e.getAttribute(at) || '').toLowerCase();
 				if (/^#[0-9a-f]{6}$/.test(v) && !A.includes(v)) f.add(v);
@@ -951,7 +960,7 @@ await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (pag
 	await page.evaluate(() => window.dispatchEvent(new Event('ks-demo')));
 	await page.waitForSelector('#landing', { state: 'hidden', timeout: 30000 });
 	await page.waitForTimeout(500);
-	const z0 = await page.evaluate(() => document.querySelector('#kartenAnsicht').getAttribute('transform'));
+	const z0 = await page.evaluate(() => document.querySelector('#kartenAnsicht').getAttribute('transform') || document.querySelector('#kartenAnsicht').style.transform);
 	const b = await page.locator('#poster').boundingBox();
 	const cdp = await page.context().newCDPSession(page);
 	const cx = b.x + b.width / 2,
@@ -965,7 +974,7 @@ await run('iPhone – Zwei-Finger-Zoom', { ...devices['iPhone 14'] }, async (pag
 	await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 	await page.waitForTimeout(500);
 	const sc = (t) => parseFloat((t.match(/scale\(([\d.]+)\)/) || [])[1] || '0');
-	const z1 = await page.evaluate(() => document.querySelector('#kartenAnsicht').getAttribute('transform'));
+	const z1 = await page.evaluate(() => document.querySelector('#kartenAnsicht').getAttribute('transform') || document.querySelector('#kartenAnsicht').style.transform);
 	ok(sc(z1) > sc(z0) * 2.5, `Zwei-Finger-Zoom vergrößert die Karte (${sc(z0).toFixed(2)} → ${sc(z1).toFixed(2)})`);
 	await page.screenshot({ path: `${OUT}/14-pinch-iphone.png` });
 });

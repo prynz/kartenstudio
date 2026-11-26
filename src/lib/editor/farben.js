@@ -27,7 +27,16 @@ export function usedColors() {
   add(app.S.bg);
   return [...m.entries()].sort((a, b) => b[1] - a[1]);
 }
+let farbKey = '';
 export function fillReplace() {
+  // Teuer bei Städten (geht alle Kartenelemente durch) – nur, wenn die erweiterten Einstellungen
+  // offen sind und sich an den Farben etwas geändert hat
+  const adv = document.getElementById('adv');
+  if (adv && adv.classList.contains('hidden')) return;
+  const S = app.S;
+  const key = JSON.stringify([app.DATA && app.DATA.feats.length, S.cls, S.ov, S.frame.color, S.bar.on && S.bar.color, S.title.color, S.sub.color, S.bg]);
+  if (key === farbKey) return;
+  farbKey = key;
   const s = $('rOld'),
     cur = s.value;
   s.innerHTML = '';

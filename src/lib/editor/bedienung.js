@@ -108,7 +108,10 @@ export function endDrag(ev) {
   if (app.sel.size) msg(`${app.sel.size} Elemente markiert`, 'ok');
 }
 export function setTool(t) {
+  const vorher = app.tool;
   app.tool = t;
+  // Der Kartenaufbau hängt am Werkzeug (eigene Kartenebene beim Verschieben) → neu zeichnen
+  if (vorher !== t && app.DATA && app.S) render();
   $('toolSel').classList.toggle('on', t === 'sel');
   $('toolMove').classList.toggle('on', t === 'move');
   app.cv.classList.toggle('tool-move', t === 'move');
@@ -136,6 +139,8 @@ export const zStep = f => change(() => {
 /** Verbindet die Bedienelemente dieses Bausteins mit der Seite. */
 /* ---------- Zwei-Finger-Zoom (Handy/Tablet) ---------- */
 const PTS = new Map();
+// auch für andere Bausteine sichtbar (laufende Zwei-Finger-Geste → nicht neu aufbauen)
+app.PTS = PTS;
 let pinch = null;
 function pinchInfo() {
   const [a, b] = [...PTS.values()];
@@ -177,8 +182,11 @@ export function initEditorBedienung() {
     }
     endDrag(ev);
   };
+  /** Liegt der Zeiger auf dem Poster? Verschieben/Zoomen nur dort – nicht im leeren Bereich daneben */
+  const aufPoster = ev => !!(ev.target && ev.target.closest && ev.target.closest('#poster'));
   app.cv.addEventListener('pointerdown', ev => {
     if (!app.DATA) return;
+    if (app.tool === 'move' && !aufPoster(ev) && !(ev.pointerType === 'touch' && PTS.size)) return;
     if (ev.pointerType === 'touch') {
       PTS.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
       if (PTS.size === 2) {
@@ -271,7 +279,7 @@ export function initEditorBedienung() {
   app.cv.addEventListener('pointerup', up);
   app.cv.addEventListener('pointercancel', up);
   app.cv.addEventListener('wheel', ev => {
-    if (!app.DATA || app.tool !== 'move' && !ev.ctrlKey || (app.S.motif === 'sterne' || app.S.motif === 'koord' || app.S.motif === 'wolke' || (app.S.multi && app.S.multi.on))) return;
+    if (!app.DATA || !aufPoster(ev) || app.tool !== 'move' && !ev.ctrlKey || (app.S.motif === 'sterne' || app.S.motif === 'koord' || app.S.motif === 'wolke' || (app.S.multi && app.S.multi.on))) return;
     ev.preventDefault();
     const p = svgToMap(toSvg(ev.clientX, ev.clientY));
     const v = app.S.view;

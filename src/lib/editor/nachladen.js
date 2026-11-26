@@ -60,11 +60,11 @@ async function lauf() {
 	try {
 		const tiles = await fetchTiles({ w: wl, n, e, s }, { z: D.tz, ohne: new Set(D.tkeys) });
 		if (app.DATA !== D) return;
-		const place = { name: D.place, region: D.region, center: D.center };
-		const nd = tiles.length ? buildDataTiles(tiles, app.lastB, { w: wl, n, e, s }, place, { fid0: D.fidN, ti0: D.tiles.length }) : null;
-		// erst nach dem Loslassen einbauen (Neuaufbau mitten im Ziehen würde ruckeln)
+		// erst nach dem Loslassen verarbeiten und einbauen (mitten im Ziehen würde es ruckeln)
 		await nichtBeimZiehen();
 		if (app.DATA !== D) return;
+		const place = { name: D.place, region: D.region, center: D.center };
+		const nd = tiles.length ? buildDataTiles(tiles, app.lastB, { w: wl, n, e, s }, place, { fid0: D.fidN, ti0: D.tiles.length }) : null;
 		if (nd) {
 			// Vorschaubilder (Designs, Vorschläge) hängen an der ursprünglichen Gegend – nicht neu erzeugen
 			if (D.n0 == null) D.n0 = D.feats.length;

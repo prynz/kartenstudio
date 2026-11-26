@@ -7,7 +7,7 @@ import { BASES } from '../themen/standard.js';
 import { RASTER, rasterKey, detailRaster, scheduleDetail, std3d, kameraBild, kameraKey, scheduleKamera } from '../karte/raster.js';
 import { fitPrint } from './druck.js';
 import { clampView } from './zustand.js';
-import { eff, vT, visRect } from './zustand.js';
+import { SICHTBAR_MAX, dichte, eff, vT, visRect } from './zustand.js';
 import { dms, panel, viewCenterLL } from './seitenleiste.js';
 import { LAY_DEFAULT, lum } from '../themen/designs.js';
 import { syncWizard } from './assistent.js';
@@ -596,6 +596,10 @@ export function mapContent(forExport, vr) {
 
 /** Kennung der Kachel-Ausschnitte (bei mehreren Orten je Ort eigene) */
 export const TCP = { p: 'tc' };
+/** Viele Linien im Poster (Stadt)? Dann teure Effekte wie Überblendungen weglassen */
+export function karteSchwer() {
+  return !!(MC.node && MC.node.getElementsByTagName('path').length > 6000);
+}
 
 /* ---------- Zwischenspeicher für die Karte ----------
    Text-, Rahmen- oder Designänderungen bauen die Karte nicht neu auf: Der fertige
@@ -608,7 +612,11 @@ function mapKey() {
 /** Sichtbarer Bereich plus großzügiger Rand, damit Verschieben ohne Neuzeichnen geht */
 function cullRect() {
   const v = visRect(), w = v[2] - v[0], h = v[3] - v[1], E = app.DATA.ext;
-  return [Math.max(E.x0, v[0] - w * 0.6), Math.max(E.y0, v[1] - h * 0.6), Math.min(E.x1, v[2] + w * 0.6), Math.min(E.y1, v[3] + h * 0.6)];
+  // Vorrat rundherum (zum Ziehen): 60 % je Seite – in dichten Städten weniger, damit nicht ein
+  // Vielfaches des Sichtbaren gezeichnet wird (höchstens ≈ 2,6 × so viele Elemente wie sichtbar erlaubt)
+  const sicht = dichte() * w * h;
+  const r = sicht > 0 ? Math.max(0.2, Math.min(0.6, (Math.sqrt((SICHTBAR_MAX() * 2.6) / sicht) - 1) / 2)) : 0.6;
+  return [Math.max(E.x0, v[0] - w * r), Math.max(E.y0, v[1] - h * r), Math.min(E.x1, v[2] + w * r), Math.min(E.y1, v[3] + h * r)];
 }
 function cacheCovers() {
   if (!MC.node || !MC.rect) return false;
@@ -654,9 +662,13 @@ function umfaerben(node) {
 }
 function mapNodes() {
   const key = mapKey();
-  if (key === MC.key && cacheCovers()) return MC;
+  // Klickflächen (unsichtbare breite Linien) braucht nur das Auswahl-Werkzeug – im Assistenten
+  // (Verschieben) wären es bei Städten zehntausende überflüssige Elemente
+  const klick = app.tool !== 'move';
+  const passt = cacheCovers() && (MC.klick || !klick);
+  if (key === MC.key && passt) return MC;
   const fk = formKey();
-  if (fk && MC.node && fk === MC.fk && MC.farbe && cacheCovers()) {
+  if (fk && MC.node && fk === MC.fk && MC.farbe && passt) {
     umfaerben(MC.node);
     MC.key = key;
     return MC;
@@ -670,7 +682,7 @@ function mapNodes() {
   const hits = document.createElementNS(NS, 'g');
   const hw = (12 / app.S.view.z).toFixed(2);
   // In der Perspektive passen die Klickflächen nicht zur Ansicht → dann keine
-  if (!perspektiveAn() && !(app.S.fx && app.S.fx.h3d)) node.querySelectorAll('path[data-k]:not([display])').forEach(p => {
+  if (klick && !perspektiveAn() && !(app.S.fx && app.S.fx.h3d)) node.querySelectorAll('path[data-k]:not([display])').forEach(p => {
     if (p.getAttribute('fill') !== 'none' || p.dataset.k === 'haus') {
       p.setAttribute('pointer-events', 'all');
       p.style.cursor = 'pointer';
@@ -685,7 +697,7 @@ function mapNodes() {
     h.dataset.ref = p.dataset.g;
     hits.appendChild(h);
   });
-  Object.assign(MC, { key, fk, farbe: nurFarbe(), node, hits, rect, z: app.S.view.z });
+  Object.assign(MC, { key, fk, farbe: nurFarbe(), node, hits, rect, z: app.S.view.z, klick });
   return MC;
 }
 
@@ -701,26 +713,40 @@ export function renderView() {
   if (std3d()) scheduleKamera();
   // Auch gekippt/3D: während des Ziehens das fertige Bild nur verschieben (flüssig),
   // die genaue Perspektive wird 140 ms nach der letzten Bewegung neu berechnet.
-  if (!inner || !MC.node || !cacheCovers()) {
+  // Mitten im Ziehen nie neu aufbauen (bei Städten ≈ 0,5 s Stillstand): der Rand bleibt kurz leer
+  // und wird nach dem Loslassen gefüllt – wie bei Online-Karten
+  const zieht = !!app.drag || (app.PTS && app.PTS.size > 1);
+  if (!inner || !MC.node || (!cacheCovers() && !zieht)) {
     render();
     return;
   }
   const g = geo();
   const t = vT(g);
-  // Linienstärken sind für den alten Zoom berechnet – bis zum Neuzeichnen proportional mitskalieren
-  inner.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
+  // Linienstärken sind für den alten Zoom berechnet – bis zum Neuzeichnen proportional mitskalieren.
+  // CSS-Transform auf der eigenen Kartenebene: der Browser verschiebt das fertige Bild (kein Neumalen).
+  if (inner.style.willChange) inner.style.transform = vTcss(g);
+  else inner.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
   const pa = app.poster.querySelector('#pinsAnsicht');
   if (pa) pa.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
   const ea = app.poster.querySelector('#einsatzAnsicht');
   if (ea) ea.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
   const oa = app.poster.querySelector('#orteAnsicht');
   if (oa) oa.setAttribute('transform', t.replace(/^translate\([^)]*\) /, ''));
-  if (MC.hits) MC.hits.setAttribute('transform', t);
-  drawSel();
+  // Klickflächen: mit eigener Kartenebene erst beim Neuzeichnen (während des Ziehens klickt niemand)
+  if (MC.hits && !inner.style.willChange) MC.hits.setAttribute('transform', t);
+  if (app.sel.size || app.selCls) drawSel();
   syncTools();
   nachladenPruefen();
   clearTimeout(fullTimer);
-  fullTimer = window.setTimeout(render, 140);
+  fullTimer = window.setTimeout(vollNachZiehen, 140);
+}
+/** Volles Neuzeichnen nach der Bewegung – solange noch gezogen wird, warten */
+function vollNachZiehen() {
+  if (app.drag || (app.PTS && app.PTS.size > 1)) {
+    fullTimer = window.setTimeout(vollNachZiehen, 120);
+    return;
+  }
+  render();
 }
 /** Schriftbreite messen (Schriften sind im Dokument geladen) */
 let MESS = null;
@@ -1008,6 +1034,36 @@ function pinsSVG(g, forExport) {
   return o + '</g></g></g></g>';
 }
 
+/** Eigene Kartenebene am Bildschirm? Nur im Verschieben-Werkzeug (Assistent). Beim Auswählen
+ * (erweiterte Einstellungen) bleibt der klassische Beschnitt – dort sollen Klicks außerhalb der
+ * Kartenform keine verdeckten Häuser treffen. */
+export function kartenEbene() {
+  return app.tool === 'move';
+}
+/** Ansicht der Karte als CSS-Transform (Einheiten = Poster-Punkte) – wird beim Ziehen nur verschoben */
+export function vTcss(g) {
+  const v = app.S.view;
+  return `translate(${MW / 2}px,${(g.MH / 2).toFixed(2)}px) scale(${v.z.toFixed(5)}) translate(${(-v.cx).toFixed(2)}px,${(-v.cy).toFixed(2)}px)`;
+}
+/**
+ * Passepartout über der Karte (nur Bildschirm): deckt alles außerhalb der Kartenform mit dem ab,
+ * was dort sonst zu sehen ist (Vorschau-Hintergrund + Papier). Ersetzt den Beschnitt der Karte.
+ */
+function kartenMaske(g, schnitt, papierF, verlauf, R) {
+  const f = app.S.frame;
+  let loch;
+  if (schnitt) {
+    const T = typoTexte(g);
+    loch = T ? `<g fill="#000">${T.texte}</g>` : '';
+  } else loch = `<g clip-path="url(#cIn)"><g transform="translate(${g.mx},${g.my})">${mapShape(g, 0, ' fill="#000"')}</g></g>`;
+  const pv = app.previewBg || '#ffffff';
+  let o = `<defs><mask id="mKarte" maskUnits="userSpaceOnUse" x="-10" y="-10" width="${(g.W + 20).toFixed(1)}" height="${(g.H + 20).toFixed(1)}"><rect x="-10" y="-10" width="${(g.W + 20).toFixed(1)}" height="${(g.H + 20).toFixed(1)}" fill="#fff"/>${loch}</mask></defs>`;
+  o += `<g id="kartenmaske" mask="url(#mKarte)" pointer-events="none">`;
+  o += `<rect id="vorschauMaske" x="-10" y="-10" width="${(g.W + 20).toFixed(1)}" height="${(g.H + 20).toFixed(1)}" fill="${pv === 'checker' ? 'url(#pvChecker)' : pv}"/>`;
+  const papier = schnitt ? typoPapier() : papierF !== 'none' ? (verlauf && !g.L.papier ? 'url(#gBg)' : papierF) : '';
+  if (papier) o += `<rect x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="${papier}"/>`;
+  return o + '</g>';
+}
 export function buildSVG(forExport) {
   const g = geo(),
     f = app.S.frame,
@@ -1056,11 +1112,19 @@ export function buildSVG(forExport) {
   // Eigenes Papier außerhalb der Karte (z. B. weiß um einen dunklen Kartenkreis)
   if (g.L.papier && app.S.bg !== 'none') o += mapShape(g, 0, ` id="kartenflaeche" transform="translate(${g.mx},${g.my})" fill="${verlauf ? 'url(#gBg)' : app.S.bg}"`);
   o += fokusSVG(g);
-  o += `<g id="karte" clip-path="url(#${schnitt ? 'cTypo' : 'cIn'})"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><g id="kartenAnsicht" transform="${vT(g).replace(/^translate\([^)]*\) /, '')}">`;
-  const KB = forExport && app.vorschau && KARTENBILD.b;
-  if (KB) o += `<image href="${KB.href}" x="${KB.r[0].toFixed(2)}" y="${KB.r[1].toFixed(2)}" width="${(KB.r[2] - KB.r[0]).toFixed(2)}" height="${(KB.r[3] - KB.r[1]).toFixed(2)}" preserveAspectRatio="none"/>`;
-  else o += forExport ? mapContent(true, visRect()) : '<g id="kartenInhalt"/>';
-  o += '</g></g></g></g>';
+  // Am Bildschirm: Karte als eigene Ebene OHNE Beschnittgruppe darüber – nur so kann der Browser sie
+  // beim Ziehen einfach verschieben, statt bei jedem Bild zehntausende Linien neu zu malen.
+  // Den Beschnitt übernimmt eine Maske in Papierfarbe darüber (wie ein Passepartout).
+  if (!forExport && kartenEbene()) {
+    o += `<g id="karte" data-ebene="1"><g transform="translate(${g.mx},${g.my})"><g id="kartenAnsicht" style="will-change:transform;transform:${vTcss(g)}"><g id="kartenInhalt"/></g></g></g>`;
+    o += kartenMaske(g, schnitt, papierF, verlauf, R);
+  } else {
+    o += `<g id="karte" clip-path="url(#${schnitt ? 'cTypo' : 'cIn'})"><g transform="translate(${g.mx},${g.my})"><g clip-path="url(#cMap)"><g id="kartenAnsicht" transform="${vT(g).replace(/^translate\([^)]*\) /, '')}">`;
+    const KB = app.vorschau && KARTENBILD.b;
+    if (KB) o += `<image href="${KB.href}" x="${KB.r[0].toFixed(2)}" y="${KB.r[1].toFixed(2)}" width="${(KB.r[2] - KB.r[0]).toFixed(2)}" height="${(KB.r[3] - KB.r[1]).toFixed(2)}" preserveAspectRatio="none"/>`;
+    else o += mapContent(true, visRect());
+    o += '</g></g></g></g>';
+  }
   const ink = app.S.title.color;
   o += fxSVG(g);
   o += leuchtenSVG(g);
@@ -1144,7 +1208,8 @@ export function render() {
   const M = mapNodes();
   const oldK = app.poster.querySelector('#karte');
   const oldHg = app.poster.querySelector('#treffer');
-  if (oldK && M.node === before && oldK.contains(M.node)) {
+  // Schneller Weg nur bei gleichem Aufbau (eigene Kartenebene ja/nein)
+  if (oldK && M.node === before && oldK.contains(M.node) && oldK.dataset.ebene === (tmp.querySelector('#karte').dataset.ebene)) {
     // Schneller Weg: Karte bleibt im Poster, nur alles drumherum wird ersetzt.
     // (Herausnehmen und Wiedereinsetzen würde den Browser zwingen, jedes Haus neu zu vermessen.)
     const newK = tmp.querySelector('#karte');

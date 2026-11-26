@@ -8,7 +8,7 @@ import { sheetZeigen, sheetOffen } from './sheet.js';
 import { textImPoster, favoritenZeichnen } from './direkt.js';
 import { tourAnbieten, tourStarten } from './tour.js';
 import { app as appUntyped } from './app.js';
-import { KARTENBILD, alsBild, buildSVG, kartenBildMalen, kartenBildMoeglich, render, vorschauSVG } from './zeichnen.js';
+import { KARTENBILD, alsBild, buildSVG, kartenBildMalen, kartenBildMoeglich, karteSchwer, render, vorschauSVG } from './zeichnen.js';
 import { begin, change, clampView, commit, newState } from './zustand.js';
 import { openSec } from './seitenleiste.js';
 import { setTool, sliderToZ, zToSlider } from './bedienung.js';
@@ -759,7 +759,9 @@ export function pickDesign(S, k) {
 export function smooth(fn) {
 	const d = /** @type {any} */ (document);
 	if (reducedMotion()) return fn();
-	if (d.startViewTransition) {
+	// Große Karten (Städte): Die Überblendung müsste das ganze Poster zweimal als Bild erfassen →
+	// stattdessen nur sanft einblenden (läuft ohne Neumalen)
+	if (d.startViewTransition && !karteSchwer()) {
 		const t = d.startViewTransition(fn);
 		// schnelles Weiterklicken bricht die vorige Überblendung ab – das ist kein Fehler
 		[t.ready, t.finished, t.updateCallbackDone].forEach((p) => p && p.catch(() => {}));
