@@ -446,6 +446,8 @@ aside.nodata .wiz{opacity:.45;pointer-events:none}
 ::view-transition-old(poster),::view-transition-new(poster){animation-duration:.32s;height:100%;object-fit:contain}
 @media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
 .mk-on #poster{view-transition-name:none}
+/* Poster liegt unter dem Mockup – nicht mitzeichnen (bei Städten zehntausende Linien) */
+.mk-on #poster{visibility:hidden}
 @media(max-width:900px){
   .wz-sizes,.wz-pinadd{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-16px;margin-right:-16px;padding:2px 16px 4px}
   .wz-sizes::-webkit-scrollbar,.wz-pinadd::-webkit-scrollbar{display:none}

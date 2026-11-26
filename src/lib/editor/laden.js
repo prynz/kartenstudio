@@ -226,14 +226,21 @@ let PFADE = { D: null, r: '', liste: null };
 function vorbereitet(D, r, klein) {
   const k = r.join();
   if (PFADE.D === D && PFADE.r === k) return PFADE.liste;
-  const liste = {};
-  ORDER.forEach(c => (liste[c] = { flaechen: [], linien: [] }));
+  // Je Klasse EIN zusammengesetzter Umriss (statt tausender einzelner): ein Malbefehl je Klasse
+  // ist bei Städten um ein Vielfaches schneller.
+  const teile = {};
+  ORDER.forEach(c => (teile[c] = { flaechen: [], linien: [] }));
   D.feats.forEach(f => {
     const bx = f.bx;
-    if (!liste[f.k]) return;
+    if (!teile[f.k]) return;
     if (bx[2] < r[0] || bx[0] > r[2] || bx[3] < r[1] || bx[1] > r[3]) return;
     if (Math.max(bx[2] - bx[0], bx[3] - bx[1]) < klein) return;
-    (f.a ? liste[f.k].flaechen : liste[f.k].linien).push(new Path2D(f.d));
+    (f.a ? teile[f.k].flaechen : teile[f.k].linien).push(f.d);
+  });
+  const liste = {};
+  ORDER.forEach(c => {
+    const t = teile[c];
+    liste[c] = { flaechen: t.flaechen.length ? [new Path2D(t.flaechen.join(''))] : [], linien: t.linien.length ? [new Path2D(t.linien.join(''))] : [] };
   });
   PFADE = { D, r: k, liste };
   return liste;
@@ -260,7 +267,8 @@ async function leinwandBild(p, D, vb, r, klein) {
     const fuellen = cl.f && cl.f !== 'none';
     if (fuellen) x.fillStyle = cl.f;
     L.flaechen.forEach(pf => {
-      if (fuellen) x.fill(pf, 'evenodd');
+      // „nonzero“: Hausteile, die sich an Kachelgrenzen überlappen, löschen sich sonst gegenseitig aus
+      if (fuellen) x.fill(pf, 'nonzero');
       if (strich) x.stroke(pf);
     });
     if (strich) L.linien.forEach(pf => x.stroke(pf));
@@ -290,14 +298,25 @@ export function renderThumbs() {
   const alt = stilUrls;
   stilUrls = [];
   const D = app.DATA;
-  let i = 0;
+  const offen = new Set(reihe);
+  /** @param {Element} b */
+  const sicht = b => b.getClientRects().length > 0;
   const naechstes = async () => {
     if (lauf !== stilLauf || app.DATA !== D) return;
-    if (i >= reihe.length) {
+    if (!offen.size) {
       alt.forEach(u => URL.revokeObjectURL(u));
       return;
     }
-    const key = reihe[i++];
+    // Nur malen, solange die Stil-Auswahl zu sehen ist – sonst bremst das jedes andere Menü aus
+    const zuSehen = new Set();
+    for (const b of knoepfe) if (offen.has(b.dataset.p) && sicht(b)) zuSehen.add(b.dataset.p);
+    if (!zuSehen.size && !knoepfe.some(sicht)) {
+      setTimeout(naechstes, 400);
+      return;
+    }
+    // Sichtbare Karten zuerst, eingeklappte danach
+    const key = reihe.find(k => zuSehen.has(k)) || reihe.find(k => offen.has(k));
+    offen.delete(key);
     const p = PRESETS[key];
     // Ohne Pop-Art-Symbole: direkt auf eine Leinwand malen (viel schneller als SVG → Bild)
     if (!p.pop) {

@@ -8,7 +8,7 @@ import { sheetZeigen, sheetOffen } from './sheet.js';
 import { textImPoster, favoritenZeichnen } from './direkt.js';
 import { tourAnbieten, tourStarten } from './tour.js';
 import { app as appUntyped } from './app.js';
-import { alsBild, buildSVG, render, vorschauSVG } from './zeichnen.js';
+import { KARTENBILD, alsBild, buildSVG, kartenBildMalen, kartenBildMoeglich, render, vorschauSVG } from './zeichnen.js';
 import { begin, change, clampView, commit, newState } from './zustand.js';
 import { openSec } from './seitenleiste.js';
 import { setTool, sliderToZ, zToSlider } from './bedienung.js';
@@ -225,6 +225,8 @@ function scheduleDesignThumbs(delay = 600) {
 	thumbTimer = window.setTimeout(renderDesignThumbs, delay);
 }
 let thumbLauf = 0;
+/** @type {null | (() => void)} angehaltene Bildchen-Erzeugung */
+let thumbWeiter = null;
 /** Sind die Design-Karten (fast) im sichtbaren Bereich? Vorher lohnt sich das Berechnen nicht. */
 let designSichtbar = false;
 let designBeobachter = /** @type {IntersectionObserver|null} */ (null);
@@ -249,18 +251,56 @@ function renderDesignThumbs() {
 	const aBasis = D && D.aspect ? S.aPrev || S.view.a : S.view.a;
 	const tt = S.title.klein ? String(S.title.text || '').toUpperCase() : S.title.text;
 	const key = JSON.stringify([schriftenDa(), app.DATA.place, app.DATA.n0 ?? app.DATA.feats.length, S.preset, S.cls, S.ov, S.bg, S.mode, S.base, S.labels, S.motif, S.fx && [S.fx.paper, S.fx.vig], aBasis, tt, S.sub.text, S.title.fontDesign ? '' : S.title.font, S.sub.font, S.scale, S.form ? S.form.ringe.length + ':' + S.form.a : 0]);
-	if (key === thumbKey) return;
+	if (key === thumbKey) {
+		// angehalten, weil der Bereich verlassen wurde → dort weitermachen
+		if (thumbWeiter) {
+			const f = thumbWeiter;
+			thumbWeiter = null;
+			f();
+		}
+		return;
+	}
 	thumbKey = key;
+	thumbWeiter = null;
 	const lauf = ++thumbLauf;
-	const knoepfe = all('#wzDesigns button[data-d]');
+	// Sichtbare Karten zuerst (Übersicht zeigt je Gruppe nur eine Reihe), aufgeklappte/ausgeblendete danach
+	const knoepfe = all('#wzDesigns button[data-d]').sort((a, b) => Number(a.offsetParent === null) - Number(b.offsetParent === null));
 	const alt = thumbUrls;
 	thumbUrls = [];
 	let i = 0;
+	/** @type {{ href: string, r: number[] } | null} */
+	let bild = null;
+	let bildDa = false;
 	// Eins nach dem anderen, mit Pausen dazwischen – die Seite bleibt bedienbar
 	const naechstes = async () => {
 		if (lauf !== thumbLauf || i >= knoepfe.length) {
 			if (i >= knoepfe.length) alt.forEach((u) => URL.revokeObjectURL(u));
 			return;
+		}
+		// Bereich verlassen → anhalten (sonst bremsen die Bildchen jedes andere Menü aus)
+		if (step !== 'design' || advOpen) {
+			thumbWeiter = naechstes;
+			return;
+		}
+		// Karte EINMAL als Bild malen – alle Design-Bildchen nutzen dann dieses Bild
+		if (!bildDa) {
+			bildDa = true;
+			if (kartenBildMoeglich()) {
+				const keep = app.S;
+				try {
+					const c = JSON.parse(JSON.stringify(keep));
+					if (c.fx) c.fx = { ...c.fx, h3d: false, kipp: 0, dreh: 0, schatten: false, relief: false, gelaende: false };
+					app.S = c;
+					const p = kartenBildMalen(440);
+					app.S = keep;
+					bild = await p;
+				} catch (e) {
+					bild = null;
+				} finally {
+					app.S = keep;
+				}
+				if (lauf !== thumbLauf) return;
+			}
 		}
 		const b = knoepfe[i++];
 		const k = /** @type {string} */ (b.dataset.d);
@@ -280,8 +320,10 @@ function renderDesignThumbs() {
 			app.S = c;
 			fitPrint(c);
 			clampView(c.view);
+			KARTENBILD.b = bild;
 			svg = vorschauSVG();
 		} finally {
+			KARTENBILD.b = null;
 			app.S = keep;
 		}
 		try {

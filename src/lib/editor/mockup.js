@@ -2,7 +2,8 @@
 // Leinwand, T-Shirt oder Tasse. Die Szenen sind selbst gezeichnet (HTML/SVG),
 // es werden keine fremden Bilder oder Dienste gebraucht.
 import { app as appUntyped } from './app.js';
-import { buildSVG, geo } from './zeichnen.js';
+import { alsBild, buildSVG, geo } from './zeichnen.js';
+import { schriftenDa } from './basis.js';
 import { paper, paperOrFree, fitPrint } from './druck.js';
 import { clampView } from './zustand.js';
 import { viewCenterLL } from './seitenleiste.js';
@@ -71,6 +72,13 @@ export function product(S) {
 let url = '';
 /** @type {string[]} */
 let setUrls = [];
+let motivKey = '';
+let motivLauf = 0;
+/** Schlüssel des Motivs: alles am Poster außer der Produktwahl */
+function motivSchluessel() {
+	const { product: _p, ...rest } = app.S;
+	return JSON.stringify([rest, app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, schriftenDa()]);
+}
 
 /**
  * Passendes 3er-Set: Koordinaten-Poster, die eigene Karte, Sternenhimmel – gleicher Stil, gleiches Design.
@@ -118,8 +126,33 @@ export function renderMockup() {
 	if (!box || !app.DATA || !app.S || !document.body.classList.contains('mk-on')) return;
 	const P = product(app.S);
 	const g = geo();
-	const old = url;
-	url = URL.createObjectURL(new Blob([buildSVG(true)], { type: 'image/svg+xml' }));
+	// Motiv nur neu malen, wenn sich am Poster etwas geändert hat (Produkt, Rahmen, Wandfarbe … nicht).
+	// Früher hing hier jedes Mal die ganze Karte als SVG-Bild drin → bei Städten ≈ 0,4 s je Öffnen/Klick.
+	const key = motivSchluessel();
+	const fertig = key === motivKey; // auch wenn es gerade noch gemalt wird
+	if (!fertig) {
+		motivKey = key;
+		const lauf = ++motivLauf;
+		// nur so groß malen, wie das Poster in der Szene höchstens erscheint (Bildpunkte kosten Zeit)
+		const dpr = Math.min(2, window.devicePixelRatio || 1);
+		const lang = Math.max(480, Math.min(1400, Math.round(Math.max(box.clientWidth, box.clientHeight) * 0.75 * dpr)));
+		const w = Math.round(g.W >= g.H ? lang : (lang * g.W) / g.H);
+		const svg = buildSVG(true);
+		// erst nach dem nächsten Bild malen → der Menüwechsel erscheint sofort
+		new Promise((ok) => requestAnimationFrame(() => setTimeout(ok, 0)))
+			.then(() => (lauf === motivLauf ? alsBild(svg, w) : Promise.reject()))
+			.then((u) => {
+				if (lauf !== motivLauf) return URL.revokeObjectURL(u);
+				const vorher = url;
+				url = u;
+				box.querySelectorAll('.mk-img').forEach((el) => el.setAttribute(el.tagName === 'image' ? 'href' : 'src', u));
+				box.querySelectorAll('.mk-set-img').forEach((el, i) => {
+					if (!setUrls[i] || setUrls[i] === vorher) el.setAttribute('src', u);
+				});
+				if (vorher) setTimeout(() => URL.revokeObjectURL(vorher), 1000);
+			})
+			.catch(() => {});
+	}
 	const alteSet = setUrls;
 	setUrls = [];
 	const istSet = !!P.set && /^(poster|gerahmt|leinwand|alu)$/.test(P.type);
@@ -134,10 +167,10 @@ export function renderMockup() {
 	else html = wallScene(P);
 	box.innerHTML = html;
 	const img = box.querySelector('.mk-img');
-	if (img) /** @type {HTMLImageElement|SVGImageElement} */ (img).setAttribute(img.tagName === 'image' ? 'href' : 'src', url);
+	// bis das neue Motiv fertig ist, bleibt das vorige stehen (kein leerer Rahmen)
+	if (img && url) /** @type {HTMLImageElement|SVGImageElement} */ (img).setAttribute(img.tagName === 'image' ? 'href' : 'src', url);
 	box.querySelectorAll('.mk-set-img').forEach((el) => el.setAttribute('src', setUrls[+(/** @type {HTMLElement} */ (el).dataset.i || 0)] || url));
-	if (old) setTimeout(() => URL.revokeObjectURL(old), 1000);
-	alteSet.forEach((u) => setTimeout(() => URL.revokeObjectURL(u), 1000));
+	alteSet.forEach((u) => u !== url && setTimeout(() => URL.revokeObjectURL(u), 1000));
 }
 
 /** Möbel als SVG in cm (1 Einheit = 1 cm), unten bündig auf dem Boden */
