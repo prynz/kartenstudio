@@ -802,7 +802,8 @@ await run('3D: Schatten und Perspektive', { viewport: { width: 1440, height: 900
 	await page.mouse.down();
 	await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 3 + 60, { steps: 6 });
 	await page.mouse.up();
-	await page.waitForTimeout(400);
+	// neu gezeichnete Karte blendet weich ein (≈0,3 s), danach ist die alte weg
+	await page.waitForTimeout(900);
 	ok(t0 !== (await page.getAttribute('#perspektive path[data-k="haupt"]', 'd')), 'Verschieben in der Perspektive');
 	await page.screenshot({ path: `${OUT}/50-perspektive.png` });
 	await page.click('#wzSteps button[data-step="fertig"]');

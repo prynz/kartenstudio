@@ -6,19 +6,20 @@ export const NAVY = '#262c3a';
 export const PRESETS = {
   // Klarer Stadtplan nach dem Vorbild klassischer Kartenposter (z. B. Cartida): weißes Papier,
   // schwarze Straßen mit deutlicher Rangordnung, hellblaues Wasser, Grün nur angedeutet,
-  // Gebäude zunächst aus (unter Ort › Kartendetails zuschaltbar, dann zartgrau).
+  // Gebäude zartgrau und erst beim Hineinzoomen bzw. bei kleinen Orten sichtbar (Detailstufe).
   stadtplan: {
     name: 'Stadtplan',
     desc: 'Schwarze Straßen, hellblaues Wasser, viel Weiß – der klare Klassiker.',
     chip: 'linear-gradient(90deg,#fff 0 60%,#a9c4e2 60% 80%,#111 80%)',
     cls: {
-      haus: { s: '#c9cbcf', f: '#eceef0', w: 0.5, h: true },
+      // Gebäude zartgrau – bei der ganzen Stadt (grobe Daten) gibt es sie nicht, sie kommen beim Hineinzoomen
+      haus: { s: '#9fa4ab', f: '#dde0e4', w: 0.6 },
       haupt: { s: '#111111', f: 'none', w: 4.4 },
       neben: { s: '#1d1d1f', f: 'none', w: 1.5 },
       weg: { s: '#5a5d63', f: 'none', w: 0.55 },
       wasser: { s: '#a9c4e2', f: '#a9c4e2', w: 1.4 },
       bahn: { s: '#a4a7ad', f: 'none', w: 0.6 },
-      gruen: { s: 'none', f: '#f5f6f3', w: 0 }
+      gruen: { s: 'none', f: '#f7f8f5', w: 0 }
     },
     bg: '#ffffff',
     frame: { color: '#111111', w: 0, r: 0, pad: 34 },

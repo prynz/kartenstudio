@@ -6,7 +6,7 @@ import { app as appUntyped } from './app.js';
 import { fetchTiles } from '../karte/kacheln.js';
 import { buildDataTiles } from '../karte/daten.js';
 import { mercInv } from '../karte/raster.js';
-import { freiBereich, nachladbar, visRect } from './zustand.js';
+import { freiBereich, meterJeEinheit, nachladbar, visRect, zielStufe } from './zustand.js';
 import { FMAP, render } from './zeichnen.js';
 
 /** @type {any} */
@@ -44,6 +44,12 @@ async function lauf() {
 		h = v[3] - v[1];
 	const E = D.ext,
 		F = freiBereich(D);
+	// Passt die Detailstufe noch zum Maßstab? (hineingezoomt → feiner, herausgezoomt → gröber)
+	// (nur bei der gezeichneten Karte – Landkarten-Stile rechnet MapLibre selbst in jeder Stufe)
+	const S = app.S;
+	const gezeichnet = S && S.mode !== 'std' && (!S.motif || S.motif === 'karte');
+	const ziel = gezeichnet ? zielStufe(w * meterJeEinheit(D), D.tz || 14) : D.tz || 14;
+	if (ziel !== (D.tz || 14)) return stufeWechseln(D, ziel, v, w, h, F);
 	// fehlt im sichtbaren Bereich (mit kleinem Rand) etwas?
 	const rand = 0.15;
 	const fehlt = v[0] - w * rand < E.x0 - 1 || v[1] - h * rand < E.y0 - 1 || v[2] + w * rand > E.x1 + 1 || v[3] + h * rand > E.y1 + 1;
@@ -56,7 +62,7 @@ async function lauf() {
 	const [wl, n] = ll(r[0], r[1]),
 		[e, s] = ll(r[2], r[3]);
 	laeuft = true;
-	const zeigTimer = window.setTimeout(() => anzeige(true), 250);
+	const zeigTimer = window.setTimeout(() => anzeige(true), 200);
 	try {
 		const tiles = await fetchTiles({ w: wl, n, e, s }, { z: D.tz, ohne: new Set(D.tkeys) });
 		if (app.DATA !== D) return;
@@ -93,6 +99,52 @@ async function lauf() {
 		laeuft = false;
 	}
 	// weiter gezogen, während geladen wurde? → gleich noch einmal prüfen
+	nachladenPruefen();
+}
+
+/**
+ * Andere Detailstufe laden (wie Online-Karten beim Zoomen): ersetzt die Kartendaten durch Kacheln der
+ * passenden Stufe für die Ansicht plus Vorrat. Gleiche Projektion → der Ausschnitt bleibt exakt stehen.
+ * @param {any} D @param {number} z @param {number[]} v @param {number} w @param {number} h @param {any} F
+ */
+async function stufeWechseln(D, z, v, w, h, F) {
+	const r = [Math.max(F.x0, v[0] - w * 0.5), Math.max(F.y0, v[1] - h * 0.5), Math.min(F.x1, v[2] + w * 0.5), Math.min(F.y1, v[3] + h * 0.5)];
+	const P = D.proj;
+	const ll = (/** @type {number} */ x, /** @type {number} */ y) => mercInv(x / P.sc + P.x0, y / P.sc + P.y0);
+	const [wl, n] = ll(r[0], r[1]),
+		[e, s] = ll(r[2], r[3]);
+	laeuft = true;
+	const zeigTimer = window.setTimeout(() => anzeige(true), 200);
+	try {
+		const tiles = await fetchTiles({ w: wl, n, e, s }, { z });
+		await nichtBeimZiehen();
+		if (app.DATA !== D || !tiles.length) return;
+		const place = { name: D.place, region: D.region, center: D.center };
+		const nd = buildDataTiles(tiles, app.lastB, { w: wl, n, e, s }, place, { fid0: D.fidN, ti0: 0 });
+		if (!nd || !nd.feats.length) return;
+		D.feats = nd.feats;
+		D.tiles = nd.tiles;
+		D.tkeys = nd.tkeys;
+		D.tz = nd.tz;
+		D.fidN = nd.fidN;
+		if (nd.orte && nd.orte.length) D.orte = nd.orte;
+		D.ext = { x0: r[0], y0: r[1], x1: r[2], y1: r[3] };
+		// Dichte, Vorschaubild-Zähler, Höhenlinien gelten für die neue Stufe neu
+		D._dichte = null;
+		D.n0 = D.feats.length;
+		delete D._contours;
+		delete D._contoursP;
+		delete D._relief;
+		FMAP.clear();
+		app.einblenden = true;
+		render();
+	} catch (err) {
+		console.warn('Detailstufe wechseln fehlgeschlagen', err);
+	} finally {
+		clearTimeout(zeigTimer);
+		anzeige(false);
+		laeuft = false;
+	}
 	nachladenPruefen();
 }
 

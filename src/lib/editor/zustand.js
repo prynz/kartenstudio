@@ -154,6 +154,24 @@ export function extZmin(v) {
   return Math.max(MW / (e.x1 - e.x0), MH / (e.y1 - e.y0)) * 1.0001;
 }
 /**
+ * Detailstufe der Kartendaten passend zum Maßstab (wie bei Online-Karten): Für eine ganze Stadt reichen
+ * die groben, schon vereinfachten Kacheln (Straßen, Wasser – ohne Einzelhäuser); beim Hineinzoomen
+ * kommen feinere Stufen mit allen Häusern und Wegen. Grenzen = sichtbare Breite in Metern.
+ */
+export const STUFE_GRENZE = { 13: 3200, 12: 7000 };
+/** Passende Kachel-Zoomstufe (12 grob … 14 fein) für eine sichtbare Breite in Metern */
+export function stufeFuer(m) {
+  return m > STUFE_GRENZE[12] ? 12 : m > STUFE_GRENZE[13] ? 13 : 14;
+}
+/** Wie stufeFuer, aber mit Spielraum um die Grenzen, damit nicht ständig hin und her gewechselt wird */
+export function zielStufe(m, tz) {
+  const ziel = stufeFuer(m);
+  if (ziel > tz) return stufeFuer(m / 0.85) > tz ? stufeFuer(m / 0.85) : tz;
+  if (ziel < tz) return stufeFuer(m / 1.15) < tz ? stufeFuer(m / 1.15) : tz;
+  return tz;
+}
+
+/**
  * Wie viele Kartenelemente dürfen höchstens gleichzeitig sichtbar sein? Darüber wird das Poster am
  * Bildschirm zäh (jede Linie ist ein eigenes Element) – und gedruckt ist es ohnehin nur noch Gewimmel.
  */
@@ -179,7 +197,12 @@ export function vLimits(v) {
     // Herauszoomen über die geladene Gegend hinaus: bis 3 × Posterbreite (max. 6 km) – lädt nach.
     // In dichten Städten weniger weit (höchstens ~17 000 Elemente sichtbar), nie aber enger als die geladene Gegend.
     const f = freiBereich();
-    const maxW = Math.max(MW / zmin, Math.min(MW * 3, 6000 / meterJeEinheit(), dichteBreite(v)));
+    const m = meterJeEinheit();
+    // Herauszoomen bis 12 km – in dichten Städten weniger. Weit genug aber immer, damit die nächst
+    // gröbere Detailstufe greifen kann (die hat dann wieder deutlich weniger Elemente).
+    const tz = app.DATA.tz || 14;
+    const stufeW = tz > 12 ? (STUFE_GRENZE[tz === 14 ? 13 : 12] * 1.3) / m : 0;
+    const maxW = Math.max(MW / zmin, Math.min(12000 / m, Math.max(dichteBreite(v), stufeW)));
     zmin = Math.max(MW / maxW, MW / (f.x1 - f.x0), MH / (f.y1 - f.y0)) * 1.0001;
   }
   return {

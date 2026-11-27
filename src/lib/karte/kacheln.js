@@ -170,9 +170,10 @@ export function lat2t(lat, z) {
 export async function fetchTiles(big, opt = {}) {
   const T = await tileTemplate();
   // Große Gebiete (z. B. lange Routen): gröbere Kachelstufe, sonst würden es hunderte Kacheln
-  let z = opt.z || T.maxz;
+  let z = Math.min(opt.z || T.maxz, T.maxz);
   const count = zz => (lon2t(big.e, zz) - lon2t(big.w, zz) + 1) * (lat2t(big.s, zz) - lat2t(big.n, zz) + 1);
-  if (!opt.z) while (z > 11 && count(z) > 100) z--;
+  // Beim Nachladen (opt.ohne) bleibt die Stufe fest – sie muss zu den schon geladenen Kacheln passen
+  if (!opt.ohne) while (z > 11 && count(z) > 100) z--;
   const x0 = lon2t(big.w, z),
     x1 = lon2t(big.e, z),
     y0 = lat2t(big.n, z),

@@ -11,7 +11,7 @@ import { FMAP, alsBild, drawSel, render } from './zeichnen.js';
 import { PRESETS } from '../themen/vorlagen.js';
 import { buildData, buildDataTiles } from '../karte/daten.js';
 import { closePicker, frameBounds, meters } from '../karte/ortswahl.js';
-import { defView, newState, updUndo } from './zustand.js';
+import { defView, newState, stufeFuer, updUndo } from './zustand.js';
 import { expand, fetchOSM } from '../karte/overpass.js';
 import { fetchTiles } from '../karte/kacheln.js';
 import { panel } from './seitenleiste.js';
@@ -90,7 +90,8 @@ export async function tileData(b, place) {
   const mw = meters(b).w;
   try {
     const big = expand(b, mw < 1500 ? 0.5 : mw < 3000 ? 0.35 : 0.2);
-    const tiles = await fetchTiles(big);
+    // Detailstufe passend zur Größe: ganze Stadt = grobe Kacheln (nur Straßen & Wasser), Ortskern = alle Häuser
+    const tiles = await fetchTiles(big, { z: stufeFuer(mw) });
     const data = buildDataTiles(tiles, b, big, place);
     return data.feats.length ? data : null;
   } catch (e) {
@@ -114,7 +115,7 @@ function loadErr(t) {
 export async function loadBounds(b, opt = {}) {
   if (app.genBusy) return false;
   const m = meters(b);
-  const maxW = opt.maxW || 6000;
+  const maxW = opt.maxW || 12000;
   if (!(m.w > 50) || m.w > maxW) {
     loadErr(`Der Ausschnitt ist zu groß (über ${Math.round(maxW / 1000)} km breit). Bitte näher heranzoomen.`);
     return false;

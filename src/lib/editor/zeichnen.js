@@ -700,6 +700,7 @@ function vollNachZiehen() {
     fullTimer = window.setTimeout(vollNachZiehen, 120);
     return;
   }
+  app.einblenden = true;
   render();
 }
 /** Schriftbreite messen (Schriften sind im Dokument geladen) */
@@ -1161,12 +1162,18 @@ export function render() {
   const oldK = app.poster.querySelector('#karte');
   const oldHg = app.poster.querySelector('#treffer');
   // Schneller Weg nur bei gleichem Aufbau (eigene Kartenebene ja/nein)
-  if (oldK && M.node === before && oldK.contains(M.node) && oldK.dataset.ebene === (tmp.querySelector('#karte').dataset.ebene)) {
+  const gleich = !!oldK && oldK.dataset.ebene === (tmp.querySelector('#karte').dataset.ebene);
+  // Neu aufgebaute Karte nach Verschieben/Nachladen: über die alte legen und weich einblenden
+  // (wie Kacheln bei Online-Karten) – vorhandene Teile bleiben stehen, neue erscheinen sanft
+  const einblenden = app.einblenden;
+  app.einblenden = false;
+  const tausch = gleich && einblenden && M.node !== before && !!before && oldK.contains(before) && kartenEbene() && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (gleich && (M.node === before ? oldK.contains(M.node) : tausch)) {
     // Schneller Weg: Karte bleibt im Poster, nur alles drumherum wird ersetzt.
     // (Herausnehmen und Wiedereinsetzen würde den Browser zwingen, jedes Haus neu zu vermessen.)
     const newK = tmp.querySelector('#karte');
     let a = newK, b = oldK;
-    while (a && b && a.id !== 'kartenInhalt' && b !== M.node) {
+    while (a && b && a.id !== 'kartenInhalt' && b !== M.node && b !== before) {
       for (const at of [...a.attributes]) b.setAttribute(at.name, at.value);
       a = a.firstElementChild;
       b = b.firstElementChild;
@@ -1179,6 +1186,11 @@ export function render() {
     });
     oldK.insertAdjacentHTML('beforebegin', html(kids.slice(0, i)));
     (oldHg || oldK).insertAdjacentHTML('afterend', html(kids.slice(i + 1)));
+    if (M.node !== before) {
+      const alt = before;
+      alt.parentNode.appendChild(M.node);
+      M.node.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.2,.8,.2,1)' }).finished.catch(() => {}).finally(() => alt.remove());
+    }
   } else {
     app.poster.innerHTML = tmp.innerHTML;
     const ph = app.poster.querySelector('#kartenInhalt');

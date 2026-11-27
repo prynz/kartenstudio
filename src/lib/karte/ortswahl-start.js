@@ -27,13 +27,14 @@ export function regionOf(p) {
 export function placeBounds(p, lon, lat, a, breite) {
   const small = /^(village|hamlet|suburb|neighbourhood|quarter|locality|isolated_dwelling|farm|house|street)$/.test(p.osm_value || p.type || '');
   const tiny = /^(hamlet|isolated_dwelling|farm|house|street|neighbourhood)$/.test(p.osm_value || p.type || '');
-  let wm = tiny ? 750 : 1100;
+  let wm = tiny ? 750 : small ? 1300 : 2500;
   const cos = Math.cos(lat * Math.PI / 180);
-  if (p.extent && !small) {
+  if (p.extent && !tiny) {
     const e = p.extent; // [west, nord, ost, süd]
     const ew = (e[2] - e[0]) * 111320 * cos, eh = (e[1] - e[3]) * 110540;
-    // Ortskern: etwas enger als die Gemeindegrenze
-    wm = Math.max(900, Math.min(2000, Math.max(ew, eh / a) * 0.6));
+    // Der ganze Ort aufs Poster (wie bei klassischen Stadtplan-Postern): Ortsgrenze mit etwas Luft,
+    // Dörfer höchstens 1,8 km, Großstädte höchstens 10 km (sonst nur noch Gewimmel)
+    wm = Math.max(small ? 900 : 1500, Math.min(small ? 1800 : 10000, Math.max(ew, eh / a) * (small ? 1.08 : 0.9)));
   }
   if (breite > 0) wm = breite;
   const [mx, my] = merc(lon, lat);
