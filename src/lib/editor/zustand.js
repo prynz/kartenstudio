@@ -141,6 +141,15 @@ export function nachladbar(D = app.DATA) {
  */
 export function freiBereich(D = app.DATA) {
   const e = D.ext;
+  // Live-Karte: Verschieben bis 40 km bzw. 6 × die gesuchte Fläche (ganzes Land …), höchstens die Welt
+  if (D.src === 'live') {
+    if (D._frei && D._frei.e === e) return D._frei.r;
+    const L = Math.max(40000 / meterJeEinheit(D), MW * 6) / 2, w = D.welt;
+    const cx = MW / 2, cy = D.MH0 / 2;
+    const r = { x0: Math.max(w.x0, cx - L), y0: Math.max(w.y0, cy - L), x1: Math.min(w.x1, cx + L), y1: Math.min(w.y1, cy + L) };
+    D._frei = { e, r };
+    return r;
+  }
   if (!nachladbar(D)) return e;
   const live = liveAn();
   if (D._frei && D._frei.e === e && D._frei.live === live) return D._frei.r;
@@ -212,7 +221,9 @@ export function vLimits(v) {
   if (liveAn()) {
     const m = meterJeEinheit();
     const f = freiBereich();
-    zmin = Math.max(MW / (15000 / m), MW / (f.x1 - f.x0), MH / (f.y1 - f.y0)) * 1.0001;
+    // Herauszoomen bis 15 km bzw. 3 × die gesuchte Fläche (bei einem Land also weit genug für Nachbarländer)
+    const live = app.DATA.src === 'live';
+    zmin = Math.max(MW / Math.max(15000 / m, live ? MW * 3 : 0), MW / (f.x1 - f.x0), MH / (f.y1 - f.y0)) * 1.0001;
     return { zmin, zmax: Math.max(8, MW / (250 / m)), MH };
   }
   return {

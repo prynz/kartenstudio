@@ -1080,6 +1080,40 @@ if (ONLINE)
 		await page.screenshot({ path: `${OUT}/neu-editor.png` });
 	});
 
+if (ONLINE)
+	await run('Neuer Editor: Land ganz, Adresse genau', { viewport: { width: 1280, height: 860 } }, async (page) => {
+		/** @param {string} q */
+		const suche = async (q) => {
+			await page.fill('#lq', q);
+			await page.click('#lgo');
+			await page.waitForSelector('#lresults button', { timeout: 30000 });
+			await page.click('#lresults button');
+			await page.waitForSelector('#landing', { state: 'hidden', timeout: 90000 });
+			await page.waitForSelector('#liveKarte canvas', { timeout: 30000 });
+			await page.waitForFunction(() => !!document.getElementById('liveKarte')?.dataset.mitte, null, { timeout: 30000 });
+			const m = await page.evaluate(() => document.getElementById('liveKarte')?.dataset.mitte || '');
+			return { lon: +m.split(',')[0], lat: +m.split(',')[1].split('@')[0], z: +m.split('@')[1] };
+		};
+		const it = await suche('Italien');
+		ok(it.z < 6.5 && it.lon > 10 && it.lon < 15 && it.lat > 39 && it.lat < 44, `Land: ganz Italien im Bild (Zoom ${it.z}, Mitte ${it.lon.toFixed(1)}/${it.lat.toFixed(1)})`);
+		await page.screenshot({ path: `${OUT}/neu-italien.png` });
+		await page.fill('#wq', 'Hamburg');
+		await page.click('#wgo');
+		await page.waitForSelector('#wresults button', { timeout: 30000 });
+		await page.click('#wresults button');
+		await page.waitForFunction(() => /^10\.0|^9\.9/.test(document.getElementById('liveKarte')?.dataset.mitte || ''), null, { timeout: 30000 });
+		const hh = await page.evaluate(() => document.getElementById('liveKarte')?.dataset.mitte || '');
+		const hz = +hh.split('@')[1];
+		ok(hz > 8.5 && hz < 11.5, `Stadt: ganz Hamburg, mittig (${hh})`);
+		await page.fill('#wq', 'Domplatz 5 Bamberg');
+		await page.click('#wgo');
+		await page.waitForSelector('#wresults button', { timeout: 30000 });
+		await page.click('#wresults button');
+		await page.waitForFunction(() => /^10\.88/.test(document.getElementById('liveKarte')?.dataset.mitte || ''), null, { timeout: 30000 });
+		const ad = await page.evaluate(() => document.getElementById('liveKarte')?.dataset.mitte || '');
+		ok(+ad.split('@')[1] > 15, `Adresse: genau dort, nah herangezoomt (${ad})`);
+	});
+
 await run('Orts-Seiten für Google', { viewport: { width: 1280, height: 860 } }, async (page) => {
 	const base = URL.replace(/\/$/, '');
 	const r = await page.goto(base + '/poster/siegritz');

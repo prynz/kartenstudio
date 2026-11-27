@@ -8,6 +8,7 @@ import { sizeInfo } from './ortswahl.js';
 import { loadBounds } from '../editor/laden.js';
 import { merc } from './overpass.js';
 import { mercInv } from './raster.js';
+import { istNeu } from '../editor/modus.js';
 
 /** Untertitel-Vorschlag aus den Ortsdaten: Landkreis ohne „Landkreis“, sonst Stadt/Bundesland */
 export function regionOf(p) {
@@ -25,6 +26,7 @@ export function regionOf(p) {
  * @param {number} [breite] feste Breite in Metern (z. B. für Beispiele)
  */
 export function placeBounds(p, lon, lat, a, breite) {
+  if (istNeu() && !(breite > 0)) return liveBounds(p, lon, lat, a);
   const small = /^(village|hamlet|suburb|neighbourhood|quarter|locality|isolated_dwelling|farm|house|street)$/.test(p.osm_value || p.type || '');
   const tiny = /^(hamlet|isolated_dwelling|farm|house|street|neighbourhood)$/.test(p.osm_value || p.type || '');
   let wm = tiny ? 750 : small ? 1300 : 2500;
@@ -40,6 +42,56 @@ export function placeBounds(p, lon, lat, a, breite) {
   const [mx, my] = merc(lon, lat);
   const dx = wm / (40075016.7 * cos), dy = dx * a;
   const [w, n] = mercInv(mx - dx / 2, my - dy / 2), [e2, s] = mercInv(mx + dx / 2, my + dy / 2);
+  return { w, n, e: e2, s };
+}
+
+/** Art des Suchtreffers grob einordnen: Adresse, Straße, Ort (Dorf/Stadt) oder Gebiet (Land, Bundesland …) */
+export function trefferArt(p) {
+  const t = String(p.type || ''), v = String(p.osm_value || ''), k = String(p.osm_key || '');
+  if (t === 'house' || p.housenumber || (k && k !== 'place' && k !== 'boundary' && t !== 'street' && t !== 'city' && t !== 'district' && t !== 'county' && t !== 'state' && t !== 'country' && t !== 'locality' && t !== 'other')) return 'adresse';
+  if (t === 'street') return 'strasse';
+  if (t === 'country' || v === 'country' || v === 'continent') return 'land';
+  if (t === 'state' || t === 'county' || /^(state|region|province|county|island|archipelago)$/.test(v)) return 'gebiet';
+  if (/^(village|hamlet|isolated_dwelling|farm|neighbourhood|quarter|suburb|locality)$/.test(v) || t === 'locality') return 'dorf';
+  return 'stadt';
+}
+
+/**
+ * Startausschnitt im neuen Editor (Live-Karte): genau das, was gesucht wurde.
+ * Land/Bundesland/Stadt → ganze Fläche (z. B. Italien = der ganze Stiefel), Straße → die Straße,
+ * Adresse → genau dieser Punkt (≈ 500 m). Feinjustieren danach per Ziehen und Zoomen.
+ */
+function liveBounds(p, lon, lat, a) {
+  const art = trefferArt(p);
+  const welt = 40075016.7;
+  let [cx, cy] = merc(lon, lat);
+  let dx;
+  // Breite in Metern ohne Ausdehnung (oder als Untergrenze)
+  const ohne = { adresse: 500, strasse: 900, dorf: 1600, stadt: 6000, gebiet: 300000, land: 1200000 }[art];
+  const cos = Math.cos(lat * Math.PI / 180);
+  dx = ohne / (welt * cos);
+  if (p.extent && art !== 'adresse') {
+    const e = p.extent; // [west, nord, ost, süd]
+    let [x0, y0] = merc(e[0], e[1]), [x1, y1] = merc(e[2], e[3]);
+    if (x1 < x0) x1 += 1; // über die Datumsgrenze
+    let w = x1 - x0, h = y1 - y0;
+    // Städte: Mitte = Stadtpunkt, Ausdehnung symmetrisch darum. Ferne Exklaven (Hamburg → Insel Neuwerk
+    // in der Nordsee) würden die Stadt sonst an den Rand schieben.
+    if (art === 'stadt' && cx > x0 && cx < x1 && cy > y0 && cy < y1) {
+      const sym = (/** @type {number} */ l, /** @type {number} */ r) => 2 * Math.min(Math.max(l, r), Math.min(l, r) * 1.15);
+      w = sym(cx - x0, x1 - cx); h = sym(cy - y0, y1 - cy);
+    }
+    // Etwas Luft drumherum; große Gebiete mittig auf ihre Fläche (nicht auf die Hauptstadt)
+    const luft = art === 'land' || art === 'gebiet' ? 1.08 : art === 'strasse' ? 1.25 : 1.05;
+    const d = Math.max(w, h / a) * luft;
+    const min = { strasse: 400, dorf: 900, stadt: 1500 }[art] || 0;
+    dx = Math.max(d, min / (welt * cos));
+    if (art === 'land' || art === 'gebiet') { cx = (x0 + x1) / 2; cy = (y0 + y1) / 2; }
+  }
+  dx = Math.min(dx, 0.9); // höchstens fast die ganze Welt
+  const dy = dx * a;
+  cy = Math.min(1 - dy / 2, Math.max(dy / 2, cy));
+  const [w, n] = mercInv(cx - dx / 2, cy - dy / 2), [e2, s] = mercInv(cx + dx / 2, cy + dy / 2);
   return { w, n, e: e2, s };
 }
 

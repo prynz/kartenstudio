@@ -233,7 +233,7 @@ function syncOrt() {
 	if (document.activeElement !== zr) zr.value = String(zToSlider(S.view));
 	const z = S.view.z,
 		zw = extZmin(S.view);
-	const umf = Math.abs(z - 1.7) < 0.02 ? 'kern' : Math.abs(z - 1) < 0.02 ? 'ort' : Math.abs(z - zw) < 0.02 ? 'weit' : '';
+	const umf = Math.abs(z - 1.7) < 0.02 ? 'kern' : Math.abs(z - 1) < 0.02 ? 'ort' : Math.abs(z - (app.DATA.src === 'live' ? 0.55 : zw)) < 0.02 ? 'weit' : '';
 	all('#wzUmfang button').forEach((b) => b.classList.toggle('on', b.dataset.z === umf));
 	const karte = !S.motif || S.motif === 'karte';
 	$('oaDetails').classList.toggle('hidden', !karte || multiOn());
@@ -1123,7 +1123,7 @@ export function initWizard() {
 					change(() => {
 						const S = app.S;
 						const v = { ...defView(), a: S.view.a };
-						v.z = b.dataset.z === 'kern' ? 1.7 : b.dataset.z === 'ort' ? 1 : extZmin(v);
+						v.z = b.dataset.z === 'kern' ? 1.7 : b.dataset.z === 'ort' ? 1 : app.DATA.src === 'live' ? 0.55 : extZmin(v);
 						S.view = v;
 						clampView(S.view);
 					})

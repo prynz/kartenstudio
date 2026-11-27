@@ -9,7 +9,7 @@ import { popColor, popDefs, popSymbols } from '../themen/pop.js';
 import { $, CLS, MW, ORDER } from './basis.js';
 import { FMAP, alsBild, drawSel, render } from './zeichnen.js';
 import { PRESETS } from '../themen/vorlagen.js';
-import { buildData, buildDataTiles } from '../karte/daten.js';
+import { buildData, buildDataTiles, liveDaten } from '../karte/daten.js';
 import { closePicker, frameBounds, meters } from '../karte/ortswahl.js';
 import { defView, newState, stufeFuer, updUndo } from './zustand.js';
 import { expand, fetchOSM } from '../karte/overpass.js';
@@ -18,6 +18,7 @@ import { panel } from './seitenleiste.js';
 import { msg } from './ansicht.js';
 import { saveDraftSoon } from './entwurf.js';
 import { neuAnwenden } from './neu.js';
+import { istNeu } from './modus.js';
 
 export const LOADMSG = ['Wir rollen die Landkarte aus …', 'Häuser werden gezählt – bitte nicht wackeln …', 'Der Kartograf spitzt seinen Bleistift …', 'Straßen werden glatt gebügelt …', 'Kurze Kaffeepause für die Maschine – mit Milch, ohne Zucker.', 'Feldwege werden nachgemessen …', 'Noch ein Schluck Kaffee … und weiter geht’s.', 'Die Dächer werden einzeln aufgesetzt …', 'Fast geschafft – wir polieren noch die Ecken …'];
 export const LOADSUB = ['Daten kommen frisch aus OpenStreetMap', 'Wir laden etwas mehr Umgebung mit – zum Feinjustieren', 'Die öffentlichen Kartenserver haben gerade viel zu tun – wir bleiben dran', 'Dauert heute etwas länger – der Kaffee ist schon nachgefüllt'];
@@ -116,7 +117,7 @@ function loadErr(t) {
 export async function loadBounds(b, opt = {}) {
   if (app.genBusy) return false;
   const m = meters(b);
-  const maxW = opt.maxW || 12000;
+  const maxW = istNeu() ? 4e7 : opt.maxW || 12000;
   if (!(m.w > 50) || m.w > maxW) {
     loadErr(`Der Ausschnitt ist zu groß (über ${Math.round(maxW / 1000)} km breit). Bitte näher heranzoomen.`);
     return false;
@@ -137,7 +138,7 @@ export async function loadBounds(b, opt = {}) {
       region: pl0.region || '',
       center: opt.center || [(b.w + b.e) / 2, (b.n + b.s) / 2]
     };
-    data = await tileData(b, place0);
+    data = istNeu() ? liveDaten(b, place0) : await tileData(b, place0);
     if (!data) {
       if (!L.style.display || L.style.display === 'none') {
         clearTimeout(ldTimer);
@@ -148,7 +149,7 @@ export async function loadBounds(b, opt = {}) {
       data = buildData(res.osm, b, res.bb, place0);
     }
     clearTimeout(ldTimer);
-    if (!data.feats.length) throw new Error('In diesem Ausschnitt wurden keine Kartenelemente gefunden');
+    if (!data.feats.length && data.src !== 'live') throw new Error('In diesem Ausschnitt wurden keine Kartenelemente gefunden');
     const wasShown = L.style.display === 'block';
     stopLoader(true);
     if (wasShown) await new Promise(r => setTimeout(r, 350));
@@ -219,7 +220,7 @@ export function loadData(data) {
   $('hdrEdit').classList.remove('hidden');
   $('hdrOrt').textContent = app.DATA.place || 'Mein Ort';
   $('placeName').textContent = app.DATA.place || 'Mein Ort';
-  $('placeInfo').textContent = [app.DATA.region, `${new Set(app.DATA.feats.map(f => f.id)).size} Kartenelemente`].filter(Boolean).join(' · ');
+  $('placeInfo').textContent = [app.DATA.region, app.DATA.src === 'live' ? '' : `${new Set(app.DATA.feats.map(f => f.id)).size} Kartenelemente`].filter(Boolean).join(' · ');
   updUndo();
   render();
   wizardAfterLoad();

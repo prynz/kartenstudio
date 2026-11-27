@@ -231,3 +231,34 @@ export function buildData(osm, b, big, place) {
     src: 'overpass'
   };
 }
+
+/**
+ * Neuer Editor (Live-Karte): keine eigenen Kartendaten nötig – MapLibre zeichnet selbst.
+ * Es braucht nur die Projektion (Ausschnitt → Poster-Kartenkoordinaten), deshalb lädt
+ * auch ein ganzes Land sofort.
+ * @param {{w:number,n:number,e:number,s:number}} b
+ * @param {{name:string, region:string, center:number[]}} place
+ */
+export function liveDaten(b, place) {
+  const [x0, y0] = merc(b.w, b.n),
+    [x1, y1] = merc(b.e, b.s);
+  const sc = MW / (x1 - x0);
+  const MH = (y1 - y0) * sc;
+  return {
+    feats: [],
+    orte: [],
+    tiles: [],
+    tkeys: [],
+    tz: 14,
+    fidN: 0,
+    MH0: MH,
+    ext: { x0: 0, y0: 0, x1: MW, y1: MH },
+    proj: { x0, y0, sc },
+    // Weltgrenzen in Kartenkoordinaten (für die Verschiebe-Grenzen)
+    welt: { x0: -x0 * sc, y0: -y0 * sc, x1: (1 - x0) * sc, y1: (1 - y0) * sc },
+    place: place.name,
+    region: place.region,
+    center: place.center,
+    src: 'live'
+  };
+}
