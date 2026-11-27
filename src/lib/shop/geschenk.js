@@ -2,6 +2,7 @@
 import { ladeSchriften } from '../editor/basis.js';
 import { app as appUntyped } from '../editor/app.js';
 import { buildSVG, geo } from '../editor/zeichnen.js';
+import { karteFuerExport } from '../editor/neu.js';
 import { shareLink } from '../editor/entwurf.js';
 import { dlPlain } from '../export/export.js';
 import { msg } from '../editor/ansicht.js';
@@ -49,6 +50,7 @@ export async function giftCard() {
 	c.fillStyle = '#f6f3ee';
 	c.fillRect(0, 0, W, H);
 	// Poster links
+	await karteFuerExport(1200);
 	const url = URL.createObjectURL(new Blob([buildSVG(true)], { type: 'image/svg+xml' }));
 	const img = new Image();
 	await new Promise((res, rej) => {

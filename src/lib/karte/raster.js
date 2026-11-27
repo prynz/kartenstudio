@@ -5,6 +5,7 @@ import { loadMaplibre } from './ortswahl.js';
 import { KONFIG } from '../konfig.js';
 import { app } from '../editor/app.js';
 import { BASES } from '../themen/standard.js';
+import { liveAn } from '../editor/neu.js';
 import { MW } from '../editor/basis.js';
 import { msg } from '../editor/ansicht.js';
 import { render } from '../editor/zeichnen.js';
@@ -19,6 +20,7 @@ export function mercInv(x, y) {
 }
 /** Stil-JSON laden und für Beschriftung/Satellit anpassen */
 async function styleFor(B, labels) {
+  if (B.stil) return B.stil();
   const r = await fetch(B.style);
   if (!r.ok) throw new Error('Stil HTTP ' + r.status);
   const st = await r.json();
@@ -92,6 +94,11 @@ async function drawRect(maplibregl, rect, cssW) {
 
 export async function ensureRaster() {
   if (!app.S || app.S.mode !== 'std' || !app.DATA) return;
+  // Neuer Editor: Live-Karte statt vorgerechnetem Bild
+  if (liveAn()) {
+    render();
+    return;
+  }
   const k = rasterKey();
   if (RASTER.has(k)) {
     render();

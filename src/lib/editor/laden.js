@@ -17,6 +17,7 @@ import { fetchTiles } from '../karte/kacheln.js';
 import { panel } from './seitenleiste.js';
 import { msg } from './ansicht.js';
 import { saveDraftSoon } from './entwurf.js';
+import { neuAnwenden } from './neu.js';
 
 export const LOADMSG = ['Wir rollen die Landkarte aus …', 'Häuser werden gezählt – bitte nicht wackeln …', 'Der Kartograf spitzt seinen Bleistift …', 'Straßen werden glatt gebügelt …', 'Kurze Kaffeepause für die Maschine – mit Milch, ohne Zucker.', 'Feldwege werden nachgemessen …', 'Noch ein Schluck Kaffee … und weiter geht’s.', 'Die Dächer werden einzeln aufgesetzt …', 'Fast geschafft – wir polieren noch die Ecken …'];
 export const LOADSUB = ['Daten kommen frisch aus OpenStreetMap', 'Wir laden etwas mehr Umgebung mit – zum Feinjustieren', 'Die öffentlichen Kartenserver haben gerade viel zu tun – wir bleiben dran', 'Dauert heute etwas länger – der Kaffee ist schon nachgefüllt'];
@@ -190,6 +191,8 @@ export function loadData(data) {
     app.undoS = [];
     app.redoS = [];
   }
+  // Neuer Editor: Live-Stadtplan, alte Stile/Designs/Effekte aus
+  neuAnwenden(app.S);
   app.sel.clear();
   app.selCls = null;
   const btns = $('grpbtns');

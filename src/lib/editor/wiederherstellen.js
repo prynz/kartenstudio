@@ -7,7 +7,7 @@ import { loadBounds } from './laden.js';
 import { loadDemo } from './beispiel.js';
 import { clampView, updUndo } from './zustand.js';
 import { render } from './zeichnen.js';
-import { goStep } from './assistent.js';
+import { STEPS, goStep } from './assistent.js';
 import { ensureRaster } from '../karte/raster.js';
 import { ago, draftFromHash, savedDraft } from './entwurf.js';
 import { msg } from './ansicht.js';
@@ -16,6 +16,7 @@ import { ORTE } from '../seo/orte.js';
 import { placeBounds } from '../karte/ortswahl-start.js';
 import { loadBounds as ladeBereich } from './laden.js';
 import { ANLAESSE } from '../themen/anlaesse.js';
+import { neuAnwenden } from './neu.js';
 
 /** @type {any} */
 const app = appUntyped;
@@ -37,13 +38,13 @@ export async function restoreDraft(d) {
 		const c = d.place && Number.isFinite(d.place.lon) ? [d.place.lon, d.place.lat] : undefined;
 		if (!(await loadBounds(d.b, { center: c }))) return false;
 	}
-	app.S = S;
+	app.S = neuAnwenden(S);
 	clampView(app.S.view);
 	app.undoS = [];
 	app.redoS = [];
 	updUndo();
 	render();
-	if (d.step && d.step !== 'ort') goStep(d.step, false);
+	if (d.step && d.step !== 'ort' && STEPS.includes(d.step)) goStep(d.step, false);
 	if (S.mode === 'std') ensureRaster();
 	if (S.motif === 'koord') document.fonts.load('40px SgXB').then(() => render());
 	return true;

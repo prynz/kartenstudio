@@ -4,6 +4,7 @@
 import { app as appUntyped } from './app.js';
 import { alsBild, buildSVG, geo } from './zeichnen.js';
 import { schriftenDa } from './basis.js';
+import { karteBild, karteBildAktuell, liveAn } from './neu.js';
 import { paper, paperOrFree, fitPrint } from './druck.js';
 import { clampView } from './zustand.js';
 import { viewCenterLL } from './seitenleiste.js';
@@ -77,7 +78,8 @@ let motivLauf = 0;
 /** Schlüssel des Motivs: alles am Poster außer der Produktwahl */
 function motivSchluessel() {
 	const { product: _p, ...rest } = app.S;
-	return JSON.stringify([rest, app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, schriftenDa()]);
+	// mit Live-Karte: ob das Kartenbild schon gerechnet ist (danach Motiv neu malen)
+	return JSON.stringify([rest, app.DATA && app.DATA.place, app.DATA && app.DATA.feats.length, schriftenDa(), !!karteBildAktuell()]);
 }
 
 /**
@@ -124,6 +126,8 @@ export function scheduleMockup(delay = 120) {
 export function renderMockup() {
 	const box = document.getElementById('mkScene');
 	if (!box || !app.DATA || !app.S || !document.body.classList.contains('mk-on')) return;
+	// Neuer Editor: Karte für das Motiv einmal in mittlerer Auflösung rechnen, danach neu zeichnen
+	if (liveAn() && !karteBildAktuell()) karteBild(1400).then(() => renderMockup()).catch((e) => console.warn('Mockup-Karte', e));
 	const P = product(app.S);
 	const g = geo();
 	// Motiv nur neu malen, wenn sich am Poster etwas geändert hat (Produkt, Rahmen, Wandfarbe … nicht).

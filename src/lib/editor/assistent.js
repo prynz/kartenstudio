@@ -34,6 +34,8 @@ import { ANLAESSE } from '../themen/anlaesse.js';
 import { initMulti, multiOn, syncMulti } from './mehrere.js';
 import { initForm, syncForm } from './form-ui.js';
 import { beispielNachLaden } from '../beispiele/galerie.js';
+import { istNeu } from './modus.js';
+import { liveAn } from './neu.js';
 import { meinStandort } from '../karte/suche.js';
 import { defView, vLimits } from './zustand.js';
 import { initRoute, syncRoute } from './route.js';
@@ -92,8 +94,10 @@ const all = (sel) => /** @type {HTMLElement[]} */ ([...document.querySelectorAll
  * @param {boolean} [animate]
  */
 export function goStep(ziel, animate = true) {
-	const next = schrittVon(ziel);
+	let next = schrittVon(ziel);
 	if (!next) return;
+	// Neuer Editor: ausgeblendete Bereiche (Stil, Design, Extras) → zum ersten Bereich
+	if (!STEPS.includes(next)) next = STEPS[0];
 	const dir = STEPS.indexOf(next) - STEPS.indexOf(step);
 	step = next;
 	app.wizStep = next;
@@ -237,7 +241,7 @@ function syncOrt() {
 		R = S.cls.haupt && S.cls.haupt.h && S.cls.neben && S.cls.neben.h;
 	const zg = !H && !R ? 'alle' : H && !R ? 'strassen' : !H && R ? 'haeuser' : '';
 	all('#wzZeig button').forEach((b) => b.classList.toggle('on', b.dataset.zg === zg));
-	$('wzZeig').classList.toggle('hidden', S.mode === 'std');
+	$('wzZeig').classList.toggle('hidden', S.mode === 'std' && !liveAn());
 	const on = /** @type {HTMLInputElement} */ ($('wzOrtsnamen'));
 	on.checked = S.mode === 'std' ? !!S.labels : !!S.ortsnamen;
 	const keine = S.mode !== 'std' && !(app.DATA.orte && app.DATA.orte.length);
@@ -455,7 +459,8 @@ export function wizardAfterLoad() {
 	const bleib = app.bleibAusschnitt;
 	app.bleibAusschnitt = false;
 	if (!advOpen) goStep(bleib ? 'ausschnitt' : 'stil', false);
-	tourAnbieten();
+	// Der Rundgang beschreibt den alten Editor
+	if (!istNeu()) tourAnbieten();
 }
 
 /**
@@ -859,6 +864,15 @@ function markierung(ziel) {
 }
 
 export function initWizard() {
+	// Neuer Editor: vorerst nur Ort → Text → Fertig (Stile, Designs, Effekte werden schrittweise neu gebaut)
+	if (istNeu()) {
+		document.body.classList.add('neu');
+		for (const t of ['stil', 'design', 'extras']) {
+			document.querySelector(`#wzSteps button[data-step="${t}"]`)?.remove();
+			const i = STEPS.indexOf(t);
+			if (i >= 0) STEPS.splice(i, 1);
+		}
+	}
 	// Schritte
 	all('#wzSteps button[data-step]').forEach(
 		(b) =>

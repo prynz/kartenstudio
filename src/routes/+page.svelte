@@ -5,6 +5,7 @@
 	import '#lib/startseite.css';
 	import { onMount } from 'svelte';
 	import { updateHinweis } from '#lib/update.js';
+	import { istNeu } from '#lib/editor/modus.js';
 	import { resolve, asset } from '$app/paths';
 	import { PREISE, FESTPREISE, fmt } from '#lib/shop/preise.js';
 
@@ -67,6 +68,8 @@
 	 */
 	onMount(() => {
 		updateHinweis();
+		// Neuer Editor (Standard) oder alter Editor (…/#alt)
+		document.body.classList.toggle('neu', istNeu());
 		let bereit = false;
 		let laedt: Promise<void> | null = null;
 		let warteKlick: HTMLElement | null = null;
@@ -199,7 +202,7 @@
 <div class="oa-seg oa-seg-3" id="wzAusr" role="group" aria-label="Ausrichtung"><button type="button" data-o="hoch"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="3.5" width="10" height="17" rx="1.5"/></svg>Hochformat</button><button type="button" data-o="quadrat"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg>Quadrat</button><button type="button" data-o="quer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="17" height="10" rx="1.5"/></svg>Querformat</button></div>
 <p class="wz-hint hidden" id="wzAusrInfo">Diese Form hat ein festes Seitenverhältnis.</p>
 
-<div class="lab">Besondere Karten</div>
+<div class="lab" data-nur-alt>Besondere Karten</div>
 <div class="oa-feat" id="rtFeat">
 <div class="oa-feat-kopf"><span class="oa-ic oa-rt"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7"/></svg></span><div><b>Route &amp; Wanderung</b><small>Deine Tour als Linie auf dem Poster – Wanderung, Lauf, Radtour oder Roadtrip.</small></div></div>
 <div class="oa-feat-knoepfe"><button type="button" class="btn primary" id="routeBtn">GPS-Datei laden</button><button type="button" class="btn" id="routeDraw"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l4-1L19 8a2.1 2.1 0 0 0-3-3L5 16z"/></svg>Selbst zeichnen</button></div>
@@ -292,7 +295,7 @@
 <h3>Text</h3>
 <label class="wz-field"><span>Titel</span><input id="wzTitle" class="inp" type="text" autocomplete="off"></label>
 <label class="wz-field"><span>Untertitel</span><input id="wzSub" class="inp" type="text" autocomplete="off"></label>
-<div class="lab">Schriften</div>
+<div class="lab" data-nur-alt>Schriften</div>
 <div class="wz-chips wz-fonts" id="wzFonts"><button type="button" data-t="SgXB" data-s="SgFR"><b style="font-family:SgXB">AB</b> <span style="font-family:SgFR">Fraktur</span></button><button type="button" data-t="SgXB" data-s="SgMD"><b style="font-family:SgXB">AB</b> <span style="font-family:SgMD">Modern</span></button><button type="button" data-t="SgXB" data-s="SgSC"><b style="font-family:SgXB">AB</b> <span style="font-family:SgSC;font-size:17px">Schrift</span></button><button type="button" data-t="SgSC" data-s="SgMD"><b style="font-family:SgSC;font-size:19px;font-weight:400">Schreibschrift</b></button><button type="button" data-t="SgBR" data-s="SgMD"><b style="font-family:SgBR;font-size:18px;font-weight:400">Pinsel</b></button></div>
 <label class="wz-field"><span>Datum oder Widmung <i>optional</i></span><input id="wzNote" class="inp" type="text" autocomplete="off" placeholder="z. B. 12.06.2021 · Hier hat alles begonnen"></label>
 <div class="wz-ideen" id="wzNoteIdeen"></div>
@@ -535,19 +538,19 @@
 <div><b>Druckfertige Datei</b><span>Vektor-PDF mit Beschnitt</span></div>
 </section>
 
-<section class="lp-sec">
+<section class="lp-sec" data-nur-alt>
 <div class="lp-head"><h2>Beliebte Designs</h2><p>Antippen – das Poster öffnet sich fertig gestaltet. Danach ist alles änderbar.</p></div>
 <div class="bsp-strip" id="bspStrip"></div>
 </section>
 
-<section class="lp-sec">
+<section class="lp-sec" data-nur-alt>
 <div class="lp-head"><h2>Für jeden Anlass</h2><p>Wähle einen Anlass, und Stil, Herz-Markierung und Widmung sind schon passend gesetzt.</p></div>
 <div class="lp-anl">
 {#each ANL as [k, titel, text] (k)}<button type="button" onclick={() => anlass(k)}><b>{titel}</b><span>{text}</span></button>{/each}
 </div>
 </section>
 
-<section class="lp-sec">
+<section class="lp-sec" data-nur-alt>
 <div class="lp-head"><h2>Mehr als eine Karte</h2><p>Sechs Motive, alle im gleichen Editor.</p></div>
 <div class="lp-motive">
 {#each MOTIVE as [id, titel, text] (id)}<button type="button" onclick={() => beispiel(id)}><img src={asset(`beispiele/${id}.webp` as any)} alt="" loading="lazy" /><b>{titel}</b><span>{text}</span></button>{/each}

@@ -7,6 +7,7 @@ import { PRESETS } from '../themen/vorlagen.js';
 import { applyDesign } from '../themen/designs.js';
 import { RASTER, ensureRaster, rasterKey } from '../karte/raster.js';
 import { render } from './zeichnen.js';
+import { liveAn } from './neu.js';
 import { saveDraftSoon } from './entwurf.js';
 
 export function newState(presetKey, keep) {
@@ -141,11 +142,13 @@ export function nachladbar(D = app.DATA) {
 export function freiBereich(D = app.DATA) {
   const e = D.ext;
   if (!nachladbar(D)) return e;
-  if (D._frei && D._frei.e === e) return D._frei.r;
-  const L = Math.min(MW * 8, 15000 / meterJeEinheit(D)) / 2;
+  const live = liveAn();
+  if (D._frei && D._frei.e === e && D._frei.live === live) return D._frei.r;
+  // Live-Karte: großzügig 40 km (MapLibre lädt selbst nach), sonst 8 × Posterbreite / max. 15 km
+  const L = (live ? 40000 / meterJeEinheit(D) : Math.min(MW * 8, 15000 / meterJeEinheit(D))) / 2;
   const cx = MW / 2, cy = D.MH0 / 2;
   const r = { x0: Math.min(e.x0, cx - L), y0: Math.min(e.y0, cy - L), x1: Math.max(e.x1, cx + L), y1: Math.max(e.y1, cy + L) };
-  D._frei = { e, r };
+  D._frei = { e, r, live };
   return r;
 }
 /** Kleinster Zoom, bei dem die schon geladene Gegend das Poster füllt („Mit Umgebung“) */
@@ -204,6 +207,13 @@ export function vLimits(v) {
     const stufeW = tz > 12 ? (STUFE_GRENZE[tz === 14 ? 13 : 12] * 1.3) / m : 0;
     const maxW = Math.max(MW / zmin, Math.min(12000 / m, Math.max(dichteBreite(v), stufeW)));
     zmin = Math.max(MW / maxW, MW / (f.x1 - f.x0), MH / (f.y1 - f.y0)) * 1.0001;
+  }
+  // Neuer Editor (Live-Karte): weit heraus bis 15 km, hinein bis ≈ 250 m – MapLibre lädt selbst passend nach
+  if (liveAn()) {
+    const m = meterJeEinheit();
+    const f = freiBereich();
+    zmin = Math.max(MW / (15000 / m), MW / (f.x1 - f.x0), MH / (f.y1 - f.y0)) * 1.0001;
+    return { zmin, zmax: Math.max(8, MW / (250 / m)), MH };
   }
   return {
     zmin,

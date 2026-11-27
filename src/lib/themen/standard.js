@@ -3,8 +3,15 @@
 // Aus dem Prototyp übernommen (prototyp/src/script.js).
 
 import { KONFIG } from '../konfig.js';
+import { stadtplanStil } from '../karte/stadtplan-stil.js';
 
 export const BASES = {
+  // Eigener Stil (kein Abruf nötig): Grundlage des neuen Editors
+  stadtplan: {
+    name: 'Stadtplan',
+    dots: ['#ffffff', '#111111', '#a9c4e2', '#dde0e4'],
+    stil: () => stadtplanStil()
+  },
   liberty: {
     name: 'Klassisch',
     dots: ['#f8f4f0', '#ffffff', '#fcd6a4', '#a0c8f0'],

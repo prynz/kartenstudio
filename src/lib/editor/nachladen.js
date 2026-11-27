@@ -8,6 +8,7 @@ import { buildDataTiles } from '../karte/daten.js';
 import { mercInv } from '../karte/raster.js';
 import { freiBereich, meterJeEinheit, nachladbar, visRect, zielStufe } from './zustand.js';
 import { FMAP, render } from './zeichnen.js';
+import { liveAn } from './neu.js';
 
 /** @type {any} */
 const app = appUntyped;
@@ -38,7 +39,8 @@ function anzeige(an) {
 
 async function lauf() {
 	const D = app.DATA;
-	if (laeuft || !nachladbar(D)) return;
+	// Live-Karte lädt ihre Kacheln selbst
+	if (laeuft || !nachladbar(D) || liveAn()) return;
 	const v = visRect(),
 		w = v[2] - v[0],
 		h = v[3] - v[1];

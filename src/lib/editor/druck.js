@@ -5,6 +5,7 @@ import { ladeSchriften } from './basis.js';
 import { app as appUntyped } from './app.js';
 import { CLS, MW } from './basis.js';
 import { buildSVG, geo } from './zeichnen.js';
+import { karteFuerExport } from './neu.js';
 import { RASTER, rasterKey, detailRaster } from '../karte/raster.js';
 import { popK } from '../themen/pop.js';
 import { DESIGNS } from '../themen/designs.js';
@@ -161,6 +162,12 @@ export async function buildPDF() {
 		ph = P.h * 10 + 2 * BLEED; // Seite in mm
 	const W = Math.round((pw / 25.4) * dpi),
 		H = Math.round((ph / 25.4) * dpi);
+	// Live-Karte in Druckauflösung rechnen (Kartenbreite in Bildpunkten)
+	{
+		const g0 = geo();
+		const fit0 = Math.min((P.w * 10) / g0.W, (P.h * 10) / g0.H);
+		await karteFuerExport(MW * fit0 * (W / pw));
+	}
 	const { img, url } = await posterImage();
 	const cv = document.createElement('canvas');
 	cv.width = W;
@@ -304,6 +311,7 @@ function toB64(u) {
 }
 
 export async function buildVectorPDF() {
+	await karteFuerExport(3000);
 	const S = app.S;
 	const P = paperOrFree(S);
 	const [{ jsPDF }, { svg2pdf }, { FONTDATA, ladeSchriften }] = await Promise.all([import('jspdf'), import('svg2pdf.js'), import('./basis.js')]);

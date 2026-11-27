@@ -5,6 +5,8 @@ import { ladeSchriften } from '../editor/basis.js';
 import { app } from '../editor/app.js';
 import { $ } from '../editor/basis.js';
 import { buildSVG, geo } from '../editor/zeichnen.js';
+import { karteFuerExport } from '../editor/neu.js';
+import { MW } from '../editor/basis.js';
 import { msg } from '../editor/ansicht.js';
 import { buildPDF, buildVectorPDF } from '../editor/druck.js';
 
@@ -29,6 +31,8 @@ export function dlPlain(name, blob) {
 }
 export async function renderPNG(W) {
   await ladeSchriften();
+  // Live-Karte in passender Auflösung (Kartenbreite in Bildpunkten)
+  await karteFuerExport(W * MW / geo().W);
   const svg = buildSVG(true),
     g = geo(),
     H = Math.round(W * g.H / g.W);
@@ -70,6 +74,7 @@ export function initExportExport() {
   $('dlGo').onclick = async () => {
     await ladeSchriften();
     if (app.dlF === 'svg') {
+      await karteFuerExport(2400);
       if (await download(fileBase() + '.svg', new Blob([buildSVG(true)], {
         type: 'image/svg+xml'
       }))) msg('SVG heruntergeladen', 'ok');

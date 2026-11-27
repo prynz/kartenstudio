@@ -22,6 +22,8 @@ async function run(name, ctxOpts, fn) {
 	if (process.env.NUR && !name.includes(process.env.NUR)) return;
 	const ctx = await browser.newContext(ctxOpts);
 	if (!/Einführung/.test(name)) await ctx.addInitScript(() => localStorage.setItem('kartenstudio.tipps.v1', '1'));
+	// Die bisherigen Prüfungen gelten dem alten Editor (…/#alt); Tests „Neuer Editor …“ prüfen den neuen
+	if (!/Neuer Editor/.test(name)) await ctx.addInitScript(() => localStorage.setItem('kartenstudio.alteditor', '1'));
 	const page = await ctx.newPage();
 	// Neue Werkzeugleiste: Liegt ein Bedienelement in einem anderen Bereich, zuerst dorthin wechseln
 	// (wie ein Mensch, der erst auf „Extras“ tippt und dann den Schalter umlegt)
@@ -995,6 +997,88 @@ await run('Feste Vorschaubilder für Stile und Designs', { viewport: { width: 14
 	const blobs = await page.$$eval('#wzStyles img, #wzDesigns img', (i) => i.filter((x) => x.src.startsWith('blob:')).length);
 	ok(blobs === 0, 'Keine live gezeichneten Vorschaubilder mehr');
 });
+
+if (ONLINE)
+	await run('Neuer Editor: Live-Karte, Text, Download', { viewport: { width: 1440, height: 900 }, acceptDownloads: true }, async (page) => {
+		const t = await page.$$eval('[data-nur-alt]', (e) => e.filter((x) => x.offsetParent !== null).length);
+		ok(t === 0, 'Startseite: alte Bereiche (Beliebte Designs, Anlässe, Motive) ausgeblendet');
+		await page.fill('#lq', 'Bamberg');
+		await page.click('#lgo');
+		await page.waitForSelector('#lresults button', { timeout: 30000 });
+		await page.click('#lresults button');
+		await page.waitForSelector('#landing', { state: 'hidden', timeout: 90000 });
+		await page.waitForSelector('#liveKarte canvas', { timeout: 30000 });
+		await page.waitForTimeout(2500);
+		ok((await page.$$eval('#wzSteps button[data-step]', (b) => b.map((x) => x.dataset.step).join(','))) === 'ort,text,fertig', 'Nur die Bereiche Ort · Text · Fertig');
+		const lage = await page.evaluate(() => {
+			const k = document.getElementById('liveKarte').getBoundingClientRect();
+			const p = document.getElementById('poster').getBoundingClientRect();
+			return { k: [k.left, k.top, k.right, k.bottom], p: [p.left, p.top, p.right, p.bottom] };
+		});
+		ok(lage.k[0] >= lage.p[0] - 1 && lage.k[2] <= lage.p[2] + 1 && lage.k[1] >= lage.p[1] - 1 && lage.k[3] < lage.p[3], 'Live-Karte liegt genau in der Kartenfläche des Posters');
+		ok((await page.$$('#poster #kartenhintergrund, #poster #vorschau')).length === 0, 'Kartenfläche des Posters ist durchsichtig (Live-Karte darunter)');
+		ok((await page.textContent('#poster')).includes('BAMBERG'), 'Titel im Poster');
+		// Ziehen verschiebt die Live-Karte
+		const c0 = await page.evaluate(() => document.getElementById('liveKarte').dataset.mitte || '');
+		const box = await page.locator('#poster').boundingBox();
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 3);
+		await page.mouse.down();
+		await page.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 3 + 40, { steps: 8 });
+		await page.mouse.up();
+		await page.waitForTimeout(400);
+		const c1 = await page.evaluate(() => document.getElementById('liveKarte').dataset.mitte || '');
+		ok(c0 && c1 && c0 !== c1, 'Ziehen verschiebt die Live-Karte');
+		// Text ändern
+		await page.click('#wzSteps button[data-step="text"]');
+		await page.fill('#wzTitle', 'UNSER ZUHAUSE');
+		await page.waitForTimeout(300);
+		ok((await page.textContent('#poster')).includes('UNSER ZUHAUSE'), 'Titel änderbar');
+		// Wandbild (Mockup) zeigt die Karte
+		await page.click('#wzSteps button[data-step="fertig"]');
+		const mkPunkte = () => page.evaluate(async () => {
+			const i = document.querySelector('#mkScene .mk-img');
+			if (!i) return -1;
+			const im = new Image();
+			im.src = i.getAttribute('src') || i.getAttribute('href') || '';
+			await im.decode().catch(() => {});
+			const c = document.createElement('canvas');
+			c.width = 100;
+			c.height = 100;
+			const x = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+			x.drawImage(im, 0, 0, 100, 100);
+			const d = x.getImageData(0, 0, 100, 60).data;
+			let z = 0;
+			for (let k = 0; k < d.length; k += 4) if (d[k] < 235) z++;
+			return z;
+		});
+		let mk = 0;
+		for (let i = 0; i < 30 && mk <= 300; i++) {
+			await page.waitForTimeout(1000);
+			mk = await mkPunkte();
+		}
+		ok(mk > 300, `Wandbild zeigt die Karte (${mk} Kartenpunkte)`);
+		// Download PNG: Karte in Druckauflösung eingesetzt (nicht leer)
+		await page.evaluate(() => document.querySelector('#fertigTabs [data-t="laden"]')?.click());
+		const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 120000 }), page.evaluate(() => document.querySelector('.wz-dl [data-f="png"]').click())]);
+		const datei = `${OUT}/neu-poster.png`;
+		await dl.saveAs(datei);
+		const bunt = await page.evaluate(async (b64) => {
+			const img = new Image();
+			img.src = 'data:image/png;base64,' + b64;
+			await img.decode();
+			const c = document.createElement('canvas');
+			c.width = 200;
+			c.height = Math.round((200 * img.naturalHeight) / img.naturalWidth);
+			const x = c.getContext('2d');
+			x.drawImage(img, 0, 0, c.width, c.height);
+			const d = x.getImageData(20, 20, 160, 120).data;
+			let dunkel = 0;
+			for (let i = 0; i < d.length; i += 4) if (d[i] < 235 || d[i + 2] < 235) dunkel++;
+			return { w: img.naturalWidth, dunkel };
+		}, fs.readFileSync(datei).toString('base64'));
+		ok(bunt.w >= 3000 && bunt.dunkel > 1500, `PNG in Druckgröße mit Karte (${bunt.w} px, ${bunt.dunkel} von 19200 Punkten der Kartenfläche nicht weiß)`);
+		await page.screenshot({ path: `${OUT}/neu-editor.png` });
+	});
 
 await run('Orts-Seiten für Google', { viewport: { width: 1280, height: 860 } }, async (page) => {
 	const base = URL.replace(/\/$/, '');

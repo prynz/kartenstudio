@@ -25,6 +25,7 @@ import { contours, reliefBild } from '../karte/hoehen.js';
 import { syncTools } from './bedienung.js';
 import { nachladenPruefen } from './nachladen.js';
 import { msg, zoom } from './ansicht.js';
+import { karteBildAktuell, liveAn, liveSync } from './neu.js';
 
 /* ---------- Poster-Geometrie & SVG ---------- */
 // Berechnet, wo Karte, Balken und Text im Poster liegen – je nach Design (app.S.lay).
@@ -392,8 +393,14 @@ export async function alsBild(svg, w = 240) {
   const u = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
   try {
     const img = new Image();
-    img.src = u;
-    await img.decode();
+    await new Promise((ok, nein) => {
+      img.onload = ok;
+      img.onerror = nein;
+      img.src = u;
+    });
+    await img.decode().catch(() => {});
+    // Eingebettete Bilder (z. B. die Live-Karte als Bild) laden im SVG einen Moment später
+    if (svg.includes('data:image')) await new Promise(r => setTimeout(r, 150));
     const c = document.createElement('canvas');
     c.width = w;
     c.height = Math.max(1, Math.round(w * (img.naturalHeight || 1) / (img.naturalWidth || 1)));
@@ -448,6 +455,14 @@ export function mapContent(forExport, vr) {
     // 2 Punkte Überstand, damit an den Rändern keine Lücke durchblitzt
     if (K) return feldGruppe('kamera', `<image href="${K.url}" x="-2" y="-2" width="${MW + 4}" height="${(MW * app.S.view.a + 4).toFixed(2)}" preserveAspectRatio="none"/>`);
     if (!forExport) scheduleKamera(60);
+  }
+  // Neuer Editor: am Bildschirm zeichnet die Live-Karte (MapLibre) darunter – hier nichts.
+  // Für Download/Druck/Mockup das vorher in passender Größe gerechnete Kartenbild der Ansicht.
+  if (liveAn()) {
+    if (!forExport) return '';
+    const B = karteBildAktuell();
+    const r = visRect();
+    return B ? `<image href="${B.url}" x="${r[0].toFixed(3)}" y="${r[1].toFixed(3)}" width="${(r[2] - r[0]).toFixed(3)}" height="${(r[3] - r[1]).toFixed(3)}" preserveAspectRatio="none"/>` : '';
   }
   if (app.S.mode === 'std') {
     const E = app.DATA.ext,
@@ -690,6 +705,7 @@ export function renderView() {
   if (MC.hits && !inner.style.willChange) MC.hits.setAttribute('transform', t);
   if (app.sel.size || app.selCls) drawSel();
   syncTools();
+  liveSync();
   nachladenPruefen();
   clearTimeout(fullTimer);
   fullTimer = window.setTimeout(vollNachZiehen, 140);
@@ -1063,7 +1079,7 @@ export function buildSVG(forExport) {
     o += `<defs><clipPath id="cTypo">${T ? T.texte : ''}</clipPath></defs>`;
     o += `<rect id="kartenhintergrund" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="${typoPapier()}"/>`;
     if (app.S.bg !== 'none') o += `<g clip-path="url(#cTypo)"><rect id="kartenflaeche" width="${g.W.toFixed(1)}" height="${g.H.toFixed(1)}" fill="${verlauf ? 'url(#gBg)' : app.S.bg}"/></g>`;
-  } else if (papierF !== 'none') o += `<rect id="kartenhintergrund" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="${verlauf && !g.L.papier ? 'url(#gBg)' : papierF}"/>`;
+  } else if (papierF !== 'none' && !(liveAn() && !forExport)) o += `<rect id="kartenhintergrund" x="${f.w / 2}" y="${f.w / 2}" width="${(g.W - f.w).toFixed(1)}" height="${(g.H - f.w).toFixed(1)}" rx="${R}" ry="${R}" fill="${verlauf && !g.L.papier ? 'url(#gBg)' : papierF}"/>`;
   // Eigenes Papier außerhalb der Karte (z. B. weiß um einen dunklen Kartenkreis)
   if (g.L.papier && app.S.bg !== 'none') o += mapShape(g, 0, ` id="kartenflaeche" transform="translate(${g.mx},${g.my})" fill="${verlauf ? 'url(#gBg)' : app.S.bg}"`);
   o += fokusSVG(g);
@@ -1155,7 +1171,8 @@ export function render() {
   const bgFill = pv === 'checker' ? 'url(#pvChecker)' : pv;
   const tdefs = tmp.querySelector('defs');
   if (pv === 'checker') tdefs.insertAdjacentHTML('beforeend', '<pattern id="pvChecker" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="#fff"/><rect width="12" height="12" fill="#ececec"/><rect x="12" y="12" width="12" height="12" fill="#ececec"/></pattern>');
-  tdefs.insertAdjacentHTML('afterend', `<rect id="vorschau" x="0" y="0" width="100%" height="100%" fill="${bgFill}" clip-path="url(#cOut)" pointer-events="none"/>`);
+  // Live-Karte: die Kartenfläche muss durchsichtig bleiben (außen deckt das Passepartout ab)
+  if (!liveAn()) tdefs.insertAdjacentHTML('afterend', `<rect id="vorschau" x="0" y="0" width="100%" height="100%" fill="${bgFill}" clip-path="url(#cOut)" pointer-events="none"/>`);
   const g = geo();
   const before = MC.node;
   const M = mapNodes();
@@ -1230,7 +1247,8 @@ export function render() {
   syncWizard();
   zoom();
   syncTools();
-  if (app.S.mode === 'std') scheduleDetail();
+  if (app.S.mode === 'std' && !liveAn()) scheduleDetail();
+  liveSync();
 }
 export const FMAP = new Map();
 export function frags(id) {

@@ -1201,3 +1201,31 @@ body.rt-zeichnen .nl-hinweis{top:72px}
 .tour-fuss .tour-weiter{margin-left:auto}
 body.tour-an .coach,body.tour-an .tour-frage{display:none}
 @media(prefers-reduced-motion:reduce){.tour-spot,.tour-blase,.tour-punkte i{transition:none}}
+
+/* ==========================================================================
+   Neuer Karteneditor (body.neu): Live-Karte (MapLibre) unter dem Poster-SVG.
+   Alte Stile, Designs, Effekte, Beispiele usw. sind ausgeblendet – sie werden schrittweise neu gebaut
+   (Übersicht im Archiv /archiv). Der alte Editor bleibt unter …/#alt erreichbar.
+   ========================================================================== */
+.poster-huelle{position:relative;flex:none;line-height:0}
+.live-karte,.live-karte.maplibregl-map{position:absolute;left:0;top:0;flex:none;transform-origin:0 0;pointer-events:none;z-index:0;background:#fff;contain:strict}
+.live-karte .maplibregl-canvas{outline:none}
+body.live #poster{position:relative;z-index:1}
+/* im Mockup liegt die Szene darüber */
+body.mk-on .live-karte{visibility:hidden}
+/* Ausgeblendet im neuen Editor */
+body.neu [data-nur-alt],
+body.neu [data-bsp-open],
+body.neu [data-adv-open],
+body.neu #railTour,
+body.neu #favBtn,
+body.neu #ptVgl,
+body.neu .oa-feat,
+body.neu #wzWider,
+body.neu #wzOrtsnamen,
+body.neu .wz-fonts,
+body.neu #wzInfo,
+body.neu #dlFmt [data-f="svg"],
+body.neu #dlFmt [data-f="pdfv"],
+body.neu .wz-dl [data-f="pdfv"]{display:none!important}
+body.neu label:has(> #wzOrtsnamen){display:none!important}
