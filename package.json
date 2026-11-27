@@ -28,6 +28,7 @@
 	},
 	"dependencies": {
 		"jspdf": "^4.2.1",
+		"maplibre-contour": "^0.2.0",
 		"maplibre-gl": "^6.19.0",
 		"svg2pdf.js": "^2.9.0"
 	}

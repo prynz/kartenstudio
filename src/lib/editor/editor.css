@@ -1229,3 +1229,18 @@ body.neu #dlFmt [data-f="svg"],
 body.neu #dlFmt [data-f="pdfv"],
 body.neu .wz-dl [data-f="pdfv"]{display:none!important}
 body.neu label:has(> #wzOrtsnamen){display:none!important}
+
+/* Neuer Editor: Bereich „Stil“ (Live-Kartenstile) – alte Stil-Inhalte ausgeblendet */
+.neu-stil{display:none}
+body.neu .neu-stil{display:block}
+body.neu .wz-pane[data-step="stil"]>:not(.neu-stil):not(.wz-head){display:none!important}
+.ns-satz{margin:-4px 0 10px;font-size:13px;line-height:1.4;color:var(--muted)}
+.ns-cards{margin-bottom:6px}
+.ns-cards .wz-card .th{background:#f1f2f4}
+.ns-cards .wz-card[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+.ns-cards .wz-card[aria-disabled="true"]:active{transform:none}
+.ns-cards .wz-card .nm{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2.6em;line-height:1.3}
+body.neu [data-dice]{display:none!important}
+.ns-cards .wz-card{display:block}
+.ns-cards .wz-card .th{aspect-ratio:1/1;min-height:0}
+.ns-cards .wz-card{aspect-ratio:auto;height:auto}

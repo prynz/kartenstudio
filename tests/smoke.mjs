@@ -1009,7 +1009,7 @@ if (ONLINE)
 		await page.waitForSelector('#landing', { state: 'hidden', timeout: 90000 });
 		await page.waitForSelector('#liveKarte canvas', { timeout: 30000 });
 		await page.waitForTimeout(2500);
-		ok((await page.$$eval('#wzSteps button[data-step]', (b) => b.map((x) => x.dataset.step).join(','))) === 'ort,text,fertig', 'Nur die Bereiche Ort · Text · Fertig');
+		ok((await page.$$eval('#wzSteps button[data-step]', (b) => b.map((x) => x.dataset.step).join(','))) === 'ort,stil,text,fertig', 'Bereiche Ort · Stil · Text · Fertig');
 		const lage = await page.evaluate(() => {
 			const k = document.getElementById('liveKarte').getBoundingClientRect();
 			const p = document.getElementById('poster').getBoundingClientRect();
@@ -1028,6 +1028,20 @@ if (ONLINE)
 		await page.waitForTimeout(400);
 		const c1 = await page.evaluate(() => document.getElementById('liveKarte').dataset.mitte || '');
 		ok(c0 && c1 && c0 !== c1, 'Ziehen verschiebt die Live-Karte');
+		// Stil: 9 gezeichnete + 4 Landkarten-Stile mit Vorschaubild, Wechsel färbt Papier und Schrift
+		await page.click('#wzSteps button[data-step="stil"]');
+		const nStile = await page.$$eval('#nsBox [data-ls]', (b) => b.length);
+		ok(nStile === 13, `13 Kartenstile zur Auswahl (${nStile})`);
+		const bilder = await page.$$eval('#nsBox img', (i) => Promise.all(i.map((x) => (x.scrollIntoView(), x.decode().then(() => x.naturalWidth > 0, () => false)))));
+		ok(bilder.every(Boolean), 'Alle Stil-Vorschaubilder vorhanden');
+		await page.click('#nsBox [data-ls="nachtgold"]');
+		await page.waitForTimeout(1200);
+		const dunkel = await page.evaluate(() => ({ bg: document.getElementById('liveKarte')?.style.background || '', on: document.querySelector('#nsBox [data-ls="nachtgold"]')?.classList.contains('on'), svg: document.getElementById('poster')?.innerHTML.includes('#0a1828') }));
+		ok(!!dunkel.on && /10, 24, 40|0a1828/.test(dunkel.bg) && !!dunkel.svg, 'Stil „Nachtblau & Gold“: Karte und Papier dunkel');
+		await page.check('#nsHoehen');
+		await page.waitForTimeout(2500);
+		ok(await page.isChecked('#nsHoehen'), 'Höhenlinien einschaltbar');
+		await page.uncheck('#nsHoehen');
 		// Text ändern
 		await page.click('#wzSteps button[data-step="text"]');
 		await page.fill('#wzTitle', 'UNSER ZUHAUSE');

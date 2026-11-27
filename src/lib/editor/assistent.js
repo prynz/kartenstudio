@@ -22,6 +22,7 @@ import { STIL_GRUPPEN, DESIGN_GRUPPEN } from '../themen/sammlungen.js';
 import { ensureRaster } from '../karte/raster.js';
 import { attachSearch } from '../karte/suche.js';
 import { pickPlace } from '../karte/ortswahl-start.js';
+import { initStilNeu, syncStilNeu } from './stil-neu.js';
 import { openPicker } from '../karte/ortswahl.js';
 import { EASE, reducedMotion } from './animation.js';
 import { revealSection } from './sheet.js';
@@ -261,6 +262,7 @@ function syncOrt() {
 export function syncWizard() {
 	const S = app.S;
 	if (!S) return;
+	if (istNeu()) syncStilNeu();
 	const sky = S.motif === 'sterne';
 	const koord = S.motif === 'koord';
 	const wolke = S.motif === 'wolke';
@@ -864,10 +866,11 @@ function markierung(ziel) {
 }
 
 export function initWizard() {
-	// Neuer Editor: vorerst nur Ort → Text → Fertig (Stile, Designs, Effekte werden schrittweise neu gebaut)
+	// Neuer Editor: Ort → Stil → Text → Fertig (Designs und Effekte werden schrittweise neu gebaut)
 	if (istNeu()) {
 		document.body.classList.add('neu');
-		for (const t of ['stil', 'design', 'extras']) {
+		initStilNeu(smooth);
+		for (const t of ['design', 'extras']) {
 			document.querySelector(`#wzSteps button[data-step="${t}"]`)?.remove();
 			const i = STEPS.indexOf(t);
 			if (i >= 0) STEPS.splice(i, 1);

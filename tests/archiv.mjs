@@ -127,15 +127,25 @@ const funktionen = [
 	{ name: 'Anlass-Vorlagen', desc: 'Hochzeit, Geburt, Zuhause, Heimat, Urlaub, Verein (Startseite).' },
 	{ name: 'Produkt-Mockups', desc: 'Poster, Rahmen, Leinwand, Alu, Aufsteller, T-Shirt, Tasse in Raumszenen.' }
 ];
+// Schon im neuen Editor nachgebaut (siehe src/lib/karte/live-stile.js) → nicht mehr im Archiv
+/** @type {Record<string, string[]>} */
+const NACHGEBAUT = {
+	stil: ['stadtplan', 'umriss', 'vintage', 'schwarzweiss', 'washi', 'tusche', 'goldnacht', 'koenigsblau', 'wald'],
+	landkarte: ['liberty', 'positron', 'bright', 'satellit'],
+	effekt: ['hoehenlinien'],
+	design: ['stadtplan']
+};
+/** @param {string} b @param {any[]} l */
+const offen = (b, l) => l.filter((e) => !(NACHGEBAUT[b] || []).includes(e.id));
 const archiv = {
 	stand: new Date().toISOString().slice(0, 10),
 	hinweis: 'Eingefroren vor dem Umbau auf den neuen Karteneditor. Vorschaubilder am Beispielort Bamberg.',
 	bereiche: [
-		{ id: 'stil', titel: 'Farbstile', text: 'Farben der gezeichneten Karte.', eintraege: stile },
-		{ id: 'design', titel: 'Designs & Formen', text: 'Aufbau des Posters: Rahmen, Formen, Textanordnung.', eintraege: designs },
-		{ id: 'motiv', titel: 'Motive', text: 'Statt einer Karte.', eintraege: motive },
-		{ id: 'landkarte', titel: 'Landkarten-Stile', text: 'Fertige Kartenstile (MapLibre/OpenFreeMap).', eintraege: landkarten },
-		{ id: 'effekt', titel: 'Effekte', text: 'Extras, die man zuschalten konnte.', eintraege: effekte.map(({ id, name, desc }) => ({ id, name, desc })) }
+		{ id: 'stil', titel: 'Farbstile', text: 'Farben der gezeichneten Karte.', eintraege: offen('stil', stile) },
+		{ id: 'design', titel: 'Designs & Formen', text: 'Aufbau des Posters: Rahmen, Formen, Textanordnung.', eintraege: offen('design', designs) },
+		{ id: 'motiv', titel: 'Motive', text: 'Statt einer Karte.', eintraege: offen('motiv', motive) },
+		{ id: 'landkarte', titel: 'Landkarten-Stile', text: 'Fertige Kartenstile (MapLibre/OpenFreeMap).', eintraege: offen('landkarte', landkarten) },
+		{ id: 'effekt', titel: 'Effekte', text: 'Extras, die man zuschalten konnte.', eintraege: offen('effekt', effekte.map(({ id, name, desc }) => ({ id, name, desc }))) }
 	],
 	funktionen
 };

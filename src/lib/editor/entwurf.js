@@ -2,6 +2,7 @@
 // Gespeichert wird nur der Ausschnitt und die Gestaltung – die Kartendaten werden beim
 // Öffnen neu geladen (schnell, weil der Browser die Kacheln zwischenspeichert).
 import { app as appUntyped } from './app.js';
+import { istNeu } from './modus.js';
 
 /** @type {any} */
 const app = appUntyped;
@@ -76,7 +77,9 @@ export function validDraft(d) {
 	const b = d.b;
 	if (!d.demo) {
 		if (!b || !['w', 'e', 'n', 's'].every((k) => Number.isFinite(b[k]))) return false;
-		if (b.e - b.w <= 0 || b.e - b.w > 0.2 || b.n - b.s <= 0 || b.n - b.s > 0.2) return false;
+		// neuer Editor: auch ganze Länder (bis fast weltweit), alter Editor nur kleine Ausschnitte
+		const max = istNeu() ? 330 : 0.2;
+		if (b.e - b.w <= 0 || b.e - b.w > max || b.n - b.s <= 0 || b.n - b.s > max) return false;
 	}
 	if (d.place && (typeof d.place !== 'object' || !safeVal(d.place.lon ?? 0, 'lon'))) return false;
 	if (d.gift && (typeof d.gift !== 'object' || String(d.gift.msg || '').length > 400 || String(d.gift.from || '').length > 100)) return false;

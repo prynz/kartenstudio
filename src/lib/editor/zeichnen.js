@@ -1145,7 +1145,7 @@ export function buildSVG(forExport) {
     const col = inBar || onPaper ? app.S.title.color : app.S.mode === 'std' ? BASES[app.S.base].sat || app.S.base === 'dark' || app.S.base === 'fiord' ? '#ffffff' : '#333333' : app.S.cls.haupt.s;
     const x = g.W - g.sw - g.p - 4 - (g.L.kind === 'steckbrief' ? 10 : 0);
     const y = inBar ? g.H - g.sw - 8 : g.L.kind === 'below' || g.L.foot || g.L.kind === 'steckbrief' ? g.H - g.sw - Math.min(14, g.p / 2 + 4) - (g.L.kind === 'steckbrief' ? 18 : 0) : g.my + g.MH - 6;
-    let at = app.S.mode === 'std' ? BASES[app.S.base].sat ? 'Luftbild © Bayer. Vermessungsverwaltung (CC BY 4.0) · © OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenStreetMap-Mitwirkende';
+    let at = app.S.mode === 'std' ? (BASES[app.S.base].sat || (liveAn() && app.S.karte && app.S.karte.stil === 'luftbild')) ? 'Luftbild © Bayer. Vermessungsverwaltung (CC BY 4.0) · © OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenMapTiles · © OpenStreetMap-Mitwirkende' : '© OpenStreetMap-Mitwirkende';
     if (((app.S.hoehen && app.S.hoehen.on) || (app.S.fx && app.S.fx.relief && !perspektiveAn())) && app.S.mode !== 'std') at += ' · Höhen © EU-DEM';
     if (std3d() && (app.S.fx.relief || app.S.fx.gelaende)) at += ' · Höhen © EU-DEM';
     o += `<text id="quelle" x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" font-family="SgMD" font-size="11" fill="${col}" fill-opacity="0.75">${at}</text>`;

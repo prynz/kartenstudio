@@ -11,7 +11,7 @@ import { istNeu } from './modus.js';
 import { loadMaplibre } from '../karte/ortswahl.js';
 import { mercInv } from '../karte/raster.js';
 import { buildSVG, geo } from './zeichnen.js';
-import { stadtplanStil, STRASSEN_EBENEN, HAUS_EBENEN } from '../karte/stadtplan-stil.js';
+import { stilJSON, liveStil, inBayern } from '../karte/live-stile.js';
 import { applyDesign } from '../themen/designs.js';
 import { PRESETS } from '../themen/vorlagen.js';
 
@@ -42,12 +42,38 @@ export function neuAnwenden(S) {
 	S.pins = [];
 	S.fx = {};
 	S.labels = false;
-	if (S.preset !== 'stadtplan' || S.design !== 'stadtplan') {
-		S.preset = 'stadtplan';
-		S.bg = PRESETS.stadtplan.bg;
-		applyDesign(S, 'stadtplan', PRESETS.stadtplan, true);
-	}
+	// Kartenstil (Stadtplan, Navy, Vintage …) und Höhenlinien
+	let st = liveStil(S.karte && S.karte.stil);
+	// Luftbild gibt es nur in Bayern – woanders zurück zum Stadtplan
+	const c = app.DATA && app.DATA.center;
+	if (st.luftbild && c && !inBayern(c[0], c[1])) st = liveStil('stadtplan');
+	S.karte = { stil: st.id, hoehen: !!(S.karte && S.karte.hoehen) };
+	if (S.preset !== st.vorlage || S.design !== 'stadtplan') stilFarben(S, st.vorlage);
 	return S;
+}
+
+/**
+ * Papier- und Schriftfarbe des Posters passend zum Kartenstil (aus der alten Vorlage des Stils).
+ * @param {any} S @param {string} vorlage
+ */
+function stilFarben(S, vorlage) {
+	const P = /** @type {any} */ (PRESETS)[vorlage] || PRESETS.stadtplan;
+	S.preset = vorlage;
+	S.bg = !P.bg || P.bg === 'none' ? '#ffffff' : P.bg;
+	applyDesign(S, 'stadtplan', P, true);
+}
+
+/** Kartenstil wählen (Bereich „Stil“) @param {any} S @param {string} id */
+export function stilSetzen(S, id) {
+	const st = liveStil(id);
+	S.karte = { ...(S.karte || {}), stil: st.id };
+	stilFarben(S, st.vorlage);
+}
+
+/** Aktueller Kartenstil + Höhenlinien */
+function karteOpt() {
+	const k = (app.S && app.S.karte) || {};
+	return { stil: liveStil(k.stil).id, hoehen: !!k.hoehen };
 }
 
 /** Sichtbare Ebenen nach „Kartendetails“ (S.cls.haus.h = Gebäude aus, Straßen aus = nur Gebäude) */
@@ -70,7 +96,9 @@ let karte = null;
 let huelle = null;
 let laedt = false;
 let pr = 0;
-let detailKey = '';
+let stilKey = '';
+/** @type {any} */
+let karteLib = null;
 
 async function starten() {
 	if (karte || laedt) return;
@@ -93,9 +121,11 @@ async function starten() {
 		rahmen.insertBefore(huelle, app.poster);
 		const k = kamera();
 		pr = Math.min(3, Math.max(1, window.devicePixelRatio || 1));
+		const o = karteOpt();
+		stilKey = JSON.stringify([o, details()]);
 		karte = new lib.Map({
 			container: huelle,
-			style: stadtplanStil(details()),
+			style: await stilJSON(o.stil, details(), o.hoehen, lib),
 			center: k.center,
 			zoom: k.zoom,
 			interactive: false,
@@ -105,7 +135,7 @@ async function starten() {
 			pixelRatio: pr,
 			renderWorldCopies: false
 		});
-		detailKey = JSON.stringify(details());
+		karteLib = lib;
 		karte.on('dataloading', () => huelle && huelle.classList.add('laedt'));
 		karte.on('idle', () => huelle && huelle.classList.remove('laedt'));
 		// Poster ändert seine Größe (Fenster, Handy-Panel) → Karte mitführen
@@ -139,6 +169,9 @@ export function liveSync() {
 	const h = (REF * g.MH) / MW;
 	const st = /** @type {HTMLDivElement} */ (huelle).style;
 	st.display = '';
+	// Untergrund in der Papierfarbe des Stils – sonst blitzt am Rand der Kartenfläche ein heller Strich durch
+	const fb = liveStil(app.S.karte && app.S.karte.stil).farben;
+	st.background = fb ? fb.bg : '#ffffff';
 	st.width = REF + 'px';
 	st.height = h.toFixed(1) + 'px';
 	st.left = (g.mx * s).toFixed(2) + 'px';
@@ -152,12 +185,17 @@ export function liveSync() {
 	}
 	const canvas = karte.getCanvas();
 	if (Math.abs(canvas.clientWidth - REF) > 0.5 || Math.abs(canvas.clientHeight - h) > 0.5) karte.resize();
-	const d = details();
-	const dk = JSON.stringify(d);
-	if (dk !== detailKey) {
-		detailKey = dk;
-		for (const id of HAUS_EBENEN) karte.setLayoutProperty(id, 'visibility', d.haeuser ? 'visible' : 'none');
-		for (const id of STRASSEN_EBENEN) karte.setLayoutProperty(id, 'visibility', d.strassen ? 'visible' : 'none');
+	// Stil, Höhenlinien oder Kartendetails geändert → neuen Stil setzen (MapLibre tauscht nur, was sich ändert)
+	const o = karteOpt(),
+		d = details();
+	const sk = JSON.stringify([o, d]);
+	if (sk !== stilKey) {
+		stilKey = sk;
+		stilJSON(o.stil, d, o.hoehen, karteLib)
+			.then((st) => {
+				if (karte && stilKey === sk) karte.setStyle(st);
+			})
+			.catch((e) => console.warn('Kartenstil', e));
 	}
 	const c = kamera();
 	karte.jumpTo({ center: c.center, zoom: c.zoom });
@@ -172,7 +210,7 @@ let BILD = null;
 function bildKey() {
 	const S = app.S,
 		v = S.view;
-	return JSON.stringify([v.cx.toFixed(3), v.cy.toFixed(3), v.z.toFixed(5), v.a.toFixed(5), details(), app.DATA.place]);
+	return JSON.stringify([v.cx.toFixed(3), v.cy.toFixed(3), v.z.toFixed(5), v.a.toFixed(5), details(), karteOpt(), app.DATA.place]);
 }
 
 /** Zuletzt gerechnetes Kartenbild, falls es zur aktuellen Ansicht passt (für buildSVG(true)) */
@@ -227,10 +265,11 @@ async function rechnen(key, pxW) {
 	document.body.appendChild(div);
 	/** @type {any} */
 	let m = null;
+	const o = karteOpt();
 	try {
 		m = new lib.Map({
 			container: div,
-			style: stadtplanStil(details()),
+			style: await stilJSON(o.stil, details(), o.hoehen, lib),
 			center: c.center,
 			zoom: c.zoom,
 			interactive: false,
