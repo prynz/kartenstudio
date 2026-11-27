@@ -1,0 +1,707 @@
+{
+ "stand": "2026-11-27",
+ "hinweis": "Eingefroren vor dem Umbau auf den neuen Karteneditor. Vorschaubilder am Beispielort Bamberg.",
+ "bereiche": [
+  {
+   "id": "stil",
+   "titel": "Farbstile",
+   "text": "Farben der gezeichneten Karte.",
+   "eintraege": [
+    {
+     "id": "stadtplan",
+     "name": "Stadtplan",
+     "desc": "Schwarze Straßen, hellblaues Wasser, viel Weiß – der klare Klassiker.",
+     "gruppe": "Hell & klassisch"
+    },
+    {
+     "id": "umriss",
+     "name": "Umriss (Siegritz)",
+     "desc": "Klare Linien, leere Häuser, Rahmen und Balken in Navy – das Siegritz-Design.",
+     "gruppe": "Hell & klassisch"
+    },
+    {
+     "id": "minimal",
+     "name": "Minimal schwarz",
+     "desc": "Schwarz auf Weiß, gefüllte Häuser – maximal reduziert.",
+     "gruppe": "Hell & klassisch"
+    },
+    {
+     "id": "vintage",
+     "name": "Vintage-Papier",
+     "desc": "Alte Landkarte: Sepia, Papier und blasses Wasser.",
+     "gruppe": "Hell & klassisch"
+    },
+    {
+     "id": "strassen",
+     "name": "Nur Straßen",
+     "desc": "Nur das Straßennetz, ohne Häuser.",
+     "gruppe": "Hell & klassisch"
+    },
+    {
+     "id": "schwarzweiss",
+     "name": "Schwarz & Weiß",
+     "desc": "Feine weiße Linien auf Schwarz – wie ein Siebdruck.",
+     "gruppe": "Hell & klassisch"
+    },
+    {
+     "id": "blaupause",
+     "name": "Blaupause",
+     "desc": "Weiße Konstruktionslinien auf Blaupausen-Blau.",
+     "gruppe": "Hell & klassisch"
+    },
+    {
+     "id": "washi",
+     "name": "Washi",
+     "desc": "Warmes Papier mit hellen Straßen, Akzent in Zinnoberrot – ruhig und japanisch.",
+     "gruppe": "Hell & klassisch"
+    },
+    {
+     "id": "tusche",
+     "name": "Tusche & Rot",
+     "desc": "Japanische Tuschezeichnung mit rotem Akzent.",
+     "gruppe": "Hell & klassisch"
+    },
+    {
+     "id": "dunkel",
+     "name": "Nachtblau (New York)",
+     "desc": "Weiße Linien auf Nachtblau, wie die klassischen Stadtposter.",
+     "gruppe": "Dunkel & Nacht"
+    },
+    {
+     "id": "goldnacht",
+     "name": "Gold & Nacht",
+     "desc": "Goldene Straßen auf tiefem Nachtblau – edel und warm.",
+     "gruppe": "Dunkel & Nacht"
+    },
+    {
+     "id": "cyber",
+     "name": "Cyber Noir",
+     "desc": "Neonpink und Cyan auf fast schwarzem Grund.",
+     "gruppe": "Dunkel & Nacht"
+    },
+    {
+     "id": "tinte",
+     "name": "Tinte & Gold",
+     "desc": "Tiefes Tintenblau, Straßen kaum heller – der Fokus leuchtet golden.",
+     "gruppe": "Dunkel & Nacht"
+    },
+    {
+     "id": "lichter",
+     "name": "Stadtlichter",
+     "desc": "Leuchtende Goldstraßen auf Schwarz – wie eine Stadt bei Nacht (mit Effekt „Leuchten“).",
+     "gruppe": "Dunkel & Nacht"
+    },
+    {
+     "id": "neon",
+     "name": "Neon-Violett",
+     "desc": "Violette Gassen, pinke Hauptstraßen und türkises Wasser auf Schwarzblau.",
+     "gruppe": "Dunkel & Nacht"
+    },
+    {
+     "id": "solar",
+     "name": "Solar Flare",
+     "desc": "Glühendes Orange auf tiefem Schwarz.",
+     "gruppe": "Dunkel & Nacht"
+    },
+    {
+     "id": "vulkan",
+     "name": "Vulkanglas",
+     "desc": "Ultradunkles Glas mit kühlen blaugrauen Reflexen.",
+     "gruppe": "Dunkel & Nacht"
+    },
+    {
+     "id": "mittelmeer",
+     "name": "Mittelmeer-Sonne",
+     "desc": "Warmes Creme, Terrakotta und Meeresblau.",
+     "gruppe": "Farbig"
+    },
+    {
+     "id": "pastell",
+     "name": "Pastell",
+     "desc": "Sanftes Rosa, Flieder und Himmelblau.",
+     "gruppe": "Farbig"
+    },
+    {
+     "id": "japan",
+     "name": "Japan-Rot",
+     "desc": "Hellgrau mit weißen Straßen, Akzent in Rot – passt zum Design „Fokus“.",
+     "gruppe": "Farbig"
+    },
+    {
+     "id": "koenigsblau",
+     "name": "Königsblau",
+     "desc": "Weißes Papier, zarte blaue Straßen, Wasser und Parks in kräftigem Blau.",
+     "gruppe": "Farbig"
+    },
+    {
+     "id": "puls",
+     "name": "Am Puls",
+     "desc": "Rote Straßen auf einem Verlauf von Blau nach Magenta – laut und lebendig.",
+     "gruppe": "Farbig"
+    },
+    {
+     "id": "wald",
+     "name": "Waldgrün",
+     "desc": "Tannengrün, Moos und Nebel.",
+     "gruppe": "Farbig"
+    },
+    {
+     "id": "koralle",
+     "name": "Koralle",
+     "desc": "Kräftiges Korallenrot mit hellen Straßen.",
+     "gruppe": "Einfarbig"
+    },
+    {
+     "id": "lavendel",
+     "name": "Lavendel",
+     "desc": "Ein Ton Flieder, Straßen hell – modern und weich.",
+     "gruppe": "Einfarbig"
+    },
+    {
+     "id": "petrol",
+     "name": "Petrol",
+     "desc": "Tiefes Petrol, Wasser und Straßen hell.",
+     "gruppe": "Einfarbig"
+    },
+    {
+     "id": "salbei",
+     "name": "Salbei",
+     "desc": "Ruhiges Salbeigrün, natürlich und hell.",
+     "gruppe": "Einfarbig"
+    },
+    {
+     "id": "senf",
+     "name": "Senf",
+     "desc": "Warmes Senfgelb mit hellen Linien.",
+     "gruppe": "Einfarbig"
+    },
+    {
+     "id": "schiefer",
+     "name": "Schiefer",
+     "desc": "Kühles Schiefergrau mit hellen Linien – zeitlos für große Buchstaben.",
+     "gruppe": "Einfarbig"
+    },
+    {
+     "id": "flamingo",
+     "name": "Flamingo",
+     "desc": "Kräftiges Rosa mit hellen Straßen – fröhlich und modern.",
+     "gruppe": "Einfarbig"
+    },
+    {
+     "id": "tanne",
+     "name": "Tanne",
+     "desc": "Dunkles Tannengrün mit hellen Linien.",
+     "gruppe": "Einfarbig"
+    },
+    {
+     "id": "insel",
+     "name": "Insel-Silhouette",
+     "desc": "Land in kräftigem Blau, Wasser weiß – für Inseln, Küsten und Seen (Ausschnitt groß wählen).",
+     "gruppe": "Einfarbig"
+    },
+    {
+     "id": "popart",
+     "name": "Pop-Art",
+     "desc": "Illustrierter Stadtplan: Symbole in Rot, Gelb und Blau folgen den Straßen, der Ort zeichnet sich als bunte Fläche ab.",
+     "gruppe": "Illustriert"
+    },
+    {
+     "id": "konfetti",
+     "name": "Konfetti-Nacht",
+     "desc": "Pastellfarbene Symbole auf Nachtblau – verspielt und edel.",
+     "gruppe": "Illustriert"
+    },
+    {
+     "id": "wimmel",
+     "name": "Wimmelbild",
+     "desc": "Illustrierter Stadtplan in Koralle, Türkis und Schieferblau.",
+     "gruppe": "Illustriert"
+    },
+    {
+     "id": "dossier",
+     "name": "Dossier",
+     "desc": "Dunkelgraue Karte, Häuser in Signalrot – passt zum Design „Dossier“.",
+     "gruppe": "Illustriert"
+    },
+    {
+     "id": "einsatz",
+     "name": "Einsatzkarte",
+     "desc": "Dunkelgraue Karte mit grauen Straßen – passt zum Design „Einsatzkarte“.",
+     "gruppe": "Illustriert"
+    },
+    {
+     "id": "albumabend",
+     "name": "Album-Abend",
+     "desc": "Exakt die Farben des Abend-Plattencovers: Taubenblau, Lavendel, Rosa, Pfirsich, Nachtviolett.",
+     "gruppe": "Sunset City"
+    },
+    {
+     "id": "sunset",
+     "name": "Sunset",
+     "desc": "Rosa-violetter Sonnenuntergang, helle Straßen – Miami-Abendstimmung.",
+     "gruppe": "Sunset City"
+    },
+    {
+     "id": "spielkarte",
+     "name": "Spielkarte",
+     "desc": "Grünes Land, tiefblaues Wasser mit türkisem Küstensaum, graue Stadt – wie eine Videospiel-Karte.",
+     "gruppe": "Sunset City"
+    },
+    {
+     "id": "nachtfahrt",
+     "name": "Nachtfahrt",
+     "desc": "Pinke Hauptstraßen und violette Gassen auf tiefem Nachtviolett, türkises Wasser.",
+     "gruppe": "Sunset City"
+    },
+    {
+     "id": "pastellabend",
+     "name": "Pastell-Abend",
+     "desc": "Lavendel geht in Pfirsich über, Straßen in dunklem Violett – sanft wie ein Plattencover.",
+     "gruppe": "Sunset City"
+    }
+   ]
+  },
+  {
+   "id": "design",
+   "titel": "Designs & Formen",
+   "text": "Aufbau des Posters: Rahmen, Formen, Textanordnung.",
+   "eintraege": [
+    {
+     "id": "stadtplan",
+     "name": "Stadtplan",
+     "desc": "Karte mit weißem Rand, großer schlichter Ortsname, darunter Region und Koordinaten.",
+     "gruppe": "Schlicht"
+    },
+    {
+     "id": "poster",
+     "name": "Poster",
+     "desc": "Das reine Poster: Karte mit weißem Rand, Titel darunter – ohne Rahmen. Rahmen und Formen wählst du danach.",
+     "gruppe": "Schlicht"
+    },
+    {
+     "id": "klassisch",
+     "name": "Klassisch",
+     "desc": "Schlanker, eckiger Rahmen mit Textbalken – zeitlos.",
+     "gruppe": "Schlicht"
+    },
+    {
+     "id": "minimal",
+     "name": "Minimal",
+     "desc": "Ohne Rahmen, viel Weißraum, zurückhaltende Schrift.",
+     "gruppe": "Schlicht"
+    },
+    {
+     "id": "linie",
+     "name": "Elegant",
+     "desc": "Feiner Rahmen, Titel und Untertitel durch eine Zierlinie getrennt.",
+     "gruppe": "Schlicht"
+    },
+    {
+     "id": "koordinaten",
+     "name": "Mit Koordinaten",
+     "desc": "Schlanker Rahmen, Balken mit Ort, Region und Koordinaten.",
+     "gruppe": "Schlicht"
+    },
+    {
+     "id": "oben",
+     "name": "Text oben",
+     "desc": "Der Titel steht über der Karte – wie ein Zeitungskopf.",
+     "gruppe": "Schlicht"
+    },
+    {
+     "id": "randlos",
+     "name": "Randlos",
+     "desc": "Die Karte füllt alles, der Text schwebt mit sanftem Verlauf darüber.",
+     "gruppe": "Schlicht"
+    },
+    {
+     "id": "leise",
+     "name": "Leise",
+     "desc": "Nur die Karte – randlos, mit kleinem Ortsnamen ganz unten.",
+     "gruppe": "Schlicht"
+    },
+    {
+     "id": "galerie",
+     "name": "Galerie",
+     "desc": "Feiner Rahmen, viel Luft, der Titel steht frei unter der Karte.",
+     "gruppe": "Schlicht"
+    },
+    {
+     "id": "galeriekoord",
+     "name": "Galerie + Koordinaten",
+     "desc": "Feiner Rahmen, Ortsname und Koordinaten unter der Karte.",
+     "gruppe": "Schlicht"
+    },
+    {
+     "id": "siegritz",
+     "name": "Siegritz",
+     "desc": "Kräftiger, abgerundeter Rahmen mit farbigem Textbalken – das Ursprungsdesign.",
+     "gruppe": "Rahmen & Balken"
+    },
+    {
+     "id": "passepartout",
+     "name": "Passepartout",
+     "desc": "Breiter heller Rand mit feiner Linie um die Karte – wie gerahmt.",
+     "gruppe": "Rahmen & Balken"
+    },
+    {
+     "id": "doppel",
+     "name": "Doppelrahmen",
+     "desc": "Zwei Linien – klassisch und elegant.",
+     "gruppe": "Rahmen & Balken"
+    },
+    {
+     "id": "breit",
+     "name": "Breiter Rahmen",
+     "desc": "Kräftiger, farbiger Rahmen wie bei einem Bilderrahmen.",
+     "gruppe": "Rahmen & Balken"
+    },
+    {
+     "id": "polaroid",
+     "name": "Polaroid",
+     "desc": "Gleichmäßiger Rand, unten breit für den Text – wie ein Sofortbild.",
+     "gruppe": "Rahmen & Balken"
+    },
+    {
+     "id": "abgerundet",
+     "name": "Abgerundet",
+     "desc": "Karte mit weichen Ecken auf hellem Grund, ohne Rahmen.",
+     "gruppe": "Rahmen & Balken"
+    },
+    {
+     "id": "balkenoben",
+     "name": "Balken oben",
+     "desc": "Farbiger Kopfbalken mit dem Ortsnamen, Karte darunter.",
+     "gruppe": "Rahmen & Balken"
+    },
+    {
+     "id": "kreiskoord",
+     "name": "Kreis + Koordinaten",
+     "desc": "Runder Ausschnitt mit Ortsname und Koordinaten.",
+     "gruppe": "Formen"
+    },
+    {
+     "id": "kreis",
+     "name": "Kreis",
+     "desc": "Die Karte als runder Ausschnitt, Text darunter.",
+     "gruppe": "Formen"
+    },
+    {
+     "id": "herz",
+     "name": "Herz",
+     "desc": "Dein Ort in Herzform – ideal als Geschenk.",
+     "gruppe": "Formen"
+    },
+    {
+     "id": "silhouette",
+     "name": "Eigene Form",
+     "desc": "Die Karte in einer Form deiner Wahl: lade eine Silhouette oder ein freigestelltes Foto hoch – oder nimm einen Buchstaben.",
+     "gruppe": "Formen"
+    },
+    {
+     "id": "haus",
+     "name": "Haus",
+     "desc": "Karte in Hausform – ideal zum Einzug oder fürs Eigenheim.",
+     "gruppe": "Formen"
+    },
+    {
+     "id": "rund",
+     "name": "Runder Rahmen",
+     "desc": "Kräftiger, stark abgerundeter Rahmen, Text frei darunter.",
+     "gruppe": "Formen"
+    },
+    {
+     "id": "sechseck",
+     "name": "Sechseck",
+     "desc": "Die Karte als Sechseck ausgeschnitten.",
+     "gruppe": "Formen"
+    },
+    {
+     "id": "bogen",
+     "name": "Bogenfenster",
+     "desc": "Die Karte als Bogen – wie ein Blick durchs Fenster.",
+     "gruppe": "Formen"
+    },
+    {
+     "id": "bogenlinie",
+     "name": "Bogen elegant",
+     "desc": "Bogenfenster mit feiner Zierlinie zwischen Titel und Untertitel.",
+     "gruppe": "Formen"
+    },
+    {
+     "id": "silhouettelinie",
+     "name": "Eigene Form + Linie",
+     "desc": "Wie „Eigene Form“, mit feiner Umrisslinie.",
+     "gruppe": "Formen"
+    },
+    {
+     "id": "typo",
+     "name": "Typografie",
+     "desc": "Riesige Buchstaben über der ganzen Karte – modern und plakativ.",
+     "gruppe": "Typografie"
+    },
+    {
+     "id": "typoschnitt",
+     "name": "Typo Ausschnitt",
+     "desc": "Die Karte erscheint nur in den Buchstaben des Ortsnamens – außen schlichtes Papier.",
+     "gruppe": "Typografie"
+    },
+    {
+     "id": "typoumriss",
+     "name": "Typo Umriss",
+     "desc": "Riesige Buchstaben nur als Umriss – die Karte bleibt überall sichtbar.",
+     "gruppe": "Typografie"
+    },
+    {
+     "id": "typopinsel",
+     "name": "Typo Pinsel",
+     "desc": "Der Ortsname in großer Pinselschrift quer über der Karte.",
+     "gruppe": "Typografie"
+    },
+    {
+     "id": "fokus",
+     "name": "Fokus",
+     "desc": "Farbiger Fleck mitten im Ort – die Straßen schneiden ihn in Blöcke. Titel in Pinselschrift.",
+     "gruppe": "Grafik & Editorial"
+    },
+    {
+     "id": "fokuskreis",
+     "name": "Fokus Kreis",
+     "desc": "Ein runder Farbpunkt wie eine Sonne über dem Ort, Titel darunter.",
+     "gruppe": "Grafik & Editorial"
+    },
+    {
+     "id": "fokusherz",
+     "name": "Fokus Herz",
+     "desc": "Ein Herz in deiner Lieblingsfarbe mitten im Ort, Titel in Schreibschrift.",
+     "gruppe": "Grafik & Editorial"
+    },
+    {
+     "id": "steckbrief",
+     "name": "Steckbrief",
+     "desc": "Wie eine Sammelserie: Kopfzeile, großer Kartenkreis, Titel links, Nordpfeil und Fakten zum Ort.",
+     "gruppe": "Grafik & Editorial"
+    },
+    {
+     "id": "studie",
+     "name": "Studie",
+     "desc": "Kartenkreis auf weißem Papier, kleiner Titel oben, unten eine Info-Leiste mit Koordinaten, Legende und Maßstab.",
+     "gruppe": "Grafik & Editorial"
+    },
+    {
+     "id": "kasten",
+     "name": "Kasten",
+     "desc": "Die Karte füllt alles, in der Mitte ein Textraster mit Titel, Koordinaten und Widmung – wie ein Festivalplakat.",
+     "gruppe": "Grafik & Editorial"
+    },
+    {
+     "id": "lupe",
+     "name": "Lupe",
+     "desc": "Ein Kreis hebt das Herz des Ortes hervor, ringsum wird die Karte blasser.",
+     "gruppe": "Grafik & Editorial"
+    },
+    {
+     "id": "nachtstadt",
+     "name": "Schwebend",
+     "desc": "Randlose Karte, gesperrter Titel mit Linie, darunter Region und Koordinaten – ideal für dunkle Stile.",
+     "gruppe": "Grafik & Editorial"
+    },
+    {
+     "id": "dossier",
+     "name": "Dossier",
+     "desc": "Gestrichelter Kreis, feines Gitter und gesperrter Titel – wie eine Einsatzkarte.",
+     "gruppe": "Grafik & Editorial"
+    },
+    {
+     "id": "einsatz",
+     "name": "Einsatzkarte",
+     "desc": "Originalgetreu nach dem Dharavi-Plakat: gestrichelter Kreis, ein rot markiertes Viertel mit Route und Nadel, Gitter, Text oben, Kompass unten.",
+     "gruppe": "Grafik & Editorial"
+    },
+    {
+     "id": "sonnenuntergang",
+     "name": "Sonnenuntergang",
+     "desc": "Retro-Himmel mit gestreifter Sonne und Palmen über der Karte – wie ein 80er-Plattencover.",
+     "gruppe": "Sunset City"
+    },
+    {
+     "id": "album",
+     "name": "Album",
+     "desc": "Quadratisch wie ein Plattencover: Abendhimmel mit Skyline und Palmen, Titel in Pinselschrift – nur in den Farben des Covers.",
+     "gruppe": "Sunset City"
+    },
+    {
+     "id": "guide",
+     "name": "Map Guide",
+     "desc": "Randlose Karte, oben ein großer Titel in Plakatschrift mit Kontur – wie eine Spielkarten-Übersicht.",
+     "gruppe": "Sunset City"
+    },
+    {
+     "id": "cover",
+     "name": "Cover-Raster",
+     "desc": "Die Karte in Panels wie ein Spiele-Cover, in der Mitte eine Titel-Plakette mit Farbverlauf.",
+     "gruppe": "Sunset City"
+    },
+    {
+     "id": "plakette",
+     "name": "Plakette",
+     "desc": "Randlose Karte mit einem runden Sticker in der Ecke – Titel in Plakatschrift auf Sonnenuntergang.",
+     "gruppe": "Sunset City"
+    }
+   ]
+  },
+  {
+   "id": "motiv",
+   "titel": "Motive",
+   "text": "Statt einer Karte.",
+   "eintraege": [
+    {
+     "id": "sterne",
+     "name": "Sternenhimmel",
+     "desc": "Der Himmel über dem Ort zu einem Datum und einer Uhrzeit."
+    },
+    {
+     "id": "koord",
+     "name": "Koordinaten",
+     "desc": "Große Koordinaten mit Ortsname und eigenem Text statt Karte."
+    },
+    {
+     "id": "wolke",
+     "name": "Wortwolke",
+     "desc": "Eigene Wörter als Wolke in Herz-, Kreis- oder Hausform."
+    }
+   ]
+  },
+  {
+   "id": "landkarte",
+   "titel": "Landkarten-Stile",
+   "text": "Fertige Kartenstile (MapLibre/OpenFreeMap).",
+   "eintraege": [
+    {
+     "id": "liberty",
+     "name": "Klassisch",
+     "desc": ""
+    },
+    {
+     "id": "positron",
+     "name": "Hell",
+     "desc": ""
+    },
+    {
+     "id": "bright",
+     "name": "Bunt",
+     "desc": ""
+    },
+    {
+     "id": "dark",
+     "name": "Dunkel",
+     "desc": ""
+    },
+    {
+     "id": "fiord",
+     "name": "Fjord",
+     "desc": ""
+    },
+    {
+     "id": "satellit",
+     "name": "Luftbild (Bayern)",
+     "desc": "Amtliches Luftbild (40 cm) – Bayerische Vermessungsverwaltung"
+    }
+   ]
+  },
+  {
+   "id": "effekt",
+   "titel": "Effekte",
+   "text": "Extras, die man zuschalten konnte.",
+   "eintraege": [
+    {
+     "id": "papier",
+     "name": "Papier-Struktur",
+     "desc": "Feine Papierstruktur auf farbigem Grund."
+    },
+    {
+     "id": "vignette",
+     "name": "Vignette",
+     "desc": "Ränder sanft abgedunkelt."
+    },
+    {
+     "id": "leuchten",
+     "name": "Leuchten",
+     "desc": "Weiches Leuchten der Straßen auf dunklem Grund."
+    },
+    {
+     "id": "hoehenlinien",
+     "name": "Höhenlinien",
+     "desc": "Höhenlinien aus dem Geländemodell (EU-DEM)."
+    },
+    {
+     "id": "relief",
+     "name": "Relief",
+     "desc": "Berge und Täler schattiert."
+    },
+    {
+     "id": "schatten",
+     "name": "Häuser-Schatten",
+     "desc": "Häuser werfen Schatten."
+    },
+    {
+     "id": "h3d",
+     "name": "3D-Häuser",
+     "desc": "Gebäude als 3D-Körper mit Dächern."
+    },
+    {
+     "id": "kipp",
+     "name": "Perspektive (gekippt)",
+     "desc": "Karte nach hinten gekippt mit Dunst am Horizont."
+    },
+    {
+     "id": "dreh",
+     "name": "Gedreht",
+     "desc": "Karte gedreht statt Norden oben."
+    }
+   ]
+  }
+ ],
+ "funktionen": [
+  {
+   "name": "Markierungen (Pins)",
+   "desc": "Herz, Pin, Stern oder Punkt an beliebige Stellen setzen und verschieben."
+  },
+  {
+   "name": "Widmung",
+   "desc": "Zusätzliche Textzeile, z. B. Datum oder Spruch."
+  },
+  {
+   "name": "Route & Wanderung",
+   "desc": "GPS-Datei laden (.gpx/.kml/.tcx/.geojson) oder Strecke entlang der Wege zeichnen."
+  },
+  {
+   "name": "Mehrere Orte",
+   "desc": "Bis zu 3–4 Orte nebeneinander in Kreisen oder Rechtecken."
+  },
+  {
+   "name": "Ortsnamen",
+   "desc": "Namen umliegender Orte auf der Karte."
+  },
+  {
+   "name": "Eigene Form",
+   "desc": "Eigenes Bild oder Buchstabe als Kartenform (Silhouette)."
+  },
+  {
+   "name": "Fokus anpassen / Typografie anpassen",
+   "desc": "Form, Größe und Lage des Farbflecks; Schrift und Stil der großen Buchstaben."
+  },
+  {
+   "name": "Einzelbearbeitung",
+   "desc": "In den erweiterten Einstellungen Häuser/Straßen einzeln umfärben oder ausblenden."
+  },
+  {
+   "name": "Anlass-Vorlagen",
+   "desc": "Hochzeit, Geburt, Zuhause, Heimat, Urlaub, Verein (Startseite)."
+  },
+  {
+   "name": "Produkt-Mockups",
+   "desc": "Poster, Rahmen, Leinwand, Alu, Aufsteller, T-Shirt, Tasse in Raumszenen."
+  }
+ ]
+}
